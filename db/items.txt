@@ -15,7 +15,7 @@ Iapapa Berry
 Kasib Berry
 Kebia Berry
 Life Orb
-Mago Berry 
+Mago Berry
 Occa Berry
 Passho Berry
 Payapa Berry
@@ -27,3 +27,9 @@ Tanga Berry
 Wacan Berry
 Wiki Berry
 Yache Berry
+Booster Energy
+Clear Amulet
+Covert Cloak
+Loaded Dice
+Mirror Herb
+Punching Glove

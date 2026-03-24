@@ -1058,6 +1058,16 @@ void MainWindow::addAsPreset(const QString& theName, const Turn& theTurn, const 
     hits_node->SetText(std::get<1>(presets.back()).getHits());
     title_node->InsertEndChild(hits_node);
 
+    //tera type
+    tinyxml2::XMLElement* teratype_node = xml_preset.NewElement("TeraType");
+    teratype_node->SetText(std::get<3>(std::get<2>(presets.back())));
+    title_node->InsertEndChild(teratype_node);
+
+    //terastallized
+    tinyxml2::XMLElement* terastallized_node = xml_preset.NewElement("Terastallized");
+    terastallized_node->SetText(std::get<4>(std::get<2>(presets.back())));
+    title_node->InsertEndChild(terastallized_node);
+
     xml_preset.LastChild()->InsertEndChild(title_node);
 
     xml_preset.SaveFile("presets.xml");
@@ -1159,6 +1169,10 @@ void MainWindow::LoadPresetsFromFile() {
             std::get<0>(std::get<2>(buffer)) = std::atoi(move_element_temp->NextSiblingElement("HPmodifier")->GetText());
             std::get<1>(std::get<2>(buffer)) = std::atoi(move_element_temp->NextSiblingElement("Defmodifier")->GetText());
             std::get<2>(std::get<2>(buffer)) = std::atoi(move_element_temp->NextSiblingElement("Spdefmodifier")->GetText());
+            auto* tera_elem = move_element_temp->NextSiblingElement("TeraType");
+            std::get<3>(std::get<2>(buffer)) = tera_elem ? (Type)std::atoi(tera_elem->GetText()) : Type::Typeless;
+            auto* tera_bool_elem = move_element_temp->NextSiblingElement("Terastallized");
+            std::get<4>(std::get<2>(buffer)) = tera_bool_elem ? (bool)std::atoi(tera_bool_elem->GetText()) : false;
 
             presets.push_back(buffer);
             element = element->NextSiblingElement();

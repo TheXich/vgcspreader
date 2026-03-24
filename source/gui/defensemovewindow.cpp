@@ -193,6 +193,19 @@ void DefenseMoveWindow::createAtk1GroupBox() {
 
     form_layout->addRow(tr("Item:"), items);
 
+    //TERA TYPE
+    QComboBox* tera_type1 = new QComboBox;
+    tera_type1->setObjectName("atk1_teratype_combobox");
+    auto teratypes1_buffer = ((MainWindow*)parentWidget())->getTypesNames();
+    for( auto it = teratypes1_buffer.begin(); it < teratypes1_buffer.end(); it++ ) tera_type1->addItem(*it);
+    tera_type1->setMaximumWidth(abilities_width);
+    form_layout->addRow(tr("Tera Type:"), tera_type1);
+
+    //TERASTALLIZED
+    QCheckBox* terastallized1 = new QCheckBox;
+    terastallized1->setObjectName("atk1_terastallized");
+    form_layout->addRow(tr("Terastallized:"), terastallized1);
+
     natures->setMaximumWidth(abilities_width);
     items->setMaximumWidth(abilities_width);
     abilities->setMaximumWidth(abilities_width);
@@ -488,6 +501,19 @@ void DefenseMoveWindow::createAtk2GroupBox() {
 
     form_layout->addRow(tr("Item:"), items);
 
+    //TERA TYPE
+    QComboBox* tera_type2 = new QComboBox;
+    tera_type2->setObjectName("atk2_teratype_combobox");
+    auto teratypes2_buffer = ((MainWindow*)parentWidget())->getTypesNames();
+    for( auto it = teratypes2_buffer.begin(); it < teratypes2_buffer.end(); it++ ) tera_type2->addItem(*it);
+    tera_type2->setMaximumWidth(abilities_width);
+    form_layout->addRow(tr("Tera Type:"), tera_type2);
+
+    //TERASTALLIZED
+    QCheckBox* terastallized2 = new QCheckBox;
+    terastallized2->setObjectName("atk2_terastallized");
+    form_layout->addRow(tr("Terastallized:"), terastallized2);
+
     natures->setMaximumWidth(abilities_width);
     items->setMaximumWidth(abilities_width);
     abilities->setMaximumWidth(abilities_width);
@@ -684,6 +710,22 @@ void DefenseMoveWindow::createDefendingGroupBox() {
     hits_modifier_spinbox->setRange(2, 5);
     hits_modifier_spinbox->setSuffix("HKO");
     defending_layout->addWidget(hits_modifier_spinbox, Qt::AlignLeft);
+
+    QLabel* tera_type_label = new QLabel(tr("Tera Type:"));
+    defending_layout->addWidget(tera_type_label);
+
+    QComboBox* tera_type_combobox = new QComboBox;
+    tera_type_combobox->setObjectName("defending_tera_type");
+    auto teratypes_buffer = ((MainWindow*)parentWidget())->getTypesNames();
+    for( auto it = teratypes_buffer.begin(); it < teratypes_buffer.end(); it++ ) tera_type_combobox->addItem(*it);
+    defending_layout->addWidget(tera_type_combobox, Qt::AlignLeft);
+
+    QLabel* terastallized_label = new QLabel(tr("Terastallized:"));
+    defending_layout->addWidget(terastallized_label);
+
+    QCheckBox* terastallized_checkbox = new QCheckBox;
+    terastallized_checkbox->setObjectName("defending_terastallized");
+    defending_layout->addWidget(terastallized_checkbox, Qt::AlignLeft);
 
     modifier_groupbox = new QGroupBox("Modifiers:");
 
@@ -973,6 +1015,8 @@ void DefenseMoveWindow::solveMove(const bool preset, const QString& preset_name)
     attacking1.setNature((Stats::Nature)atk1_groupbox->findChild<QComboBox*>("atk1_nature_combobox")->currentIndex());
     attacking1.setAbility((Ability)atk1_groupbox->findChild<QComboBox*>("atk1_abilities_combobox")->currentIndex());
     attacking1.setItem(Item(atk1_groupbox->findChild<QComboBox*>("atk1_items_combobox")->currentIndex()));
+    attacking1.setTeraType((Type)atk1_groupbox->findChild<QComboBox*>("atk1_teratype_combobox")->currentIndex());
+    attacking1.setTerastallized(atk1_groupbox->findChild<QCheckBox*>("atk1_terastallized")->isChecked());
 
     Move attacking1_move((Moves)atk1_groupbox->findChild<QComboBox*>("atk1_moves_combobox")->currentIndex());
     if( atk1_groupbox->findChild<QComboBox*>("atk1_target_combobox")->currentIndex() == Move::Target::SINGLE ) attacking1_move.setTarget(Move::Target::SINGLE);
@@ -1007,6 +1051,8 @@ void DefenseMoveWindow::solveMove(const bool preset, const QString& preset_name)
     attacking2.setNature((Stats::Nature)atk2_groupbox->findChild<QComboBox*>("atk2_nature_combobox")->currentIndex());
     attacking2.setAbility((Ability)atk2_groupbox->findChild<QComboBox*>("atk2_abilities_combobox")->currentIndex());
     attacking2.setItem(Item(atk2_groupbox->findChild<QComboBox*>("atk2_items_combobox")->currentIndex()));
+    attacking2.setTeraType((Type)atk2_groupbox->findChild<QComboBox*>("atk2_teratype_combobox")->currentIndex());
+    attacking2.setTerastallized(atk2_groupbox->findChild<QCheckBox*>("atk2_terastallized")->isChecked());
 
     Move attacking2_move((Moves)atk2_groupbox->findChild<QComboBox*>("atk2_moves_combobox")->currentIndex());
     if( atk2_groupbox->findChild<QComboBox*>("atk2_target_combobox")->currentIndex() == Move::Target::SINGLE ) attacking2_move.setTarget(Move::Target::SINGLE);
@@ -1038,7 +1084,13 @@ void DefenseMoveWindow::solveMove(const bool preset, const QString& preset_name)
     if( atk2_groupbox->findChild<QCheckBox*>("atk2_activated")->checkState() == Qt::Checked ) turn.addMove(attacking2, attacking2_move);
     turn.setHits(defending_groupbox->findChild<QSpinBox*>("defending_hits_modifier")->value()-1);
 
-    defense_modifier def_mod = std::make_tuple(defending_groupbox->findChild<QSpinBox*>("defending_hp_modifier")->value(), defending_groupbox->findChild<QSpinBox*>("defending_def_modifier")->value(), defending_groupbox->findChild<QSpinBox*>("defending_spdef_modifier")->value());
+    defense_modifier def_mod = std::make_tuple(
+        (float)defending_groupbox->findChild<QSpinBox*>("defending_hp_modifier")->value(),
+        (int16_t)defending_groupbox->findChild<QSpinBox*>("defending_def_modifier")->value(),
+        (int16_t)defending_groupbox->findChild<QSpinBox*>("defending_spdef_modifier")->value(),
+        (Type)defending_groupbox->findChild<QComboBox*>("defending_tera_type")->currentIndex(),
+        defending_groupbox->findChild<QCheckBox*>("defending_terastallized")->isChecked()
+    );
 
     if( !preset ) ((MainWindow*)parentWidget())->addDefenseTurn(turn, def_mod);
     else ((MainWindow*)parentWidget())->addAsPreset(preset_name, turn, def_mod);
@@ -1061,6 +1113,8 @@ void DefenseMoveWindow::setAsBlank() {
     atk1_groupbox->findChild<QComboBox*>("atk1_moves_combobox")->setCurrentIndex(0);
     atk1_groupbox->findChild<QCheckBox*>("atk1_crit")->setChecked(false);
     atk1_groupbox->findChild<QCheckBox*>("atk1_z")->setChecked(false);
+    atk1_groupbox->findChild<QComboBox*>("atk1_teratype_combobox")->setCurrentIndex(0);
+    atk1_groupbox->findChild<QCheckBox*>("atk1_terastallized")->setChecked(false);
 
     //atk2
     atk2_groupbox->findChild<QCheckBox*>("atk2_activated")->setChecked(true);
@@ -1079,6 +1133,8 @@ void DefenseMoveWindow::setAsBlank() {
     atk2_groupbox->findChild<QComboBox*>("atk2_moves_combobox")->setCurrentIndex(0);
     atk2_groupbox->findChild<QCheckBox*>("atk2_crit")->setChecked(false);
     atk2_groupbox->findChild<QCheckBox*>("atk2_z")->setChecked(false);
+    atk2_groupbox->findChild<QComboBox*>("atk2_teratype_combobox")->setCurrentIndex(0);
+    atk2_groupbox->findChild<QCheckBox*>("atk2_terastallized")->setChecked(false);
 
     modifier_groupbox->findChild<QComboBox*>("weather_combobox")->setCurrentIndex(0);
     modifier_groupbox->findChild<QComboBox*>("terrain_combobox")->setCurrentIndex(0);
@@ -1087,6 +1143,8 @@ void DefenseMoveWindow::setAsBlank() {
     defending_groupbox->findChild<QSpinBox*>("defending_spdef_modifier")->setValue(0);
     defending_groupbox->findChild<QSpinBox*>("defending_hp_modifier")->setValue(100);
     defending_groupbox->findChild<QSpinBox*>("defending_hits_modifier")->setValue(0);
+    defending_groupbox->findChild<QComboBox*>("defending_tera_type")->setCurrentIndex(0);
+    defending_groupbox->findChild<QCheckBox*>("defending_terastallized")->setChecked(false);
 
     tabs->setCurrentIndex(0);
 }
@@ -1109,6 +1167,8 @@ void DefenseMoveWindow::setAsTurn(const Turn &theTurn, const defense_modifier &t
 
     atk1_groupbox->findChild<QCheckBox*>("atk1_crit")->setChecked(theTurn.getMoves()[0].second.isCrit());
     atk1_groupbox->findChild<QCheckBox*>("atk1_z")->setChecked(theTurn.getMoves()[0].second.isZ());
+    atk1_groupbox->findChild<QComboBox*>("atk1_teratype_combobox")->setCurrentIndex(theTurn.getMoves()[0].first.getTeraType());
+    atk1_groupbox->findChild<QCheckBox*>("atk1_terastallized")->setChecked(theTurn.getMoves()[0].first.isTerastallized());
 
     Stats::Stat stat;
     if( theTurn.getMoves()[0].second.getMoveCategory() == Move::Category::SPECIAL ) stat = Stats::SPATK;
@@ -1136,6 +1196,8 @@ void DefenseMoveWindow::setAsTurn(const Turn &theTurn, const defense_modifier &t
 
         atk2_groupbox->findChild<QCheckBox*>("atk2_crit")->setChecked(theTurn.getMoves()[1].second.isCrit());
         atk2_groupbox->findChild<QCheckBox*>("atk2_z")->setChecked(theTurn.getMoves()[1].second.isZ());
+        atk2_groupbox->findChild<QComboBox*>("atk2_teratype_combobox")->setCurrentIndex(theTurn.getMoves()[1].first.getTeraType());
+        atk2_groupbox->findChild<QCheckBox*>("atk2_terastallized")->setChecked(theTurn.getMoves()[1].first.isTerastallized());
 
         Stats::Stat stat2;
         if( theTurn.getMoves()[1].second.getMoveCategory() == Move::Category::SPECIAL ) stat2 = Stats::SPATK;
@@ -1154,6 +1216,8 @@ void DefenseMoveWindow::setAsTurn(const Turn &theTurn, const defense_modifier &t
     defending_groupbox->findChild<QSpinBox*>("defending_def_modifier")->setValue(std::get<1>(theDefenseModifier));
     defending_groupbox->findChild<QSpinBox*>("defending_spdef_modifier")->setValue(std::get<2>(theDefenseModifier));
     defending_groupbox->findChild<QSpinBox*>("defending_hp_modifier")->setValue(std::get<0>(theDefenseModifier));
+    defending_groupbox->findChild<QComboBox*>("defending_tera_type")->setCurrentIndex(std::get<3>(theDefenseModifier));
+    defending_groupbox->findChild<QCheckBox*>("defending_terastallized")->setChecked(std::get<4>(theDefenseModifier));
     defending_groupbox->findChild<QSpinBox*>("defending_hits_modifier")->setValue(theTurn.getHits()+1);
 
     tabs->setCurrentIndex(0);

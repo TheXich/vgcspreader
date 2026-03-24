@@ -22,7 +22,7 @@
 
 class Turn;
 
-typedef std::tuple<float, int16_t, int16_t> defense_modifier;
+typedef std::tuple<float, int16_t, int16_t, Type, bool> defense_modifier;
 typedef std::pair<int16_t, int16_t> attack_modifier;
 typedef std::pair<DefenseResult, AttackResult> FinalResult;
 
@@ -58,6 +58,8 @@ class Pokemon {
         bool grounded;
         unsigned int formes_number;
         unsigned int form;
+        Type tera_type;
+        bool terastallized;
         static std::mutex buffer_mutex;
         static std::mutex result_mutex;
         bool abort_calculation; //this variable is needed to request a stop for the resistMove function
@@ -108,6 +110,8 @@ class Pokemon {
         void setType(const unsigned int theIndex, const Type& theType) { types[form][theIndex] = theType; }
         void setGrounded(const bool theValue) { grounded = theValue; }
         void setForm(const unsigned int theForm) { if( theForm < formes_number ) { form = theForm; ability = possible_abilities[form][0]; calculateTotal(); } }
+        void setTeraType(const Type theType) { tera_type = theType; }
+        void setTerastallized(const bool value) { terastallized = value; }
         void abortCalculation() { abort_calculation = true; }
 
         unsigned int getPokedexNumber() const { return pokedex_number; }
@@ -129,6 +133,8 @@ class Pokemon {
         bool isGrounded() const { return grounded; }
         unsigned int getForm() const { return form; }
         unsigned int getFormesNumber() const { return formes_number; }
+        Type getTeraType() const { return tera_type; }
+        bool isTerastallized() const { return terastallized; }
         float getDEFTier() const;
         float getSPDEFTier() const;
 

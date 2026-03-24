@@ -1,8 +1,6 @@
 QT += widgets concurrent
 
 INCLUDEPATH += include include/gui
-LIBS += -ltinyxml2
-
 SOURCES += \
     source/main.cpp \
     source/modifier.cpp \
@@ -20,7 +18,8 @@ SOURCES += \
     source/gui/defensemovewindow.cpp \
     source/gui/attackmovewindow.cpp \
     source/gui/presetwindow.cpp \
-    source/gui/addpresetwindow.cpp
+    source/gui/addpresetwindow.cpp \
+    source/tinyxml2.cpp
 
 HEADERS += \
     include/abilities.hpp \
@@ -42,7 +41,8 @@ HEADERS += \
     include/gui/defensemovewindow.hpp \
     include/gui/attackmovewindow.hpp \
     include/gui/presetwindow.hpp \
-    include/gui/addpresetwindow.hpp
+    include/gui/addpresetwindow.hpp \
+    include/tinyxml2.h
 
 RESOURCES += \
     resources.qrc

@@ -3,6 +3,7 @@
 #include <QVBoxLayout>
 #include <QLabel>
 #include <QComboBox>
+#include <QCheckBox>
 #include <QFormLayout>
 #include <QDebug>
 
@@ -168,6 +169,19 @@ void AttackMoveWindow::createDefendingPokemonGroupbox() {
     for( auto it = items_buffer.begin(); it < items_buffer.end(); it++ ) items->addItem(*it);
 
     form_layout->addRow(tr("Item:"), items);
+
+    //TERA TYPE
+    QComboBox* tera_type = new QComboBox;
+    tera_type->setObjectName("def_teratype_combobox");
+    auto teratypes_buffer = ((MainWindow*)parentWidget())->getTypesNames();
+    for( auto it = teratypes_buffer.begin(); it < teratypes_buffer.end(); it++ ) tera_type->addItem(*it);
+    tera_type->setMaximumWidth(abilities_width);
+    form_layout->addRow(tr("Tera Type:"), tera_type);
+
+    //TERASTALLIZED
+    QCheckBox* terastallized = new QCheckBox;
+    terastallized->setObjectName("def_terastallized");
+    form_layout->addRow(tr("Terastallized:"), terastallized);
 
     natures->setMaximumWidth(abilities_width);
     items->setMaximumWidth(abilities_width);
@@ -548,6 +562,8 @@ void AttackMoveWindow::solveMove(void) {
     attacking1.setNature((Stats::Nature)defending_pokemon_groupbox->findChild<QComboBox*>("def_nature_combobox")->currentIndex());
     attacking1.setAbility((Ability)defending_pokemon_groupbox->findChild<QComboBox*>("def_abilities_combobox")->currentIndex());
     attacking1.setItem(Item(defending_pokemon_groupbox->findChild<QComboBox*>("def_items_combobox")->currentIndex()));
+    attacking1.setTeraType((Type)defending_pokemon_groupbox->findChild<QComboBox*>("def_teratype_combobox")->currentIndex());
+    attacking1.setTerastallized(defending_pokemon_groupbox->findChild<QCheckBox*>("def_terastallized")->isChecked());
 
     Move attacking1_move((Moves)move_groupbox->findChild<QComboBox*>("moves_combobox")->currentIndex());
     if( move_groupbox->findChild<QComboBox*>("target_combobox")->currentIndex() == Move::Target::SINGLE ) attacking1_move.setTarget(Move::Target::SINGLE);
@@ -595,6 +611,8 @@ void AttackMoveWindow::setAsBlank() {
     defending_pokemon_groupbox->findChild<QComboBox*>("def_forms_combobox")->setCurrentIndex(0);
     defending_pokemon_groupbox->findChild<QComboBox*>("def_nature_combobox")->setCurrentIndex(0);
     defending_pokemon_groupbox->findChild<QComboBox*>("def_items_combobox")->setCurrentIndex(0);
+    defending_pokemon_groupbox->findChild<QComboBox*>("def_teratype_combobox")->setCurrentIndex(0);
+    defending_pokemon_groupbox->findChild<QCheckBox*>("def_terastallized")->setChecked(false);
 
     defending_pokemon_groupbox->findChild<QSpinBox*>("def_iv_spinbox")->setValue(31);
     defending_pokemon_groupbox->findChild<QSpinBox*>("def_ev_spinbox")->setValue(0);
@@ -623,6 +641,8 @@ void AttackMoveWindow::setAsTurn(const Turn& theTurn, const Pokemon& theDefendin
     defending_pokemon_groupbox->findChild<QComboBox*>("def_nature_combobox")->setCurrentIndex(theDefendingPokemon.getNature());
     defending_pokemon_groupbox->findChild<QComboBox*>("def_items_combobox")->setCurrentIndex(theDefendingPokemon.getItem().getIndex());
     defending_pokemon_groupbox->findChild<QComboBox*>("def_abilities_combobox")->setCurrentIndex(theDefendingPokemon.getAbility());
+    defending_pokemon_groupbox->findChild<QComboBox*>("def_teratype_combobox")->setCurrentIndex(theDefendingPokemon.getTeraType());
+    defending_pokemon_groupbox->findChild<QCheckBox*>("def_terastallized")->setChecked(theDefendingPokemon.isTerastallized());
 
     Stats::Stat stat;
     if( theTurn.getMoves()[0].second.getMoveCategory() == Move::Category::SPECIAL ) stat = Stats::SPDEF;

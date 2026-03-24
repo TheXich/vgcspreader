@@ -25,11 +25,13 @@ class PokemonDB {
         static const unsigned int STAT_SIZE = 6;
         static const unsigned int TYPE_OFFSET = 6;
         static const unsigned int TYPE_SIZE = 2;
-        static const unsigned int ABILITY_OFFSET = 24;
-        static const unsigned int ABILITY_SIZE = 3;
-        static const unsigned int FORM_OFFSET = 28;
+        // Abilities moved to offset 8 (previously unused bytes 8-23).
+        // Each ability slot is 2 bytes (uint16 LE) to support Gen 9 ability IDs > 255.
+        static const unsigned int ABILITY_OFFSET = 8;
+        static const unsigned int ABILITY_SIZE = 6; // 3 slots × 2 bytes each
+        static const unsigned int FORM_OFFSET = 28; // unchanged
         static const unsigned int FORM_SIZE = 2;
-        static const unsigned int FORMNUMBER_OFFSET = 32;
+        static const unsigned int FORMNUMBER_OFFSET = 32; // unchanged
         static const unsigned int FORMNUMBER_SIZE = 1;
 
         static const unsigned int MOVEBP_OFFSET = 0;

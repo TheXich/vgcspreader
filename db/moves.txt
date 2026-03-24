@@ -56,7 +56,7 @@ Discharge
 Doom Desire
 Double Hit
 Double Kick
-Double-Edge
+Double Edge
 Draco Meteor
 Dragon Ascent
 Dragon Claw
@@ -104,7 +104,7 @@ Focus Punch
 Force Palm
 Foul Play
 Freeze Shock
-Freeze-Dry
+Freeze Dry
 Frost Breath
 Frustration
 Fusion Bolt
@@ -189,7 +189,7 @@ Moongeist Beam
 Mud Bomb
 Mud Shot
 Muddy Water
-Multi-Attack
+Multi Attack
 Natural Gift
 Nature Power
 Night Daze
@@ -215,7 +215,7 @@ Pollen Puff
 Power Gem
 Power Trip
 Power Whip
-Power-Up Punch
+Power Up Punch
 Precipice Blades
 Prismatic Laser
 Psichic
@@ -273,7 +273,7 @@ Smart Strike
 Snarl
 Solar Blade
 SolarBeam
-Soul-Stealing 7-Star Strike
+Soul Stealing 7 Star Strike
 Spacial Rend
 Spark
 Sparkling Aria
@@ -305,12 +305,12 @@ ThunderPunch
 Thunderbolt
 Tri Attack
 Trop Kick
-U-turn
-V-create
+U turn
+V create
 Vacuum Wave
 Volt Switch
 Volt Tackle
-Wake-Up Slap
+Wake Up Slap
 Water Pulse
 Water Shuriken
 Water Spout
@@ -318,7 +318,55 @@ Waterfall
 Weather Ball
 Wild Charge
 Wood Hammer
-X-Scissor
+X Scissor
 Zap Cannon
 Zen Headbutt
 Zing Zap
+Aqua Cutter
+Aqua Step
+Armor Cannon
+Bitter Blade
+Blazing Torque
+Blood Moon
+Chilling Water
+Collision Course
+Combat Torque
+Double Shock
+Electro Drift
+Electro Shot
+Esper Wing
+Fickle Beam
+Flower Trick
+Gigaton Hammer
+Hard Press
+Hydro Steam
+Ivy Cudgel
+Kowtow Cleave
+Lumina Crash
+Magical Torque
+Malignant Chain
+Make It Rain
+Matcha Gotcha
+Mighty Cleave
+Mortal Spin
+Noxious Torque
+Population Bomb
+Pounce
+Psychic Noise
+Rage Fist
+Raging Bull
+Ruination
+Salt Cure
+Spin Out
+Supercell Slam
+Syrup Bomb
+Tachyon Cutter
+Temper Flare
+Tera Blast
+Tera Starstorm
+Thunderclap
+Torch Song
+Trailblaze
+Triple Arrows
+Upper Hand
+Wicked Torque

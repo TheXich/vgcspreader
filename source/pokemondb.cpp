@@ -56,9 +56,10 @@ unsigned int PokemonDB::getMoveBasePowerZ(const unsigned int theMoveIndex) const
 std::array<Ability, 3> PokemonDB::getPokemonAbilities(const unsigned int thePokedexNumber, const unsigned int theForm) const {
     auto buffer = readSpeciesData(getPokemonOffset(thePokedexNumber, theForm) + ABILITY_OFFSET, ABILITY_SIZE);
     std::array<Ability, 3> result;
-    result[0] = static_cast<Ability>(buffer[0]);
-    result[1] = static_cast<Ability>(buffer[1]);
-    result[2] = static_cast<Ability>(buffer[2]);
+    // Each ability slot is 2 bytes (uint16 little-endian) to support Gen 9 ability IDs > 255.
+    result[0] = static_cast<Ability>(256U * buffer[1] + buffer[0]);
+    result[1] = static_cast<Ability>(256U * buffer[3] + buffer[2]);
+    result[2] = static_cast<Ability>(256U * buffer[5] + buffer[4]);
 
     return result;
 }

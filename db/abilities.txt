@@ -1,4 +1,4 @@
-—
+No Ability
 Stench
 Drizzle
 Speed Boost
@@ -218,7 +218,7 @@ Dancer
 Battery
 Fluffy
 Dazzling
-Soul-Heart
+Soul Heart
 Tangling Hair
 Receiver
 Power of Alchemy
@@ -232,3 +232,41 @@ Full Metal Body
 Shadow Shield
 Prism Armor
 Neuroforce
+stored as uint16 in binary)
+Protosynthesis
+Quark Drive
+Good as Gold
+Vessel of Ruin
+Sword of Ruin
+Tablets of Ruin
+Beads of Ruin
+Orichalcum Pulse
+Hadron Engine
+Opportunist
+Cud Chew
+Sharpness
+Supreme Overlord
+Costar
+Zero to Hero
+Commander
+Electromorphosis
+Lingering Aroma
+Seed Sower
+Thermal Exchange
+Anger Shell
+Purifying Salt
+Well Baked Body
+Wind Rider
+Guard Dog
+Rocky Payload
+Wind Power
+Hospitality
+Toxic Debris
+Armor Tail
+Earth Eater
+Mycelium Might
+Toxic Chain
+Supersweet Syrup
+Tera Shell
+Teraform Zero
+Poison Puppeteer

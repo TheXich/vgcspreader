@@ -40,6 +40,8 @@ const float Pokemon::type_matrix[18][18] = {
 Pokemon::Pokemon(const unsigned int thePokedexNumber, const Stats& theStats) {
     current_hp_percentage = 100;
     abort_calculation = false;
+    tera_type = Type::Typeless;
+    terastallized = false;
 
     pokedex_number = thePokedexNumber;
 
@@ -193,12 +195,15 @@ float Pokemon::calculateWeatherModifier(const Move& theMove) const {
     }
 
     else if( theMove.getWeather() == Move::SUN && getAbility() != Ability::Cloud_Nine && getAbility() != Ability::Air_Lock ) {
+        // Hydro Steam is not weakened in sun; it is instead boosted to 1.5×
+        if( theMove.getMoveIndex() == Moves::Hydro_Steam ) return 1.5;
         if( theMove.getMoveType() == Water ) return 0.5;
         else if( theMove.getMoveType() == Fire ) return 1.5;
         else return 1;
     }
 
     else if( theMove.getWeather() == Move::HARSH_SUNSHINE && getAbility() != Ability::Cloud_Nine && getAbility() != Ability::Air_Lock ) {
+        if( theMove.getMoveIndex() == Moves::Hydro_Steam ) return 1.5;
         if( theMove.getMoveType() == Water ) return 0;
         else if( theMove.getMoveType() == Fire ) return 1.5;
         else return 1;
@@ -226,12 +231,28 @@ float Pokemon::calculateTerrainModifier(const Pokemon& theAttacker, const Move& 
 }
 
 float Pokemon::calculateStabModifier(const Pokemon& theAttacker, const Move& theMove) const {
-    float stab_modifier;
-    if( theAttacker.getAbility() == Ability::Adaptability ) stab_modifier = 2;
-    else stab_modifier = 1.5;
+    bool adaptability = (theAttacker.getAbility() == Ability::Adaptability);
 
+    if( theAttacker.isTerastallized() ) {
+        // Tera STAB rules (Gen 9):
+        //   - STAB only applies if move type matches the Tera type.
+        //   - If the Tera type was also one of the attacker's original types, the bonus
+        //     is +0.5 (giving 2.0× without Adaptability, or still 2.0× with Adaptability).
+        //   - Moves matching the original type but NOT the Tera type receive no STAB.
+        if( theMove.getMoveType() == theAttacker.getTeraType() ) {
+            bool teraMatchesOriginal =
+                (theAttacker.getTeraType() == theAttacker.getTypes()[theAttacker.getForm()][0]) ||
+                (theAttacker.getTeraType() == theAttacker.getTypes()[theAttacker.getForm()][1]);
+            if( adaptability || teraMatchesOriginal ) return 2.0f;
+            return 1.5f;
+        }
+        return 1.0f; // original types no longer grant STAB while terastallized
+    }
+
+    // Normal (non-tera) STAB
+    float stab_modifier = adaptability ? 2.0f : 1.5f;
     if( (theAttacker.getTypes()[theAttacker.getForm()][0] == theMove.getMoveType()) || (theAttacker.getTypes()[theAttacker.getForm()][1] == theMove.getMoveType())) return stab_modifier;
-    else return 1;
+    return 1.0f;
 }
 
 float Pokemon::calculateTargetModifier(const Move& theMove) const {
@@ -250,48 +271,44 @@ float Pokemon::calculateBurnModifier(const Pokemon& theAttacker, const Move& the
 }
 
 float Pokemon::calculateTypeModifier(const Pokemon& theAttacker, const Move& theMove) const {
-    //i should probably re-engineer this function
+    // Tera Shell (Gen 9): at full HP the first hit is always neutral effectiveness.
+    // Turboblaze/Teravolt and ability-ignoring moves bypass this.
+    if( getAbility() == Ability::Tera_Shell && getCurrentHPPercentage() == 100 &&
+        theAttacker.getAbility() != Ability::Turboblaze && theAttacker.getAbility() != Ability::Teravolt &&
+        theMove.getMoveIndex() != Moves::Moongeist_Beam && theMove.getMoveIndex() != Moves::Sunsteel_Strike &&
+        theMove.getMoveIndex() != Moves::Menacing_Moonraze_Maelstrom && theMove.getMoveIndex() != Moves::Searing_Sunraze_Smash &&
+        theMove.getMoveIndex() != Moves::Photon_Geyser && theMove.getMoveIndex() != Moves::Light_That_Burns_the_Sky ) {
+        return 1.0f;
+    }
+
+    // When terastallized, the defender's type becomes its Tera type (monotype).
+    Type eff_type1 = terastallized ? tera_type : getTypes()[form][0];
+    Type eff_type2 = terastallized ? tera_type : getTypes()[form][1];
 
     //taking into account the strong winds if enabled
     if( theMove.getWeather() == Move::STRONG_WINDS && getAbility() != Ability::Cloud_Nine && getAbility() != Ability::Air_Lock ) {
-        //single type
-        if( getTypes()[form][0] == getTypes()[form][1] ) {
-            if( getTypes()[form][0] == Type::Flying && type_matrix[theMove.getMoveType()][Type::Flying] > 1 ) return 1;
-            else return type_matrix[theMove.getMoveType()][getTypes()[form][0]];
+        if( eff_type1 == eff_type2 ) {
+            if( eff_type1 == Type::Flying && type_matrix[theMove.getMoveType()][Type::Flying] > 1 ) return 1;
+            else return type_matrix[theMove.getMoveType()][eff_type1];
         }
-
-        //dual type
         else {
-            float part_1;
-            if( getTypes()[form][0] == Type::Flying && type_matrix[theMove.getMoveType()][Type::Flying] > 1 ) part_1 = 1;
-            else part_1 = type_matrix[theMove.getMoveType()][getTypes()[form][0]];
-
-            float part_2;
-            if( getTypes()[form][1] == Type::Flying && type_matrix[theMove.getMoveType()][Type::Flying] > 1 ) part_2 = 1;
-            else part_2 = type_matrix[theMove.getMoveType()][getTypes()[form][1]];
-
+            float part_1 = (eff_type1 == Type::Flying && type_matrix[theMove.getMoveType()][Type::Flying] > 1) ? 1.0f : type_matrix[theMove.getMoveType()][eff_type1];
+            float part_2 = (eff_type2 == Type::Flying && type_matrix[theMove.getMoveType()][Type::Flying] > 1) ? 1.0f : type_matrix[theMove.getMoveType()][eff_type2];
             return part_1 * part_2;
         }
     }
 
     //in case it is scrappy
     else if( theAttacker.getAbility() == Ability::Scrappy ) {
-        float part_1;
-        float part_2;
-
-        if( getTypes()[form][0] == Type::Ghost && (theMove.getMoveType() == Type::Normal || theMove.getMoveType() == Type::Fighting) ) part_1 = 1;
-        else part_1 = type_matrix[theMove.getMoveType()][getTypes()[form][0]];
-
-        if( getTypes()[form][1] == Type::Ghost && (theMove.getMoveType() == Type::Normal || theMove.getMoveType() == Type::Fighting) ) part_2 = 1;
-        else part_2 = type_matrix[theMove.getMoveType()][getTypes()[form][1]];
-
-        if( getTypes()[form][0] == getTypes()[form][1] ) return part_1;
+        float part_1 = (eff_type1 == Type::Ghost && (theMove.getMoveType() == Type::Normal || theMove.getMoveType() == Type::Fighting)) ? 1.0f : type_matrix[theMove.getMoveType()][eff_type1];
+        float part_2 = (eff_type2 == Type::Ghost && (theMove.getMoveType() == Type::Normal || theMove.getMoveType() == Type::Fighting)) ? 1.0f : type_matrix[theMove.getMoveType()][eff_type2];
+        if( eff_type1 == eff_type2 ) return part_1;
         else return part_1 * part_2;
     }
 
     else {
-        if( getTypes()[form][0] == getTypes()[form][1] ) return type_matrix[theMove.getMoveType()][getTypes()[form][0]];
-        else return type_matrix[theMove.getMoveType()][getTypes()[form][0]] * type_matrix[theMove.getMoveType()][getTypes()[form][1]];
+        if( eff_type1 == eff_type2 ) return type_matrix[theMove.getMoveType()][eff_type1];
+        else return type_matrix[theMove.getMoveType()][eff_type1] * type_matrix[theMove.getMoveType()][eff_type2];
     }
 }
 
@@ -305,6 +322,20 @@ float Pokemon::calculateOtherModifier(const Pokemon& theAttacker, const Move& th
     else if( getAbility() == Ability::Prism_Armor && calculateTypeModifier(theAttacker, theMove) >= 2 ) modifier = modifier * 0.75;
     else if( theAttacker.getAbility() == Ability::Neuroforce && calculateTypeModifier(theAttacker, theMove) >= 2 ) modifier = modifier * 1.25;
 
+    // Gen 9 defensive abilities
+    if( getAbility() == Ability::Purifying_Salt && theMove.getMoveType() == Type::Ghost ) modifier = modifier * 0.5;
+
+    // Fluffy (Gen 7, was missing): halves contact moves, doubles Fire moves
+    if( getAbility() == Ability::Fluffy ) {
+        if( theMove.getMoveType() == Type::Fire ) modifier = modifier * 2.0f;
+        // Contact moves: we approximate by checking the move category is Physical.
+        // A full implementation would require a per-move contact flag in the binary.
+        else if( theMove.getMoveCategory() == Move::PHYSICAL ) modifier = modifier * 0.5f;
+    }
+
+    // Water Bubble (Gen 7, was missing): 0.5× Fire damage received; handled offensively below
+    if( getAbility() == Ability::Water_Bubble && theMove.getMoveType() == Type::Fire ) modifier = modifier * 0.5f;
+
     //these effects are ignored by solgaleo & lunala & necrozma peculiar moves & zekrom e reshiram abilities
     if( theMove.getMoveIndex() != Moves::Moongeist_Beam && theMove.getMoveIndex() != Moves::Sunsteel_Strike && theMove.getMoveIndex() != Moves::Menacing_Moonraze_Maelstrom && theMove.getMoveIndex() != Moves::Searing_Sunraze_Smash && theMove.getMoveIndex() != Moves::Photon_Geyser && theMove.getMoveIndex() != Moves::Light_That_Burns_the_Sky && theAttacker.getAbility() != Ability::Turboblaze && theAttacker.getAbility() != Ability::Teravolt) {
         if( getAbility() == Ability::Wonder_Guard && calculateTypeModifier(theAttacker, theMove) < 2 ) modifier = modifier * 0;
@@ -314,7 +345,40 @@ float Pokemon::calculateOtherModifier(const Pokemon& theAttacker, const Move& th
         else if( getAbility() == Ability::Heatproof && theMove.getMoveType() == Type::Fire ) modifier = modifier * 0.5;
     }
 
+    // Offensive item/ability boosts
     if( theAttacker.getItem() == Items::Life_Orb ) modifier = modifier * 1.3;
+
+    // Water Bubble (attacker): 2× Water-type moves
+    if( theAttacker.getAbility() == Ability::Water_Bubble && theMove.getMoveType() == Type::Water ) modifier = modifier * 2.0f;
+
+    // Orichalcum Pulse (Gen 9): +ATK boost under sun (treated as 1.3× on top of attack)
+    // Applied here rather than in calculateAttackInMove to keep that function focused on base stat.
+    if( theAttacker.getAbility() == Ability::Orichalcum_Pulse &&
+        (theMove.getWeather() == Move::SUN || theMove.getWeather() == Move::HARSH_SUNSHINE) &&
+        theMove.getMoveCategory() == Move::PHYSICAL ) modifier = modifier * 1.3f;
+
+    // Hadron Engine (Gen 9): +SpATK boost under Electric Terrain
+    if( theAttacker.getAbility() == Ability::Hadron_Engine &&
+        theMove.getTerrain() == Move::Terrain::ELECTRIC &&
+        theMove.getMoveCategory() == Move::SPECIAL ) modifier = modifier * 1.3f;
+
+    // Collision Course / Electro Drift (Gen 9): 5461/4096 ≈ 1.333× bonus when super-effective
+    if( (theMove.getMoveIndex() == Moves::Collision_Course || theMove.getMoveIndex() == Moves::Electro_Drift) &&
+        calculateTypeModifier(theAttacker, theMove) >= 2 ) modifier = modifier * (5461.0f / 4096.0f);
+
+    // Punching Glove (Gen 9): 1.1× for punching moves
+    if( theAttacker.getItem() == Items::Punching_Glove ) {
+        // Punching moves in the current roster:
+        static const Moves PUNCHING_MOVES[] = {
+            Moves::Bullet_Punch, Moves::Drain_Punch, Moves::DynamicPunch,
+            Moves::Fire_Punch, Moves::Focus_Punch, Moves::Hammer_Arm, Moves::Ice_Punch,
+            Moves::Mach_Punch, Moves::Meteor_Mash, Moves::Power_Up_Punch, Moves::Sky_Uppercut,
+            Moves::ThunderPunch, Moves::Vacuum_Wave
+        };
+        for( auto m : PUNCHING_MOVES ) {
+            if( theMove.getMoveIndex() == m ) { modifier = modifier * 1.1f; break; }
+        }
+    }
 
     return modifier;
 }
@@ -458,17 +522,50 @@ uint16_t Pokemon::calculateAttackInMove(const Pokemon& theAttacker, const Move& 
     if( theAttacker.getAbility() == Ability::Blaze && theAttacker.getCurrentHPPercentage() <= float(100/3) && theMove.getMoveType() == Type::Fire ) attack = attack * 1.5;
     if( theAttacker.getAbility() == Ability::Overgrow && theAttacker.getCurrentHPPercentage() <= float(100/3) && theMove.getMoveType() == Type::Grass  ) attack = attack * 1.5;
 
+    // Water Bubble (Gen 7): 2× offensive Water multiplier applied to the attack stat
+    // (already handled in calculateOtherModifier; keep here for reference — do NOT double-apply)
+
     return attack;
 }
 
+// Helper: returns true for slicing moves (boosted by Sharpness in Gen 9).
+// Source: official Gen 9 move flag data.
+static bool isSlicingMove(const Moves moveIndex) {
+    switch( moveIndex ) {
+        case Moves::Aqua_Cutter:
+        case Moves::Bitter_Blade:
+        case Moves::Cross_Poison:
+        case Moves::Kowtow_Cleave:
+        case Moves::Leaf_Blade:
+        case Moves::Night_Slash:
+        case Moves::Psycho_Cut:
+        case Moves::Sacred_Sword:
+        case Moves::Solar_Blade:   // Solar Blade (slicing) — not SolarBeam (beam)
+        case Moves::Tachyon_Cutter:
+            return true;
+        default:
+            return false;
+    }
+}
+
 void Pokemon::calculateMoveTypeInAttack(const Pokemon& theAttacker, Move& theMove) const {
+    // Tera Blast: type becomes the attacker's Tera type when terastallized.
+    // Category also changes: Physical if ATK > SpATK, otherwise Special.
+    if( theMove.getMoveIndex() == Moves::Tera_Blast && theAttacker.isTerastallized() && theAttacker.getTeraType() != Type::Typeless ) {
+        theMove.setMoveType(theAttacker.getTeraType());
+        if( theAttacker.getBoostedStat(Stats::ATK) > theAttacker.getBoostedStat(Stats::SPATK) )
+            theMove.setMoveCategory(Move::PHYSICAL);
+        else
+            theMove.setMoveCategory(Move::SPECIAL);
+        return; // Tera Blast overrides *-ate abilities
+    }
+
     //accounting for the *late ability move type change
     if( theAttacker.getAbility() == Ability::Aerilate && theMove.getMoveType() == Type::Normal && !theMove.isZ() ) theMove.setMoveType(Type::Flying);
     if( theAttacker.getAbility() == Ability::Pixilate && theMove.getMoveType() == Type::Normal && !theMove.isZ() ) theMove.setMoveType(Type::Fairy);
     if( theAttacker.getAbility() == Ability::Normalize && !theMove.isZ() ) theMove.setMoveType(Type::Normal);
     if( theAttacker.getAbility() == Ability::Refrigerate && theMove.getMoveType() == Type::Normal && !theMove.isZ() ) theMove.setMoveType(Type::Ice);
     if( theAttacker.getAbility() == Ability::Galvanize && theMove.getMoveType() == Type::Normal && !theMove.isZ() ) theMove.setMoveType(Type::Electric);
-
 }
 
 unsigned int Pokemon::calculateMoveBasePowerInAttack(const Pokemon& theAttacker, const Move& theMove) const {
@@ -492,6 +589,20 @@ unsigned int Pokemon::calculateMoveBasePowerInAttack(const Pokemon& theAttacker,
         else return bp;
     }
 
+    // Hard Press (Gen 9): BP = floor(100 * defender_current_HP / max_HP), minimum 1
+    if( !theMove.isZ() && theMove.getMoveIndex() == Moves::Hard_Press ) {
+        bp = static_cast<unsigned int>((getCurrentHP() * 100.0f) / getBoostedStat(Stats::HP));
+        if( bp < 1 ) return 1;
+        else return bp;
+    }
+
+    // Population Bomb (Gen 9): each hit is 20 BP; the binary stores 20 BP.
+    // With Loaded Dice the move always hits 10 times (handled in turn logic outside this function).
+    // Base calculation uses single-hit BP = 20 (already from binary).
+
+    // Sharpness (Gen 9): 1.5× boost for slicing moves
+    if( theAttacker.getAbility() == Ability::Sharpness && isSlicingMove(theMove.getMoveIndex()) && !theMove.isZ() ) bp = static_cast<unsigned int>(bp * 1.5f);
+
     //*late abilities boost
     if( theAttacker.getAbility() == Ability::Aerilate && theMove.getMoveType() == Type::Normal && !theMove.isZ() ) bp = bp * 1.2;
     if( theAttacker.getAbility() == Ability::Pixilate && theMove.getMoveType() == Type::Normal && !theMove.isZ() ) bp = bp * 1.2;
@@ -503,6 +614,27 @@ unsigned int Pokemon::calculateMoveBasePowerInAttack(const Pokemon& theAttacker,
 }
 
 std::vector<int> Pokemon::getDamage(const Pokemon& theAttacker, Move theMove) const {
+    // Flower Trick (Gen 9): always lands as a critical hit.
+    if( theMove.getMoveIndex() == Moves::Flower_Trick ) theMove.setCrit(true);
+
+    // Ruination (Gen 9): deals exactly half the defender's current HP as fixed damage.
+    // Returns 16 identical rolls (no variance on fixed-damage moves).
+    if( theMove.getMoveIndex() == Moves::Ruination ) {
+        int fixed_damage = getCurrentHP() / 2;
+        if( fixed_damage < 1 ) fixed_damage = 1;
+        return std::vector<int>(16, fixed_damage);
+    }
+
+    // Tera Blast early pre-processing: set type and category BEFORE calculateAttackInMove
+    // so the correct offensive stat is selected.
+    if( theMove.getMoveIndex() == Moves::Tera_Blast && theAttacker.isTerastallized() && theAttacker.getTeraType() != Type::Typeless ) {
+        theMove.setMoveType(theAttacker.getTeraType());
+        if( theAttacker.getBoostedStat(Stats::ATK) > theAttacker.getBoostedStat(Stats::SPATK) )
+            theMove.setMoveCategory(Move::PHYSICAL);
+        else
+            theMove.setMoveCategory(Move::SPECIAL);
+    }
+
     uint16_t defense;
     uint16_t attack;
 
@@ -789,6 +921,8 @@ DefenseResult Pokemon::resistMove(const std::vector<Turn>& theTurn, const std::v
             buffer.setModifier(Stats::HP, std::get<0>(theDefModifiers[it]));
             buffer.setModifier(Stats::DEF, std::get<1>(theDefModifiers[it]));
             buffer.setModifier(Stats::SPDEF, std::get<2>(theDefModifiers[it]));
+            buffer.setTeraType(std::get<3>(theDefModifiers[it]));
+            buffer.setTerastallized(std::get<4>(theDefModifiers[it]));
             returnable.def_ko_prob[i].push_back(buffer.getKOProbability(theTurn[it]));
             returnable.def_damage_perc[i].push_back(buffer.getDamagePercentage(theTurn[it]));
             returnable.def_damage_int[i].push_back(buffer.getDamageInt(theTurn[it]));
@@ -906,6 +1040,8 @@ std::pair<std::vector<std::tuple<uint8_t, uint8_t, uint8_t>>, std::vector<std::t
                             defender.setCurrentHPPercentage(std::get<0>(theDefModifiers[it]));
                             defender.setModifier(Stats::DEF, std::get<1>(theDefModifiers[it]));
                             defender.setModifier(Stats::SPDEF, std::get<2>(theDefModifiers[it]));
+                            defender.setTeraType(std::get<3>(theDefModifiers[it]));
+                            defender.setTerastallized(std::get<4>(theDefModifiers[it]));
                             if( hp_assigned + def_assigned + spdef_assigned > assignable_evs ) to_add = false;
                             else if( results_buffer[it][hp_assigned +  def_assigned * ARRAY_SIZE + spdef_assigned * ARRAY_SIZE * ARRAY_SIZE] > (0 + tolerances[it]) ) to_add = false;
                         }
@@ -938,6 +1074,8 @@ void Pokemon::resistMoveLoopThread(Pokemon theDefender, const std::vector<Turn>&
         theDefender.setCurrentHPPercentage(std::get<0>(theDefModifiers[it]));
         theDefender.setModifier(Stats::DEF, std::get<1>(theDefModifiers[it]));
         theDefender.setModifier(Stats::SPDEF, std::get<2>(theDefModifiers[it]));
+        theDefender.setTeraType(std::get<3>(theDefModifiers[it]));
+        theDefender.setTerastallized(std::get<4>(theDefModifiers[it]));
         float ko_prob;
         if( theDefender.getEV(Stats::HP) + theDefender.getEV(Stats::DEF) + theDefender.getEV(Stats::SPDEF) > theAssignableEVS ) to_add = false;
         else if( (ko_prob = theDefender.getKOProbability(theTurn[it])) > 0 ) {

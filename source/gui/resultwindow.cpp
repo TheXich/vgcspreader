@@ -251,6 +251,8 @@ void ResultWindow::setResultDefense(const Pokemon& theDefendingPokemon, const st
             pokemon_buffer.setEV(Stats::SPDEF, theResult.spdef_ev[index]);
             pokemon_buffer.setModifier(Stats::DEF, std::get<1>(theDefModifier[it]));
             pokemon_buffer.setModifier(Stats::SPDEF, std::get<2>(theDefModifier[it]));
+            pokemon_buffer.setTeraType(std::get<3>(theDefModifier[it]));
+            pokemon_buffer.setTerastallized(std::get<4>(theDefModifier[it]));
             QString final_result = getCompleteString(theTurns[it], pokemon_buffer, true, theResult.def_ko_prob[index][it], theResult.def_damage_perc[index][it]);
             calc_groupbox->findChild<QTextEdit*>("text_edit_defense")->setText(calc_groupbox->findChild<QTextEdit*>("text_edit_defense")->toPlainText() + final_result + "\n\n");
 
@@ -525,7 +527,7 @@ QString ResultWindow::getCompleteString(const Turn& theTurn, const Pokemon& theD
 
     //DEFENDING POKEMON
     QString vs_string = "vs. ";
-    defender_result = vs_string + getDefendPokemon(theDefendingPokemon, std::make_tuple(theDefendingPokemon.getEV(Stats::HP), theDefendingPokemon.getEV(Stats::DEF), theDefendingPokemon.getEV(Stats::SPDEF)), std::make_tuple(100, theDefendingPokemon.getModifier(Stats::DEF), theDefendingPokemon.getModifier(Stats::SPDEF)), theTurn.getMoves()[0].second, isDualDefense);
+    defender_result = vs_string + getDefendPokemon(theDefendingPokemon, std::make_tuple(theDefendingPokemon.getEV(Stats::HP), theDefendingPokemon.getEV(Stats::DEF), theDefendingPokemon.getEV(Stats::SPDEF)), std::make_tuple((float)100, (int16_t)theDefendingPokemon.getModifier(Stats::DEF), (int16_t)theDefendingPokemon.getModifier(Stats::SPDEF), theDefendingPokemon.getTeraType(), theDefendingPokemon.isTerastallized()), theTurn.getMoves()[0].second, isDualDefense);
 
     //MODIFIERS
     modifier_result = getModifiers(theTurn);

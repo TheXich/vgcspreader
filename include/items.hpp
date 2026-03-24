@@ -30,7 +30,14 @@ enum Items {
 	Tanga_Berry,
 	Wacan_Berry,
 	Wiki_Berry,
-	Yache_Berry
+	Yache_Berry,
+	// Gen 9 items (appended to preserve existing enum values)
+	Booster_Energy,
+	Clear_Amulet,
+	Covert_Cloak,
+	Loaded_Dice,
+	Mirror_Herb,
+	Punching_Glove
 };
 
 #endif
