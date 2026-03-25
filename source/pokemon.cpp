@@ -260,8 +260,13 @@ float Pokemon::calculateTargetModifier(const Move& theMove) const {
     else return 0.75;
 }
 
+static bool isAlwaysCrit(const Move& theMove) {
+    return theMove.getMoveIndex() == Moves::Surging_Strikes ||
+           theMove.getMoveIndex() == Moves::Wicked_Blow;
+}
+
 float Pokemon::calculateCritModifier(const Move& theMove) const {
-    if( theMove.isCrit() ) return 1.5;
+    if( theMove.isCrit() || isAlwaysCrit(theMove) ) return 1.5;
     else return 1;
 }
 
@@ -386,7 +391,7 @@ float Pokemon::calculateOtherModifier(const Pokemon& theAttacker, const Move& th
 uint16_t Pokemon::calculateDefenseInMove(const Move& theMove) const {
     uint16_t defense;
 
-    if( theMove.isCrit() ) {
+    if( theMove.isCrit() || isAlwaysCrit(theMove) ) {
         if( theMove.getMoveCategory() == Move::PHYSICAL || (theMove.getMoveIndex() == Moves::Psyshock && !theMove.isZ()) ) {
             if( (getModifier(Stats::DEF) > 0) || (theMove.getMoveIndex() == Moves::Darkest_Lariat && !theMove.isZ()) || (theMove.getMoveIndex() == Moves::Sacred_Sword && !theMove.isZ()) ) defense = getStat(Stats::DEF);
             else defense = getBoostedStat(Stats::DEF);
@@ -429,7 +434,7 @@ uint16_t Pokemon::calculateAttackInMove(const Pokemon& theAttacker, const Move& 
     //this function is a fucking mess
     uint16_t attack;
 
-    if( theMove.isCrit() ) {
+    if( theMove.isCrit() || isAlwaysCrit(theMove) ) {
         //foul play
         if( theMove.getMoveIndex() == Moves::Foul_Play && !theMove.isZ() ) {
             if( getModifier(Stats::ATK) < 0 ) attack = getStat(Stats::ATK);
@@ -753,12 +758,7 @@ void Pokemon::recursiveDamageCalculation(Pokemon theDefendingPokemon, std::vecto
             if( *it_last < theDefendingPokemon.getBoostedStat(Stats::HP) ) {
 
                 //RESTORING FOR GRASSY TERRAIN
-                for( auto it_temp = theVector.begin(); it_temp < theVector.end(); it_temp++ ) {
-                    if( it_temp->second.getTerrain() == Move::Terrain::GRASSY && theDefendingPokemon.isGrounded() ) {
-                        *it_last = *it_last - (theDefendingPokemon.getBoostedStat(Stats::HP) / 16);
-                        break; //grassy terrain just restores one time
-                    }
-                }
+                //Note: recovery is shown as a text note only; not subtracted from displayed damage (matching Showdown format)
 
                 //SOON SOME MORE
             }

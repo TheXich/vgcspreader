@@ -464,6 +464,10 @@ void AttackMoveWindow::setMove(int index) {
     if( selected_move.isSignatureZ() ) move_groupbox->findChild<QCheckBox*>("z")->setEnabled(false);
     else move_groupbox->findChild<QCheckBox*>("z")->setEnabled(true);
 
+    // Surging Strikes and Wicked Blow always land critical hits
+    if( (Moves)index == Moves::Surging_Strikes || (Moves)index == Moves::Wicked_Blow )
+        move_groupbox->findChild<QCheckBox*>("crit")->setChecked(true);
+
     if( selected_move.getMoveCategory() == Move::Category::PHYSICAL ) {
         defending_pokemon_groupbox->findChild<QLabel*>("def_iv_label")->setText(tr("Def IV"));
         defending_pokemon_groupbox->findChild<QLabel*>("def_ev_label")->setText(tr("Def EV"));

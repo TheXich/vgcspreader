@@ -791,6 +791,10 @@ void DefenseMoveWindow::setMove1(int index) {
     if( selected_move.isSignatureZ() ) atk1_groupbox->findChild<QCheckBox*>("atk1_z")->setEnabled(false);
     else atk1_groupbox->findChild<QCheckBox*>("atk1_z")->setEnabled(true);
 
+    // Surging Strikes and Wicked Blow always land critical hits
+    if( (Moves)index == Moves::Surging_Strikes || (Moves)index == Moves::Wicked_Blow )
+        atk1_groupbox->findChild<QCheckBox*>("atk1_crit")->setChecked(true);
+
     if( selected_move.getMoveCategory() == Move::Category::PHYSICAL ) {
         atk1_groupbox->findChild<QLabel*>("atk1_iv_label")->setText(tr("Atk IV"));
         atk1_groupbox->findChild<QLabel*>("atk1_ev_label")->setText(tr("Atk EV"));
@@ -926,6 +930,10 @@ void DefenseMoveWindow::setMove2(int index) {
 
     if( selected_move.isSignatureZ() ) atk2_groupbox->findChild<QCheckBox*>("atk2_z")->setEnabled(false);
     else atk2_groupbox->findChild<QCheckBox*>("atk2_z")->setEnabled(true);
+
+    // Surging Strikes and Wicked Blow always land critical hits
+    if( (Moves)index == Moves::Surging_Strikes || (Moves)index == Moves::Wicked_Blow )
+        atk2_groupbox->findChild<QCheckBox*>("atk2_crit")->setChecked(true);
 
     if( selected_move.getMoveCategory() == Move::Category::PHYSICAL ) {
         atk2_groupbox->findChild<QLabel*>("atk2_iv_label")->setText(tr("Atk IV"));

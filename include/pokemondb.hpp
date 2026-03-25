@@ -84,7 +84,13 @@ class PokemonDB {
         bool load();
         bool isLoaded() const { return loaded; }
         
-        unsigned int getPokemonStat(const unsigned int thePokedexNumber, const unsigned int theForm, const Stats::Stat& theStat) const { return readSpeciesData(getPokemonOffset(thePokedexNumber, theForm) + STAT_OFFSET, STAT_SIZE)[theStat]; }
+        unsigned int getPokemonStat(const unsigned int thePokedexNumber, const unsigned int theForm, const Stats::Stat& theStat) const {
+            // Binary stores stats as: HP(0), ATK(1), DEF(2), SpATK(3), SpDEF(4), SPE(5)
+            // Stats::Stat enum:        HP=0,  ATK=1,  DEF=2,  SPE=3,   SPATK=4, SPDEF=5
+            // Remap enum index → binary position so each stat reads the correct byte.
+            static const unsigned int remap[Stats::STAT_NUM] = {0, 1, 2, 5, 3, 4};
+            return readSpeciesData(getPokemonOffset(thePokedexNumber, theForm) + STAT_OFFSET, STAT_SIZE)[remap[theStat]];
+        }
         std::array<Type, 2> getPokemonType(const unsigned int thePokedexNumber, const unsigned int theForm) const;
         unsigned int getPokemonFormesNumber(const unsigned int thePokedexNumber) const { return readSpeciesData(getPokemonOffset(thePokedexNumber, 0) + FORMNUMBER_OFFSET, FORMNUMBER_SIZE)[0]; }
         std::array<Ability, 3> getPokemonAbilities(const unsigned int thePokedexNumber, const unsigned int theForm) const;

@@ -326,7 +326,9 @@ QString ResultWindow::getAttackPokemon(const Pokemon& thePokemon, const Move& th
     QString atk_ability = ((MainWindow*)parentWidget())->getAbilitiesNames()[thePokemon.getAbility()] + " ";
 
     //atk1_pokemon
-    QString atk_pokemon = ((MainWindow*)parentWidget())->getSpeciesNames()[thePokemon.getPokedexNumber()-1] + " ";
+    QString atk_tera;
+    if( thePokemon.isTerastallized() ) atk_tera = "Tera-" + ((MainWindow*)parentWidget())->getTypesNames()[thePokemon.getTeraType()] + " ";
+    QString atk_pokemon = atk_tera + ((MainWindow*)parentWidget())->getSpeciesNames()[thePokemon.getPokedexNumber()-1] + " ";
 
     //atk1_move
     QString atk_move;
@@ -384,7 +386,9 @@ QString ResultWindow::getDefendPokemon(const Pokemon& thePokemon, const std::tup
     QString ability = ((MainWindow*)parentWidget())->getAbilitiesNames()[thePokemon.getAbility()] + " ";
 
     //species
-    QString species = ((MainWindow*)parentWidget())->getSpeciesNames()[thePokemon.getPokedexNumber()-1] + " ";
+    QString def_tera;
+    if( std::get<4>(theDefModifier) ) def_tera = "Tera-" + ((MainWindow*)parentWidget())->getTypesNames()[std::get<3>(theDefModifier)] + " ";
+    QString species = def_tera + ((MainWindow*)parentWidget())->getSpeciesNames()[thePokemon.getPokedexNumber()-1] + " ";
 
     return hp_evs + def_evs + spdef_evs + item + ability + species;
 }

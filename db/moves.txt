@@ -370,3 +370,5 @@ Trailblaze
 Triple Arrows
 Upper Hand
 Wicked Torque
+Surging Strikes
+Wicked Blow

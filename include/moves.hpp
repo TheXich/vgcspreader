@@ -374,7 +374,10 @@ enum Moves {
 	Trailblaze,
 	Triple_Arrows,
 	Upper_Hand,
-	Wicked_Torque
+	Wicked_Torque,
+	// Gen 8 moves missing from original list
+	Surging_Strikes,
+	Wicked_Blow
 };
 
 #endif
