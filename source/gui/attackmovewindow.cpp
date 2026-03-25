@@ -400,6 +400,22 @@ void AttackMoveWindow::createModifierGroupbox() {
     hits_modifier_spinbox->setSuffix("HKO");
     attacking_layout->addWidget(hits_modifier_spinbox, Qt::AlignLeft);
 
+    QLabel* atk_tera_label = new QLabel(tr("Tera Type:"));
+    attacking_layout->addWidget(atk_tera_label);
+
+    QComboBox* atk_tera_combobox = new QComboBox;
+    atk_tera_combobox->setObjectName("attacking_tera_type");
+    auto tera_types_buffer = ((MainWindow*)parentWidget())->getTypesNames();
+    for( auto it = tera_types_buffer.begin(); it < tera_types_buffer.end(); it++ ) atk_tera_combobox->addItem(*it);
+    attacking_layout->addWidget(atk_tera_combobox, Qt::AlignLeft);
+
+    QLabel* atk_tera_bool_label = new QLabel(tr("Terastallized:"));
+    attacking_layout->addWidget(atk_tera_bool_label);
+
+    QCheckBox* atk_terastallized = new QCheckBox;
+    atk_terastallized->setObjectName("attacking_terastallized");
+    attacking_layout->addWidget(atk_terastallized, Qt::AlignLeft);
+
     move_modifier_groupbox = new QGroupBox("Modifiers:");
 
     QHBoxLayout* modifier_layout = new QHBoxLayout;
@@ -607,7 +623,10 @@ void AttackMoveWindow::solveMove(void) {
     if( attacking1_move.getMoveCategory() == Move::Category::PHYSICAL ) { spatk_mod = 0; /*useless*/ atk_mod = atk_modifier_groupbox->findChild<QSpinBox*>("attacking_atk_modifier")->value(); }
     else { atk_mod = 0; spatk_mod = atk_modifier_groupbox->findChild<QSpinBox*>("attacking_atk_modifier")->value(); }
 
-    ((MainWindow*)parentWidget())->addAttackTurn(turn, attacking1, std::make_pair(atk_mod, spatk_mod));
+    Type atk_tera = (Type)atk_modifier_groupbox->findChild<QComboBox*>("attacking_tera_type")->currentIndex();
+    bool atk_terastallized = atk_modifier_groupbox->findChild<QCheckBox*>("attacking_terastallized")->isChecked();
+
+    ((MainWindow*)parentWidget())->addAttackTurn(turn, attacking1, std::make_tuple(atk_mod, spatk_mod, atk_tera, atk_terastallized));
 }
 
 void AttackMoveWindow::setAsBlank() {
@@ -635,6 +654,8 @@ void AttackMoveWindow::setAsBlank() {
 
     atk_modifier_groupbox->findChild<QSpinBox*>("attacking_atk_modifier")->setValue(0);
     atk_modifier_groupbox->findChild<QSpinBox*>("attacking_hits_modifier")->setValue(1);
+    atk_modifier_groupbox->findChild<QComboBox*>("attacking_tera_type")->setCurrentIndex(0);
+    atk_modifier_groupbox->findChild<QCheckBox*>("attacking_terastallized")->setChecked(false);
 }
 
 void AttackMoveWindow::setAsTurn(const Turn& theTurn, const Pokemon& theDefendingPokemon, const attack_modifier& theAttackModifier) {
@@ -676,6 +697,8 @@ void AttackMoveWindow::setAsTurn(const Turn& theTurn, const Pokemon& theDefendin
     else atk_modifier_groupbox->findChild<QSpinBox*>("attacking_atk_modifier")->setValue(std::get<0>(theAttackModifier));
 
     atk_modifier_groupbox->findChild<QSpinBox*>("attacking_hits_modifier")->setValue(theTurn.getHits());
+    atk_modifier_groupbox->findChild<QComboBox*>("attacking_tera_type")->setCurrentIndex(std::get<2>(theAttackModifier));
+    atk_modifier_groupbox->findChild<QCheckBox*>("attacking_terastallized")->setChecked(std::get<3>(theAttackModifier));
 }
 
 void AttackMoveWindow::setMoveCategory(int index) {

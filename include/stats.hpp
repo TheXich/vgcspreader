@@ -22,7 +22,8 @@ class Stats {
             TIMID, HASTY, SERIOUS, JOLLY, NAIVE,
             MODEST, MILD, QUIET, BASHFUL, RASH,
             CALM, GENTLE, SASSY, CAREFUL, QUIRK,
-            NATURE_NUM
+            NATURE_NUM,
+            AUTO_NATURE = NATURE_NUM  // sentinel: auto-select best nature
         };
 
     private:

@@ -1,4 +1,5 @@
 #include <cmath>
+#include <climits>
 #include <iostream>
 #include <algorithm>
 #include <thread>
@@ -1168,8 +1169,10 @@ AttackResult Pokemon::koMove(const std::vector<Turn>& theTurn, const std::vector
 
             bool to_add = true;
             for(unsigned int it = 0; it < theTurn.size(); it++ ) {
-                attacker.setModifier(Stats::ATK, theAtkModifier[it].first);
-                attacker.setModifier(Stats::SPATK, theAtkModifier[it].second);
+                attacker.setModifier(Stats::ATK, std::get<0>(theAtkModifier[it]));
+                attacker.setModifier(Stats::SPATK, std::get<1>(theAtkModifier[it]));
+                attacker.setTeraType(std::get<2>(theAtkModifier[it]));
+                attacker.setTerastallized(std::get<3>(theAtkModifier[it]));
 
                 //reversing because of the offensive nature of the calc
                 Turn temp_turn;
@@ -1279,8 +1282,10 @@ AttackResult Pokemon::koMove(const std::vector<Turn>& theTurn, const std::vector
     final_result.atk_damage_int.push_back(std::vector<std::vector<int>>());
     for( auto it = 0; it < theTurn.size(); it++ ) {
         //doing this switch because the Turn is used in an offensive sense
-        buffer.setModifier(Stats::ATK, theAtkModifier[it].first);
-        buffer.setModifier(Stats::SPATK, theAtkModifier[it].second);
+        buffer.setModifier(Stats::ATK, std::get<0>(theAtkModifier[it]));
+        buffer.setModifier(Stats::SPATK, std::get<1>(theAtkModifier[it]));
+        buffer.setTeraType(std::get<2>(theAtkModifier[it]));
+        buffer.setTerastallized(std::get<3>(theAtkModifier[it]));
 
         Turn temp_turn;
         temp_turn.addMove(buffer, theTurn[it].getMoves()[0].second);
@@ -1295,6 +1300,66 @@ AttackResult Pokemon::koMove(const std::vector<Turn>& theTurn, const std::vector
 }
 
 std::pair<DefenseResult, AttackResult> Pokemon::calculateEVSDistrisbution(const EVCalculationInput& theInput) {
+
+    // Auto nature: trigger if explicitly set to Auto, or if nature is neutral (doesn't affect any stat)
+    auto isNeutralNature = [](Stats::Nature n) {
+        return n == Stats::HARDY || n == Stats::DOCILE || n == Stats::SERIOUS ||
+               n == Stats::BASHFUL || n == Stats::QUIRK;
+    };
+    if( getNature() == Stats::AUTO_NATURE || isNeutralNature(getNature()) ) {
+        static const Stats::Nature CANDIDATE_NATURES[] = {
+            Stats::ADAMANT, Stats::BRAVE, Stats::LONELY, Stats::NAUGHTY,  // +Atk
+            Stats::MODEST,  Stats::QUIET, Stats::MILD,   Stats::RASH,     // +SpAtk
+            Stats::BOLD,    Stats::RELAXED, Stats::IMPISH, Stats::LAX,    // +Def
+            Stats::CALM,    Stats::SASSY, Stats::GENTLE, Stats::CAREFUL   // +SpDef
+        };
+
+        std::pair<DefenseResult, AttackResult> best_result;
+        int best_total = INT_MAX;
+        Stats::Nature best_nature = Stats::ADAMANT;
+        bool found_any = false;
+
+        for( Stats::Nature nat : CANDIDATE_NATURES ) {
+            if( abort_calculation ) break;
+            Pokemon clone = *this;
+            clone.setNature(nat);
+            auto result = clone.calculateEVSDistrisbution(theInput);
+            if( abort_calculation ) break;
+
+            bool def_ok = result.first.isEmptyInput() || (result.first.isValid() && !result.first.isEmpty());
+            bool atk_ok = result.second.isEmptyInput() || (result.second.isValid() && !result.second.isEmpty());
+            if( !def_ok || !atk_ok ) continue;
+
+            int total = 0;
+            if( !result.first.isEmptyInput() )  total += result.first.hp_ev[0]  + result.first.def_ev[0]  + result.first.spdef_ev[0];
+            if( !result.second.isEmptyInput() ) total += result.second.atk_ev[0] + result.second.spatk_ev[0];
+
+            if( !found_any || total < best_total ) {
+                best_total   = total;
+                best_result  = result;
+                best_nature  = nat;
+                found_any    = true;
+            }
+        }
+
+        if( abort_calculation ) {
+            DefenseResult d; d.hp_ev.push_back(-4); d.def_ev.push_back(-4); d.spdef_ev.push_back(-4);
+            AttackResult  a; a.atk_ev.push_back(-4); a.spatk_ev.push_back(-4);
+            return std::make_pair(d, a);
+        }
+
+        if( found_any ) {
+            setNature(best_nature);
+            return best_result;
+        }
+
+        // Nothing worked with any nature — return impossible spread with a concrete nature set
+        setNature(Stats::ADAMANT);
+        DefenseResult d; d.hp_ev.push_back(-1); d.def_ev.push_back(-1); d.spdef_ev.push_back(-1);
+        AttackResult  a; a.atk_ev.push_back(-1); a.spatk_ev.push_back(-1);
+        return std::make_pair(d, a);
+    }
+
     //we do this calculation on a copy of *this
     Pokemon buffer = *this;
 

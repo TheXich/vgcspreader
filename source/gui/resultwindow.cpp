@@ -79,6 +79,11 @@ void ResultWindow::createResultGroupBox() {
     spdef_score->setObjectName("spdef_score");
     result_layout->addWidget(spdef_score);
 
+    QLabel* chosen_nature_label = new QLabel;
+    chosen_nature_label->setObjectName("chosen_nature_label");
+    chosen_nature_label->setVisible(false);
+    result_layout->addWidget(chosen_nature_label);
+
     QLabel* no_spread_label = new QLabel(tr("Sorry, no such spread exists"));
     no_spread_label->setObjectName("no_spread_label");
     no_spread_label->setVisible(false);
@@ -159,6 +164,7 @@ void ResultWindow::setResult(const Pokemon& thePokemon, const std::vector<defens
         result_groupbox->findChild<QLabel*>("sprite")->setVisible(false);
         result_groupbox->findChild<QLabel*>("def_score")->setVisible(false);
         result_groupbox->findChild<QLabel*>("spdef_score")->setVisible(false);
+        result_groupbox->findChild<QLabel*>("chosen_nature_label")->setVisible(false);
 
         calc_groupbox->setVisible(false);
     }
@@ -178,6 +184,7 @@ void ResultWindow::setResult(const Pokemon& thePokemon, const std::vector<defens
         result_groupbox->findChild<QLabel*>("no_spread_label")->setVisible(false);
         result_groupbox->findChild<QLabel*>("no_input_label")->setVisible(true);
         result_groupbox->findChild<QLabel*>("sprite")->setVisible(false);
+        result_groupbox->findChild<QLabel*>("chosen_nature_label")->setVisible(false);
 
         calc_groupbox->setVisible(false);
     }
@@ -199,6 +206,15 @@ void ResultWindow::setResult(const Pokemon& thePokemon, const std::vector<defens
         result_groupbox->findChild<QLabel*>("no_spread_label")->setVisible(false);
         result_groupbox->findChild<QLabel*>("no_input_label")->setVisible(false);
         result_groupbox->findChild<QLabel*>("sprite")->setVisible(true);
+
+        // Show chosen nature label only when auto-nature was used
+        QLabel* nat_label = result_groupbox->findChild<QLabel*>("chosen_nature_label");
+        if( thePokemon.getNature() < Stats::NATURE_NUM ) {
+            nat_label->setText(tr("Nature: ") + ((MainWindow*)parentWidget())->getNaturesNames()[thePokemon.getNature()]);
+            nat_label->setVisible(true);
+        } else {
+            nat_label->setVisible(false);
+        }
 
         calc_groupbox->setVisible(true);
         calc_groupbox->findChild<QTextEdit*>("text_edit_defense")->clear();
@@ -275,8 +291,10 @@ void ResultWindow::setResultAttack(const Pokemon& theAttackingPokemon, const std
             Pokemon pokemon_buffer = theAttackingPokemon;
             pokemon_buffer.setEV(Stats::ATK, theResult.atk_ev[index]);
             pokemon_buffer.setEV(Stats::SPATK, theResult.spatk_ev[index]);
-            pokemon_buffer.setModifier(Stats::ATK, theAtkModifier[it].first);
-            pokemon_buffer.setModifier(Stats::SPATK, theAtkModifier[it].second);
+            pokemon_buffer.setModifier(Stats::ATK, std::get<0>(theAtkModifier[it]));
+            pokemon_buffer.setModifier(Stats::SPATK, std::get<1>(theAtkModifier[it]));
+            pokemon_buffer.setTeraType(std::get<2>(theAtkModifier[it]));
+            pokemon_buffer.setTerastallized(std::get<3>(theAtkModifier[it]));
 
             std::vector<Turn> temp_turns = theTurns;
             Turn temp_turn;

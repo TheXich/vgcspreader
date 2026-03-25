@@ -23,7 +23,7 @@
 class Turn;
 
 typedef std::tuple<float, int16_t, int16_t, Type, bool> defense_modifier;
-typedef std::pair<int16_t, int16_t> attack_modifier;
+typedef std::tuple<int16_t, int16_t, Type, bool> attack_modifier; // ATK stage, SpATK stage, Tera type, terastallized
 typedef std::pair<DefenseResult, AttackResult> FinalResult;
 
 class EVCalculationInput;

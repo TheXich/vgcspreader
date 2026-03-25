@@ -338,6 +338,7 @@ void MainWindow::createDefendingPokemonGroupBox() {
     }
 
     for(auto it = natures_names.begin(); it < natures_names.end(); it++) natures->addItem(*it);
+    natures->addItem(tr("Auto"));
 
     form_layout->addRow(tr("Nature:"), natures);
 
