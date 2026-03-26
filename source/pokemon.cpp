@@ -349,7 +349,14 @@ float Pokemon::calculateOtherModifier(const Pokemon& theAttacker, const Move& th
         else if( (getAbility() == Ability::Filter || getAbility() == Ability::Solid_Rock) && calculateTypeModifier(theAttacker, theMove) > 2  ) modifier = modifier * 0.75;
         else if( getAbility() == Ability::Levitate && theMove.getMoveType() == Type::Ground ) modifier = modifier * 0;
         else if( getAbility() == Ability::Heatproof && theMove.getMoveType() == Type::Fire ) modifier = modifier * 0.5;
+        else if( getAbility() == Ability::Thick_Fat && (theMove.getMoveType() == Type::Fire || theMove.getMoveType() == Type::Ice) ) modifier = modifier * 0.5;
+        else if( getAbility() == Ability::Flash_Fire && theMove.getMoveType() == Type::Fire ) modifier = modifier * 0;
+        else if( getAbility() == Ability::Volt_Absorb && theMove.getMoveType() == Type::Electric ) modifier = modifier * 0;
+        else if( (getAbility() == Ability::Water_Absorb || getAbility() == Ability::Storm_Drain) && theMove.getMoveType() == Type::Water ) modifier = modifier * 0;
     }
+
+    // Tinted Lens (attacker): 2× damage on not-very-effective moves
+    if( theAttacker.getAbility() == Ability::Tinted_Lens && calculateTypeModifier(theAttacker, theMove) < 1.0f ) modifier = modifier * 2.0f;
 
     // Offensive item/ability boosts
     if( theAttacker.getItem() == Items::Life_Orb ) modifier = modifier * 1.3;
@@ -357,15 +364,20 @@ float Pokemon::calculateOtherModifier(const Pokemon& theAttacker, const Move& th
     // Water Bubble (attacker): 2× Water-type moves
     if( theAttacker.getAbility() == Ability::Water_Bubble && theMove.getMoveType() == Type::Water ) modifier = modifier * 2.0f;
 
-    // Orichalcum Pulse (Gen 9): +ATK boost under sun (treated as 1.3× on top of attack)
-    // Applied here rather than in calculateAttackInMove to keep that function focused on base stat.
+    // Orichalcum Pulse (Gen 9): +ATK boost under sun.
+    // Koraidon sets sun on entry automatically, so the boost is active by default.
+    // Only suppressed if weather is explicitly overridden by Rain, Heavy Rain, or Strong Winds.
     if( theAttacker.getAbility() == Ability::Orichalcum_Pulse &&
-        (theMove.getWeather() == Move::SUN || theMove.getWeather() == Move::HARSH_SUNSHINE) &&
+        theMove.getWeather() != Move::RAIN && theMove.getWeather() != Move::HEAVY_RAIN &&
+        theMove.getWeather() != Move::STRONG_WINDS &&
         theMove.getMoveCategory() == Move::PHYSICAL ) modifier = modifier * 1.3f;
 
-    // Hadron Engine (Gen 9): +SpATK boost under Electric Terrain
+    // Hadron Engine (Gen 9): +SpATK boost under Electric Terrain.
+    // Miraidon sets Electric Terrain on entry automatically, so the boost is active by default.
+    // Only suppressed if terrain is explicitly overridden by Grassy, Psychic, or Misty Terrain.
     if( theAttacker.getAbility() == Ability::Hadron_Engine &&
-        theMove.getTerrain() == Move::Terrain::ELECTRIC &&
+        theMove.getTerrain() != Move::Terrain::GRASSY && theMove.getTerrain() != Move::Terrain::PSYCHIC &&
+        theMove.getTerrain() != Move::Terrain::MISTY &&
         theMove.getMoveCategory() == Move::SPECIAL ) modifier = modifier * 1.3f;
 
     // Collision Course / Electro Drift (Gen 9): 5461/4096 ≈ 1.333× bonus when super-effective
@@ -398,6 +410,7 @@ uint16_t Pokemon::calculateDefenseInMove(const Move& theMove) const {
             else defense = getBoostedStat(Stats::DEF);
 
             if( getAbility() == Ability::Fur_Coat ) defense = defense * 2;
+            if( getAbility() == Ability::Marvel_Scale && getStatus() != NO_STATUS ) defense = defense * 1.5;
 
         }
 
@@ -414,11 +427,13 @@ uint16_t Pokemon::calculateDefenseInMove(const Move& theMove) const {
             defense = getBoostedStat(Stats::DEF);
 
             if( getAbility() == Ability::Fur_Coat ) defense = defense * 2;
+            if( getAbility() == Ability::Marvel_Scale && getStatus() != NO_STATUS ) defense = defense * 1.5;
         }
 
         else if( (theMove.getMoveIndex() == Moves::Darkest_Lariat && !theMove.isZ()) || (theMove.getMoveIndex() == Moves::Sacred_Sword && !theMove.isZ()) ) {
             defense = getStat(Stats::DEF);
             if( getAbility() == Ability::Fur_Coat ) defense = defense * 2;
+            if( getAbility() == Ability::Marvel_Scale && getStatus() != NO_STATUS ) defense = defense * 1.5;
         }
 
         else {
@@ -442,7 +457,7 @@ uint16_t Pokemon::calculateAttackInMove(const Pokemon& theAttacker, const Move& 
             else attack = getBoostedStat(Stats::ATK);
 
             if( theAttacker.getItem() == Items::Choice_Band ) attack = attack * 1.5;
-            if( getAbility() == Ability::Huge_Power ) attack = attack * 2;
+            if( getAbility() == Ability::Huge_Power || getAbility() == Ability::Pure_Power ) attack = attack * 2;
         }
 
         //photon geyser & light that burns the sky
@@ -452,7 +467,7 @@ uint16_t Pokemon::calculateAttackInMove(const Pokemon& theAttacker, const Move& 
                 else attack = theAttacker.getBoostedStat(Stats::ATK);
 
                 if( theAttacker.getItem() == Items::Choice_Band ) attack = attack * 1.5;
-                if( getAbility() == Ability::Huge_Power ) attack = attack * 2;
+                if( theAttacker.getAbility() == Ability::Huge_Power || theAttacker.getAbility() == Ability::Pure_Power ) attack = attack * 2;
 
             }
 
@@ -461,7 +476,6 @@ uint16_t Pokemon::calculateAttackInMove(const Pokemon& theAttacker, const Move& 
                 else attack = theAttacker.getBoostedStat(Stats::SPATK);
 
                 if( theAttacker.getItem() == Items::Choice_Specs ) attack = attack * 1.5;
-                if( getAbility() == Ability::Huge_Power ) attack = attack * 2;
             }
         }
 
@@ -471,7 +485,7 @@ uint16_t Pokemon::calculateAttackInMove(const Pokemon& theAttacker, const Move& 
             else attack = theAttacker.getBoostedStat(Stats::ATK);
 
             if( theAttacker.getItem() == Items::Choice_Band ) attack = attack * 1.5;
-            if( getAbility() == Ability::Huge_Power ) attack = attack * 2;
+            if( theAttacker.getAbility() == Ability::Huge_Power || theAttacker.getAbility() == Ability::Pure_Power ) attack = attack * 2;
         }
 
         //usual special
@@ -490,7 +504,7 @@ uint16_t Pokemon::calculateAttackInMove(const Pokemon& theAttacker, const Move& 
             attack = getBoostedStat(Stats::ATK);
 
             if( theAttacker.getItem() == Items::Choice_Band ) attack = attack * 1.5;
-            if( getAbility() == Ability::Huge_Power ) attack = attack * 2;
+            if( getAbility() == Ability::Huge_Power || getAbility() == Ability::Pure_Power ) attack = attack * 2;
         }
 
         //photon geyser & light that burns the sky
@@ -499,7 +513,7 @@ uint16_t Pokemon::calculateAttackInMove(const Pokemon& theAttacker, const Move& 
                 attack = theAttacker.getBoostedStat(Stats::ATK);
 
                 if( theAttacker.getItem() == Items::Choice_Band ) attack = attack * 1.5;
-                if( getAbility() == Ability::Huge_Power ) attack = attack * 2;
+                if( theAttacker.getAbility() == Ability::Huge_Power || theAttacker.getAbility() == Ability::Pure_Power ) attack = attack * 2;
             }
 
             else {
@@ -513,7 +527,7 @@ uint16_t Pokemon::calculateAttackInMove(const Pokemon& theAttacker, const Move& 
             attack = theAttacker.getBoostedStat(Stats::ATK);
 
             if( theAttacker.getItem() == Items::Choice_Band ) attack = attack * 1.5;
-            if( getAbility() == Ability::Huge_Power ) attack = attack * 2;
+            if( theAttacker.getAbility() == Ability::Huge_Power || theAttacker.getAbility() == Ability::Pure_Power ) attack = attack * 2;
         }
 
 
@@ -527,6 +541,10 @@ uint16_t Pokemon::calculateAttackInMove(const Pokemon& theAttacker, const Move& 
 
     if( theAttacker.getAbility() == Ability::Blaze && theAttacker.getCurrentHPPercentage() <= float(100/3) && theMove.getMoveType() == Type::Fire ) attack = attack * 1.5;
     if( theAttacker.getAbility() == Ability::Overgrow && theAttacker.getCurrentHPPercentage() <= float(100/3) && theMove.getMoveType() == Type::Grass  ) attack = attack * 1.5;
+    if( theAttacker.getAbility() == Ability::Torrent && theAttacker.getCurrentHPPercentage() <= float(100/3) && theMove.getMoveType() == Type::Water ) attack = attack * 1.5;
+    if( theAttacker.getAbility() == Ability::Swarm && theAttacker.getCurrentHPPercentage() <= float(100/3) && theMove.getMoveType() == Type::Bug ) attack = attack * 1.5;
+    if( theAttacker.getAbility() == Ability::Guts && theAttacker.getStatus() != NO_STATUS && theMove.getMoveCategory() == Move::PHYSICAL ) attack = attack * 1.5;
+    if( theAttacker.getAbility() == Ability::Hustle && theMove.getMoveCategory() == Move::PHYSICAL ) attack = attack * 1.5;
 
     // Water Bubble (Gen 7): 2× offensive Water multiplier applied to the attack stat
     // (already handled in calculateOtherModifier; keep here for reference — do NOT double-apply)
@@ -582,9 +600,20 @@ unsigned int Pokemon::calculateMoveBasePowerInAttack(const Pokemon& theAttacker,
     else bp = theMove.getBasePower();
 
     if( theAttacker.getAbility() == Ability::Technician && bp <= 60 ) bp = bp * 1.5;
-    if( getAbility() == Dry_Skin && theMove.getMoveType() == Type::Fire ) bp = bp * 1.25;
-    if( (getAbility() == Dark_Aura || theMove.isDarkAura()) && theMove.getMoveType() == Type::Dark ) bp = bp * 1.33;
-    if( (getAbility() == Fairy_Aura || theMove.isFairyAura()) && theMove.getMoveType() == Type::Fairy ) bp = bp * 1.33;
+    if( getAbility() == Ability::Dry_Skin && theMove.getMoveType() == Type::Fire ) bp = bp * 1.25;
+    if( (getAbility() == Ability::Dark_Aura || theAttacker.getAbility() == Ability::Dark_Aura || theMove.isDarkAura()) && theMove.getMoveType() == Type::Dark ) bp = bp * 1.33;
+    if( (getAbility() == Ability::Fairy_Aura || theAttacker.getAbility() == Ability::Fairy_Aura || theMove.isFairyAura()) && theMove.getMoveType() == Type::Fairy ) bp = bp * 1.33;
+    if( theAttacker.getAbility() == Ability::Iron_Fist ) {
+        static const Moves IRON_FIST_MOVES[] = {
+            Moves::Bullet_Punch, Moves::Drain_Punch, Moves::DynamicPunch,
+            Moves::Fire_Punch, Moves::Focus_Punch, Moves::Hammer_Arm, Moves::Ice_Punch,
+            Moves::Mach_Punch, Moves::Meteor_Mash, Moves::Power_Up_Punch, Moves::Sky_Uppercut,
+            Moves::ThunderPunch, Moves::Vacuum_Wave
+        };
+        for( auto m : IRON_FIST_MOVES ) {
+            if( theMove.getMoveIndex() == m ) { bp = static_cast<unsigned int>(bp * 1.2f); break; }
+        }
+    }
     if( !theMove.isZ() && theMove.getMoveIndex() == Moves::Acrobatics && theAttacker.getItem() == Items::None ) bp = bp * 2;
     if( !theMove.isZ() && theMove.getMoveIndex() == Moves::Facade && (theAttacker.getStatus() == Status::BURNED || theAttacker.getStatus() == Status::POISONED || theAttacker.getStatus() == PARALYZED) ) bp = bp * 2;
     if( theMove.getMoveIndex() == Moves::Knock_Off && getItem().isRemovable() && !theMove.isZ() ) bp = bp * 1.5;
@@ -615,6 +644,7 @@ unsigned int Pokemon::calculateMoveBasePowerInAttack(const Pokemon& theAttacker,
     if( theAttacker.getAbility() == Ability::Normalize && !theMove.isZ() ) bp = bp * 1.2;
     if( theAttacker.getAbility() == Ability::Refrigerate && theMove.getMoveType() == Type::Normal && !theMove.isZ() ) bp = bp * 1.2;
     if( theAttacker.getAbility() == Ability::Galvanize && theMove.getMoveType() == Type::Normal && !theMove.isZ() ) bp = bp * 1.2;
+    if( theAttacker.getAbility() == Ability::Tough_Claws && theMove.getMoveCategory() == Move::PHYSICAL && !theMove.isZ() ) bp = static_cast<unsigned int>(bp * 1.3333f);
 
     return bp;
 }
