@@ -37,7 +37,8 @@ enum Items {
 	Covert_Cloak,
 	Loaded_Dice,
 	Mirror_Herb,
-	Punching_Glove
+	Punching_Glove,
+	Eviolite
 };
 
 #endif

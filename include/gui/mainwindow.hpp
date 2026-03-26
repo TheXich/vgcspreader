@@ -104,6 +104,9 @@ class MainWindow : public QDialog {
 
         //MISC
         QString retrieveFormName(const int species, const int form);
+
+        static void populateSortedComboBox(QComboBox* combo, const std::vector<QString>& names);
+        static void setComboByOriginalIdx(QComboBox* combo, int originalIdx);
 };
 
 #endif // MAINWINDOW_HPP

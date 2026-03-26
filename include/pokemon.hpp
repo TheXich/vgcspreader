@@ -22,8 +22,10 @@
 
 class Turn;
 
-typedef std::tuple<float, int16_t, int16_t, Type, bool> defense_modifier;
-typedef std::tuple<int16_t, int16_t, Type, bool> attack_modifier; // ATK stage, SpATK stage, Tera type, terastallized
+// defense_modifier: HP%, mod_DEF, mod_SPDEF, tera_type, terastallized, sword_of_ruin, beads_of_ruin
+typedef std::tuple<float, int16_t, int16_t, Type, bool, bool, bool> defense_modifier;
+// attack_modifier: mod_ATK, mod_SPATK, tera_type, terastallized, tablets_of_ruin, vessel_of_ruin, sword_of_ruin, beads_of_ruin, helping_hand
+typedef std::tuple<int16_t, int16_t, Type, bool, bool, bool, bool, bool, bool> attack_modifier;
 typedef std::pair<DefenseResult, AttackResult> FinalResult;
 
 class EVCalculationInput;
@@ -63,6 +65,13 @@ class Pokemon {
         static std::mutex buffer_mutex;
         static std::mutex result_mutex;
         bool abort_calculation; //this variable is needed to request a stop for the resistMove function
+
+        // Per-turn field ability flags (set before each damage call)
+        bool ruin_sword;    // Sword of Ruin active: ×0.75 to this Pokémon's DEF
+        bool ruin_beads;    // Beads of Ruin active: ×0.75 to this Pokémon's SpDef
+        bool ruin_tablets;  // Tablets of Ruin active: ×0.75 to this Pokémon's ATK
+        bool ruin_vessel;   // Vessel of Ruin active: ×0.75 to this Pokémon's SpAtk
+        bool helping_hand;  // Helping Hand active: ×1.5 to moves used by this Pokémon
 
         void calculateTotal();
         std::vector<int> getDamage(const Pokemon& theAttacker, Move theMove) const;
@@ -112,6 +121,11 @@ class Pokemon {
         void setForm(const unsigned int theForm) { if( theForm < formes_number ) { form = theForm; ability = possible_abilities[form][0]; calculateTotal(); } }
         void setTeraType(const Type theType) { tera_type = theType; }
         void setTerastallized(const bool value) { terastallized = value; }
+        void setRuinSword(const bool v) { ruin_sword = v; }
+        void setRuinBeads(const bool v) { ruin_beads = v; }
+        void setRuinTablets(const bool v) { ruin_tablets = v; }
+        void setRuinVessel(const bool v) { ruin_vessel = v; }
+        void setHelpingHand(const bool v) { helping_hand = v; }
         void abortCalculation() { abort_calculation = true; }
 
         unsigned int getPokedexNumber() const { return pokedex_number; }
@@ -135,6 +149,11 @@ class Pokemon {
         unsigned int getFormesNumber() const { return formes_number; }
         Type getTeraType() const { return tera_type; }
         bool isTerastallized() const { return terastallized; }
+        bool getRuinSword() const { return ruin_sword; }
+        bool getRuinBeads() const { return ruin_beads; }
+        bool getRuinTablets() const { return ruin_tablets; }
+        bool getRuinVessel() const { return ruin_vessel; }
+        bool getHelpingHand() const { return helping_hand; }
         float getDEFTier() const;
         float getSPDEFTier() const;
 

@@ -33,3 +33,4 @@ Covert Cloak
 Loaded Dice
 Mirror Herb
 Punching Glove
+Eviolite

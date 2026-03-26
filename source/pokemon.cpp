@@ -43,6 +43,11 @@ Pokemon::Pokemon(const unsigned int thePokedexNumber, const Stats& theStats) {
     abort_calculation = false;
     tera_type = Type::Typeless;
     terastallized = false;
+    ruin_sword = false;
+    ruin_beads = false;
+    ruin_tablets = false;
+    ruin_vessel = false;
+    helping_hand = false;
 
     pokedex_number = thePokedexNumber;
 
@@ -380,6 +385,9 @@ float Pokemon::calculateOtherModifier(const Pokemon& theAttacker, const Move& th
         theMove.getTerrain() != Move::Terrain::MISTY &&
         theMove.getMoveCategory() == Move::SPECIAL ) modifier = modifier * 1.3f;
 
+    // Helping Hand: ×1.5 to the attacker's move damage
+    if( theAttacker.helping_hand ) modifier = modifier * 1.5f;
+
     // Collision Course / Electro Drift (Gen 9): 5461/4096 ≈ 1.333× bonus when super-effective
     if( (theMove.getMoveIndex() == Moves::Collision_Course || theMove.getMoveIndex() == Moves::Electro_Drift) &&
         calculateTypeModifier(theAttacker, theMove) >= 2 ) modifier = modifier * (5461.0f / 4096.0f);
@@ -411,6 +419,8 @@ uint16_t Pokemon::calculateDefenseInMove(const Move& theMove) const {
 
             if( getAbility() == Ability::Fur_Coat ) defense = defense * 2;
             if( getAbility() == Ability::Marvel_Scale && getStatus() != NO_STATUS ) defense = defense * 1.5;
+            if( getItem() == Items::Eviolite ) defense = defense * 1.5;
+            if( ruin_sword ) defense = defense * 0.75f;
 
         }
 
@@ -419,6 +429,8 @@ uint16_t Pokemon::calculateDefenseInMove(const Move& theMove) const {
             else defense = getBoostedStat(Stats::SPDEF);
 
             if( getItem() == Items::Assault_Vest ) defense = defense * 1.5;
+            if( getItem() == Items::Eviolite ) defense = defense * 1.5;
+            if( ruin_beads ) defense = defense * 0.75f;
         }
     }
 
@@ -428,18 +440,24 @@ uint16_t Pokemon::calculateDefenseInMove(const Move& theMove) const {
 
             if( getAbility() == Ability::Fur_Coat ) defense = defense * 2;
             if( getAbility() == Ability::Marvel_Scale && getStatus() != NO_STATUS ) defense = defense * 1.5;
+            if( getItem() == Items::Eviolite ) defense = defense * 1.5;
+            if( ruin_sword ) defense = defense * 0.75f;
         }
 
         else if( (theMove.getMoveIndex() == Moves::Darkest_Lariat && !theMove.isZ()) || (theMove.getMoveIndex() == Moves::Sacred_Sword && !theMove.isZ()) ) {
             defense = getStat(Stats::DEF);
             if( getAbility() == Ability::Fur_Coat ) defense = defense * 2;
             if( getAbility() == Ability::Marvel_Scale && getStatus() != NO_STATUS ) defense = defense * 1.5;
+            if( getItem() == Items::Eviolite ) defense = defense * 1.5;
+            if( ruin_sword ) defense = defense * 0.75f;
         }
 
         else {
             defense = getBoostedStat(Stats::SPDEF);
 
             if( getItem() == Items::Assault_Vest ) defense = defense * 1.5;
+            if( getItem() == Items::Eviolite ) defense = defense * 1.5;
+            if( ruin_beads ) defense = defense * 0.75f;
         }
     }
 
@@ -451,7 +469,7 @@ uint16_t Pokemon::calculateAttackInMove(const Pokemon& theAttacker, const Move& 
     uint16_t attack;
 
     if( theMove.isCrit() || isAlwaysCrit(theMove) ) {
-        //foul play
+        //foul play (uses defender's ATK — Ruin Tablets does NOT apply here)
         if( theMove.getMoveIndex() == Moves::Foul_Play && !theMove.isZ() ) {
             if( getModifier(Stats::ATK) < 0 ) attack = getStat(Stats::ATK);
             else attack = getBoostedStat(Stats::ATK);
@@ -468,7 +486,7 @@ uint16_t Pokemon::calculateAttackInMove(const Pokemon& theAttacker, const Move& 
 
                 if( theAttacker.getItem() == Items::Choice_Band ) attack = attack * 1.5;
                 if( theAttacker.getAbility() == Ability::Huge_Power || theAttacker.getAbility() == Ability::Pure_Power ) attack = attack * 2;
-
+                if( theAttacker.ruin_tablets ) attack = attack * 0.75f;
             }
 
             else {
@@ -476,6 +494,7 @@ uint16_t Pokemon::calculateAttackInMove(const Pokemon& theAttacker, const Move& 
                 else attack = theAttacker.getBoostedStat(Stats::SPATK);
 
                 if( theAttacker.getItem() == Items::Choice_Specs ) attack = attack * 1.5;
+                if( theAttacker.ruin_vessel ) attack = attack * 0.75f;
             }
         }
 
@@ -486,6 +505,7 @@ uint16_t Pokemon::calculateAttackInMove(const Pokemon& theAttacker, const Move& 
 
             if( theAttacker.getItem() == Items::Choice_Band ) attack = attack * 1.5;
             if( theAttacker.getAbility() == Ability::Huge_Power || theAttacker.getAbility() == Ability::Pure_Power ) attack = attack * 2;
+            if( theAttacker.ruin_tablets ) attack = attack * 0.75f;
         }
 
         //usual special
@@ -494,12 +514,12 @@ uint16_t Pokemon::calculateAttackInMove(const Pokemon& theAttacker, const Move& 
             else attack = theAttacker.getBoostedStat(Stats::SPATK);
 
             if( theAttacker.getItem() == Items::Choice_Specs ) attack = attack * 1.5;
-
+            if( theAttacker.ruin_vessel ) attack = attack * 0.75f;
         }
     }
 
     else {
-        //foul play
+        //foul play (uses defender's ATK — Ruin Tablets does NOT apply here)
         if( theMove.getMoveIndex() == Moves::Foul_Play && !theMove.isZ() ) {
             attack = getBoostedStat(Stats::ATK);
 
@@ -514,11 +534,13 @@ uint16_t Pokemon::calculateAttackInMove(const Pokemon& theAttacker, const Move& 
 
                 if( theAttacker.getItem() == Items::Choice_Band ) attack = attack * 1.5;
                 if( theAttacker.getAbility() == Ability::Huge_Power || theAttacker.getAbility() == Ability::Pure_Power ) attack = attack * 2;
+                if( theAttacker.ruin_tablets ) attack = attack * 0.75f;
             }
 
             else {
                 attack = theAttacker.getBoostedStat(Stats::SPATK);
                 if( theAttacker.getItem() == Items::Choice_Specs ) attack = attack * 1.5;
+                if( theAttacker.ruin_vessel ) attack = attack * 0.75f;
             }
         }
 
@@ -528,14 +550,14 @@ uint16_t Pokemon::calculateAttackInMove(const Pokemon& theAttacker, const Move& 
 
             if( theAttacker.getItem() == Items::Choice_Band ) attack = attack * 1.5;
             if( theAttacker.getAbility() == Ability::Huge_Power || theAttacker.getAbility() == Ability::Pure_Power ) attack = attack * 2;
+            if( theAttacker.ruin_tablets ) attack = attack * 0.75f;
         }
-
 
         //usual special
         else {
             attack = theAttacker.getBoostedStat(Stats::SPATK);
             if( theAttacker.getItem() == Items::Choice_Specs ) attack = attack * 1.5;
-
+            if( theAttacker.ruin_vessel ) attack = attack * 0.75f;
         }
     }
 
@@ -954,6 +976,8 @@ DefenseResult Pokemon::resistMove(const std::vector<Turn>& theTurn, const std::v
             buffer.setModifier(Stats::SPDEF, std::get<2>(theDefModifiers[it]));
             buffer.setTeraType(std::get<3>(theDefModifiers[it]));
             buffer.setTerastallized(std::get<4>(theDefModifiers[it]));
+            buffer.setRuinSword(std::get<5>(theDefModifiers[it]));
+            buffer.setRuinBeads(std::get<6>(theDefModifiers[it]));
             returnable.def_ko_prob[i].push_back(buffer.getKOProbability(theTurn[it]));
             returnable.def_damage_perc[i].push_back(buffer.getDamagePercentage(theTurn[it]));
             returnable.def_damage_int[i].push_back(buffer.getDamageInt(theTurn[it]));
@@ -1073,6 +1097,8 @@ std::pair<std::vector<std::tuple<uint8_t, uint8_t, uint8_t>>, std::vector<std::t
                             defender.setModifier(Stats::SPDEF, std::get<2>(theDefModifiers[it]));
                             defender.setTeraType(std::get<3>(theDefModifiers[it]));
                             defender.setTerastallized(std::get<4>(theDefModifiers[it]));
+                            defender.setRuinSword(std::get<5>(theDefModifiers[it]));
+                            defender.setRuinBeads(std::get<6>(theDefModifiers[it]));
                             if( hp_assigned + def_assigned + spdef_assigned > assignable_evs ) to_add = false;
                             else if( results_buffer[it][hp_assigned +  def_assigned * ARRAY_SIZE + spdef_assigned * ARRAY_SIZE * ARRAY_SIZE] > (0 + tolerances[it]) ) to_add = false;
                         }
@@ -1107,6 +1133,8 @@ void Pokemon::resistMoveLoopThread(Pokemon theDefender, const std::vector<Turn>&
         theDefender.setModifier(Stats::SPDEF, std::get<2>(theDefModifiers[it]));
         theDefender.setTeraType(std::get<3>(theDefModifiers[it]));
         theDefender.setTerastallized(std::get<4>(theDefModifiers[it]));
+        theDefender.setRuinSword(std::get<5>(theDefModifiers[it]));
+        theDefender.setRuinBeads(std::get<6>(theDefModifiers[it]));
         float ko_prob;
         if( theDefender.getEV(Stats::HP) + theDefender.getEV(Stats::DEF) + theDefender.getEV(Stats::SPDEF) > theAssignableEVS ) to_add = false;
         else if( (ko_prob = theDefender.getKOProbability(theTurn[it])) > 0 ) {
@@ -1203,6 +1231,14 @@ AttackResult Pokemon::koMove(const std::vector<Turn>& theTurn, const std::vector
                 attacker.setModifier(Stats::SPATK, std::get<1>(theAtkModifier[it]));
                 attacker.setTeraType(std::get<2>(theAtkModifier[it]));
                 attacker.setTerastallized(std::get<3>(theAtkModifier[it]));
+                attacker.setRuinTablets(std::get<4>(theAtkModifier[it]));
+                attacker.setRuinVessel(std::get<5>(theAtkModifier[it]));
+                attacker.setHelpingHand(std::get<8>(theAtkModifier[it]));
+
+                // Ruin sword/beads reduce the defender's DEF/SpDef — apply on a local copy
+                Pokemon def_copy = theDefendingPokemon[it];
+                def_copy.setRuinSword(std::get<6>(theAtkModifier[it]));
+                def_copy.setRuinBeads(std::get<7>(theAtkModifier[it]));
 
                 //reversing because of the offensive nature of the calc
                 Turn temp_turn;
@@ -1211,7 +1247,7 @@ AttackResult Pokemon::koMove(const std::vector<Turn>& theTurn, const std::vector
 
                 float ko_prob;
                 if( attacker.getEV(Stats::ATK) + attacker.getEV(Stats::SPATK) > assignable_evs ) to_add = false;
-                else if( (ko_prob = theDefendingPokemon[it].getKOProbability(temp_turn)) < 100 ) { results_buffer[it][attacker.getEV(Stats::ATK) + attacker.getEV(Stats::SPATK) * ARRAY_SIZE] = ko_prob; to_add = false; }
+                else if( (ko_prob = def_copy.getKOProbability(temp_turn)) < 100 ) { results_buffer[it][attacker.getEV(Stats::ATK) + attacker.getEV(Stats::SPATK) * ARRAY_SIZE] = ko_prob; to_add = false; }
 
                 else results_buffer[it][attacker.getEV(Stats::ATK) + attacker.getEV(Stats::SPATK) * ARRAY_SIZE] = ko_prob;
             }
@@ -1316,14 +1352,21 @@ AttackResult Pokemon::koMove(const std::vector<Turn>& theTurn, const std::vector
         buffer.setModifier(Stats::SPATK, std::get<1>(theAtkModifier[it]));
         buffer.setTeraType(std::get<2>(theAtkModifier[it]));
         buffer.setTerastallized(std::get<3>(theAtkModifier[it]));
+        buffer.setRuinTablets(std::get<4>(theAtkModifier[it]));
+        buffer.setRuinVessel(std::get<5>(theAtkModifier[it]));
+        buffer.setHelpingHand(std::get<8>(theAtkModifier[it]));
+
+        Pokemon def_copy_final = theDefendingPokemon[it];
+        def_copy_final.setRuinSword(std::get<6>(theAtkModifier[it]));
+        def_copy_final.setRuinBeads(std::get<7>(theAtkModifier[it]));
 
         Turn temp_turn;
         temp_turn.addMove(buffer, theTurn[it].getMoves()[0].second);
         temp_turn.setHits(theTurn[it].getHits());
 
-        final_result.atk_ko_prob[0].push_back(theDefendingPokemon[it].getKOProbability(temp_turn));
-        final_result.atk_damage_perc[0].push_back(theDefendingPokemon[it].getDamagePercentage(temp_turn));
-        final_result.atk_damage_int[0].push_back(theDefendingPokemon[it].getDamageInt(temp_turn));
+        final_result.atk_ko_prob[0].push_back(def_copy_final.getKOProbability(temp_turn));
+        final_result.atk_damage_perc[0].push_back(def_copy_final.getDamagePercentage(temp_turn));
+        final_result.atk_damage_int[0].push_back(def_copy_final.getDamageInt(temp_turn));
     }
 
     return final_result;

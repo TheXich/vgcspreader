@@ -1,5 +1,6 @@
 #include "mainwindow.hpp"
 
+#include <algorithm>
 #include <QFile>
 #include <QTextEdit>
 #include <QVBoxLayout>
@@ -89,6 +90,29 @@ MainWindow::MainWindow() {
     layout()->setSizeConstraint( QLayout::SetFixedSize );
 }
 
+/*static*/ void MainWindow::populateSortedComboBox(QComboBox* combo, const std::vector<QString>& names) {
+    std::vector<std::pair<QString, int>> sorted;
+    sorted.reserve(names.size());
+    for (int i = 0; i < (int)names.size(); i++)
+        sorted.push_back({names[i], i});
+    std::sort(sorted.begin(), sorted.end(), [](const std::pair<QString,int>& a, const std::pair<QString,int>& b){
+        return a.first.toLower() < b.first.toLower();
+    });
+    for (const auto& p : sorted) {
+        combo->addItem(p.first);
+        combo->setItemData(combo->count() - 1, p.second, Qt::UserRole);
+    }
+}
+
+/*static*/ void MainWindow::setComboByOriginalIdx(QComboBox* combo, int originalIdx) {
+    for (int i = 0; i < combo->count(); i++) {
+        if (combo->itemData(i, Qt::UserRole).toInt() == originalIdx) {
+            combo->setCurrentIndex(i);
+            return;
+        }
+    }
+}
+
 void MainWindow::moveTabChanged(int index) {
     moves_groupbox->findChild<QPushButton*>("moves_edit_button")->setEnabled(false);
     moves_groupbox->findChild<QPushButton*>("moves_delete_button")->setEnabled(false);
@@ -107,7 +131,8 @@ void MainWindow::setButtonClickable(int row, int column) {
 }
 
 void MainWindow::setDefendingPokemonSpecies(int index) {
-    Pokemon selected_pokemon(index + 1);
+    int orig = defending_groupbox->findChild<QComboBox*>("defending_species_combobox")->currentData(Qt::UserRole).toInt();
+    Pokemon selected_pokemon(orig + 1);
 
     //setting correct sprite
     QPixmap sprite_pixmap;
@@ -120,11 +145,11 @@ void MainWindow::setDefendingPokemonSpecies(int index) {
     sprite->setPixmap(sprite_pixmap);
 
     //setting ability
-    defending_groupbox->findChild<QComboBox*>("defending_abilities_combobox")->setCurrentIndex(selected_pokemon.getPossibleAbilities()[0][0]);
+    setComboByOriginalIdx(defending_groupbox->findChild<QComboBox*>("defending_abilities_combobox"), selected_pokemon.getPossibleAbilities()[0][0]);
 
     //setting correct types
-    defending_groupbox->findChild<QComboBox*>("defending_type1_combobox")->setCurrentIndex(selected_pokemon.getTypes()[0][0]);
-    defending_groupbox->findChild<QComboBox*>("defending_type2_combobox")->setCurrentIndex(selected_pokemon.getTypes()[0][1]);
+    setComboByOriginalIdx(defending_groupbox->findChild<QComboBox*>("defending_type1_combobox"), selected_pokemon.getTypes()[0][0]);
+    setComboByOriginalIdx(defending_groupbox->findChild<QComboBox*>("defending_type2_combobox"), selected_pokemon.getTypes()[0][1]);
 
     if( selected_pokemon.getTypes()[0][0] == selected_pokemon.getTypes()[0][1] ) defending_groupbox->findChild<QComboBox*>("defending_type2_combobox")->setVisible(false);
     else defending_groupbox->findChild<QComboBox*>("defending_type2_combobox")->setVisible(true);
@@ -144,7 +169,8 @@ void MainWindow::setDefendingPokemonSpecies(int index) {
 }
 
 void MainWindow::setDefendingPokemonForm(int index) {
-    Pokemon selected_pokemon(defending_groupbox->findChild<QComboBox*>("defending_species_combobox")->currentIndex() + 1);
+    int orig = defending_groupbox->findChild<QComboBox*>("defending_species_combobox")->currentData(Qt::UserRole).toInt();
+    Pokemon selected_pokemon(orig + 1);
 
     //setting correct sprite
     QPixmap sprite_pixmap;
@@ -162,11 +188,11 @@ void MainWindow::setDefendingPokemonForm(int index) {
     sprite->setPixmap(sprite_pixmap);
 
     //setting ability
-    defending_groupbox->findChild<QComboBox*>("defending_abilities_combobox")->setCurrentIndex(selected_pokemon.getPossibleAbilities()[index][0]);
+    setComboByOriginalIdx(defending_groupbox->findChild<QComboBox*>("defending_abilities_combobox"), selected_pokemon.getPossibleAbilities()[index][0]);
 
     //setting correct types
-    defending_groupbox->findChild<QComboBox*>("defending_type1_combobox")->setCurrentIndex(selected_pokemon.getTypes()[index][0]);
-    defending_groupbox->findChild<QComboBox*>("defending_type2_combobox")->setCurrentIndex(selected_pokemon.getTypes()[index][1]);
+    setComboByOriginalIdx(defending_groupbox->findChild<QComboBox*>("defending_type1_combobox"), selected_pokemon.getTypes()[index][0]);
+    setComboByOriginalIdx(defending_groupbox->findChild<QComboBox*>("defending_type2_combobox"), selected_pokemon.getTypes()[index][1]);
 
     if( selected_pokemon.getTypes()[index][0] == selected_pokemon.getTypes()[index][1] ) defending_groupbox->findChild<QComboBox*>("defending_type2_combobox")->setVisible(false);
     else defending_groupbox->findChild<QComboBox*>("defending_type2_combobox")->setVisible(true);
@@ -250,7 +276,7 @@ void MainWindow::createDefendingPokemonGroupBox() {
         else is_egg = false;
     }
 
-    for(auto it = species_names.begin(); it < species_names.end(); it++) species->addItem(*it);
+    populateSortedComboBox(species, species_names);
 
     //some resizing
     int species_width = species->minimumSizeHint().width();
@@ -293,7 +319,8 @@ void MainWindow::createDefendingPokemonGroupBox() {
         types_names.push_back(line);
     }
 
-    for(auto it = types_names.begin(); it < types_names.end(); it++) { types1->addItem(*it); types2->addItem(*it); }
+    populateSortedComboBox(types1, types_names);
+    populateSortedComboBox(types2, types_names);
 
     //resizing them
     int types_width = species->minimumSizeHint().width();
@@ -337,8 +364,10 @@ void MainWindow::createDefendingPokemonGroupBox() {
         natures_names.push_back(line);
     }
 
-    for(auto it = natures_names.begin(); it < natures_names.end(); it++) natures->addItem(*it);
+    populateSortedComboBox(natures, natures_names);
     natures->addItem(tr("Auto"));
+    natures->setItemData(natures->count() - 1, (int)natures_names.size(), Qt::UserRole);
+    setComboByOriginalIdx(natures, 0); // Default: Hardy (neutral)
 
     form_layout->addRow(tr("Nature:"), natures);
 
@@ -357,7 +386,7 @@ void MainWindow::createDefendingPokemonGroupBox() {
         abilities_names.push_back(line);
     }
 
-    for(auto it = abilities_names.begin(); it < abilities_names.end(); it++) abilities->addItem(*it);
+    populateSortedComboBox(abilities, abilities_names);
 
     //getting the abilities width (to be used later)
     int abilities_width = abilities->minimumSizeHint().width();
@@ -379,7 +408,8 @@ void MainWindow::createDefendingPokemonGroupBox() {
         items_names.push_back(line);
     }
 
-    for(auto it = items_names.begin(); it < items_names.end(); it++) items->addItem(*it);
+    populateSortedComboBox(items, items_names);
+    setComboByOriginalIdx(items, 0); // Default: None
 
     form_layout->addRow(tr("Item:"), items);
 
@@ -723,8 +753,8 @@ void MainWindow::clear(QAbstractButton* theButton) {
     if( theButton->objectName() == "clear_button" ) {
         defending_groupbox->findChild<QComboBox*>("defending_species_combobox")->setCurrentIndex(0);
         defending_groupbox->findChild<QComboBox*>("defending_forms_combobox")->setCurrentIndex(0);
-        defending_groupbox->findChild<QComboBox*>("defending_nature_combobox")->setCurrentIndex(0);
-        defending_groupbox->findChild<QComboBox*>("defending_items_combobox")->setCurrentIndex(0);
+        setComboByOriginalIdx(defending_groupbox->findChild<QComboBox*>("defending_nature_combobox"), 0); // Hardy
+        setComboByOriginalIdx(defending_groupbox->findChild<QComboBox*>("defending_items_combobox"), 0); // None
 
         defending_groupbox->findChild<QSpinBox*>("defending_hpiv_spinbox")->setValue(31);
         defending_groupbox->findChild<QSpinBox*>("defending_atkiv_spinbox")->setValue(31);
@@ -756,13 +786,13 @@ void MainWindow::clear(QAbstractButton* theButton) {
 }
 
 void MainWindow::calculate() {
-    selected_pokemon = new Pokemon(defending_groupbox->findChild<QComboBox*>("defending_species_combobox")->currentIndex()+1);
+    selected_pokemon = new Pokemon(defending_groupbox->findChild<QComboBox*>("defending_species_combobox")->currentData(Qt::UserRole).toInt()+1);
     selected_pokemon->setForm(defending_groupbox->findChild<QComboBox*>("defending_forms_combobox")->currentIndex());
-    selected_pokemon->setType(0, (Type)defending_groupbox->findChild<QComboBox*>("defending_type1_combobox")->currentIndex());
-    selected_pokemon->setType(1, (Type)defending_groupbox->findChild<QComboBox*>("defending_type2_combobox")->currentIndex());
-    selected_pokemon->setNature((Stats::Nature)defending_groupbox->findChild<QComboBox*>("defending_nature_combobox")->currentIndex());
-    selected_pokemon->setAbility((Ability)defending_groupbox->findChild<QComboBox*>("defending_abilities_combobox")->currentIndex());
-    selected_pokemon->setItem(Item(defending_groupbox->findChild<QComboBox*>("defending_items_combobox")->currentIndex()));
+    selected_pokemon->setType(0, (Type)defending_groupbox->findChild<QComboBox*>("defending_type1_combobox")->currentData(Qt::UserRole).toInt());
+    selected_pokemon->setType(1, (Type)defending_groupbox->findChild<QComboBox*>("defending_type2_combobox")->currentData(Qt::UserRole).toInt());
+    selected_pokemon->setNature((Stats::Nature)defending_groupbox->findChild<QComboBox*>("defending_nature_combobox")->currentData(Qt::UserRole).toInt());
+    selected_pokemon->setAbility((Ability)defending_groupbox->findChild<QComboBox*>("defending_abilities_combobox")->currentData(Qt::UserRole).toInt());
+    selected_pokemon->setItem(Item(defending_groupbox->findChild<QComboBox*>("defending_items_combobox")->currentData(Qt::UserRole).toInt()));
 
     selected_pokemon->setIV(Stats::HP, defending_groupbox->findChild<QSpinBox*>("defending_hpiv_spinbox")->value());
     selected_pokemon->setIV(Stats::ATK, defending_groupbox->findChild<QSpinBox*>("defending_atkiv_spinbox")->value());

@@ -96,8 +96,7 @@ void DefenseMoveWindow::createAtk1GroupBox() {
     species->setObjectName("atk1_species_combobox");
 
     //loading it with all the species name
-    auto species_buffer = ((MainWindow*)parentWidget())->getSpeciesNames();
-    for( auto it = species_buffer.begin(); it < species_buffer.end(); it++ ) species->addItem(*it);
+    MainWindow::populateSortedComboBox(species, ((MainWindow*)parentWidget())->getSpeciesNames());
 
     //some resizing
     int species_width = species->minimumSizeHint().width();
@@ -131,8 +130,8 @@ void DefenseMoveWindow::createAtk1GroupBox() {
     types2->setObjectName("atk1_type2_combobox");
 
     //loading it with all the types names
-    auto types_buffer = ((MainWindow*)parentWidget())->getTypesNames();
-    for( auto it = types_buffer.begin(); it < types_buffer.end(); it++ ) { types1->addItem(*it); types2->addItem(*it); }
+    MainWindow::populateSortedComboBox(types1, ((MainWindow*)parentWidget())->getTypesNames());
+    MainWindow::populateSortedComboBox(types2, ((MainWindow*)parentWidget())->getTypesNames());
 
     //resizing them
     int types_width = species->minimumSizeHint().width();
@@ -163,8 +162,7 @@ void DefenseMoveWindow::createAtk1GroupBox() {
     natures->setObjectName("atk1_nature_combobox");
 
     //populating it
-    auto natures_buffer = ((MainWindow*)parentWidget())->getNaturesNames();
-    for( auto it = natures_buffer.begin(); it < natures_buffer.end(); it++ ) natures->addItem(*it);
+    MainWindow::populateSortedComboBox(natures, ((MainWindow*)parentWidget())->getNaturesNames());
 
     form_layout->addRow(tr("Nature:"), natures);
 
@@ -174,8 +172,7 @@ void DefenseMoveWindow::createAtk1GroupBox() {
     abilities->setObjectName("atk1_abilities_combobox");
 
     //populating it
-    auto abilities_buffer = ((MainWindow*)parentWidget())->getAbilitiesNames();
-    for( auto it = abilities_buffer.begin(); it < abilities_buffer.end(); it++ ) abilities->addItem(*it);
+    MainWindow::populateSortedComboBox(abilities, ((MainWindow*)parentWidget())->getAbilitiesNames());
 
     //getting the abilities width (to be used later)
     int abilities_width = abilities->minimumSizeHint().width();
@@ -188,16 +185,14 @@ void DefenseMoveWindow::createAtk1GroupBox() {
     items->setObjectName("atk1_items_combobox");
 
     //populating it
-    auto items_buffer = ((MainWindow*)parentWidget())->getItemsNames();
-    for( auto it = items_buffer.begin(); it < items_buffer.end(); it++ ) items->addItem(*it);
+    MainWindow::populateSortedComboBox(items, ((MainWindow*)parentWidget())->getItemsNames());
 
     form_layout->addRow(tr("Item:"), items);
 
     //TERA TYPE
     QComboBox* tera_type1 = new QComboBox;
     tera_type1->setObjectName("atk1_teratype_combobox");
-    auto teratypes1_buffer = ((MainWindow*)parentWidget())->getTypesNames();
-    for( auto it = teratypes1_buffer.begin(); it < teratypes1_buffer.end(); it++ ) tera_type1->addItem(*it);
+    MainWindow::populateSortedComboBox(tera_type1, ((MainWindow*)parentWidget())->getTypesNames());
     tera_type1->setMaximumWidth(abilities_width);
     form_layout->addRow(tr("Tera Type:"), tera_type1);
 
@@ -267,8 +262,7 @@ void DefenseMoveWindow::createAtk1GroupBox() {
     moves->setObjectName("atk1_moves_combobox");
 
     //populating it
-    auto moves_buffer = ((MainWindow*)parentWidget())->getMovesNames();
-    for( auto it = moves_buffer.begin(); it < moves_buffer.end(); it++ ) moves->addItem(*it);
+    MainWindow::populateSortedComboBox(moves, ((MainWindow*)parentWidget())->getMovesNames());
 
     move_name_layout->addWidget(moves);
 
@@ -291,8 +285,7 @@ void DefenseMoveWindow::createAtk1GroupBox() {
     move_types->setObjectName("atk1_movetypes_combobox");
 
     //populating it
-    auto movetypes_buffer = ((MainWindow*)parentWidget())->getTypesNames();
-    for( auto it = movetypes_buffer.begin(); it < movetypes_buffer.end(); it++ ) move_types->addItem(*it);
+    MainWindow::populateSortedComboBox(move_types, ((MainWindow*)parentWidget())->getTypesNames());
 
     move_info_layout->addWidget(move_types);
 
@@ -404,8 +397,7 @@ void DefenseMoveWindow::createAtk2GroupBox() {
     species->setObjectName("atk2_species_combobox");
 
     //loading it with all the species name
-    auto species_buffer = ((MainWindow*)parentWidget())->getSpeciesNames();
-    for( auto it = species_buffer.begin(); it < species_buffer.end(); it++ ) species->addItem(*it);
+    MainWindow::populateSortedComboBox(species, ((MainWindow*)parentWidget())->getSpeciesNames());
 
     //some resizing
     int species_width = species->minimumSizeHint().width();
@@ -439,8 +431,8 @@ void DefenseMoveWindow::createAtk2GroupBox() {
     types2->setObjectName("atk2_type2_combobox");
 
     //loading it with all the types names
-    auto types_buffer = ((MainWindow*)parentWidget())->getTypesNames();
-    for( auto it = types_buffer.begin(); it < types_buffer.end(); it++ ) { types1->addItem(*it); types2->addItem(*it); }
+    MainWindow::populateSortedComboBox(types1, ((MainWindow*)parentWidget())->getTypesNames());
+    MainWindow::populateSortedComboBox(types2, ((MainWindow*)parentWidget())->getTypesNames());
 
     //resizing them
     int types_width = species->minimumSizeHint().width();
@@ -471,8 +463,7 @@ void DefenseMoveWindow::createAtk2GroupBox() {
     natures->setObjectName("atk2_nature_combobox");
 
     //populating it
-    auto natures_buffer = ((MainWindow*)parentWidget())->getNaturesNames();
-    for( auto it = natures_buffer.begin(); it < natures_buffer.end(); it++ ) natures->addItem(*it);
+    MainWindow::populateSortedComboBox(natures, ((MainWindow*)parentWidget())->getNaturesNames());
 
     form_layout->addRow(tr("Nature:"), natures);
 
@@ -482,8 +473,7 @@ void DefenseMoveWindow::createAtk2GroupBox() {
     abilities->setObjectName("atk2_abilities_combobox");
 
     //populating it
-    auto abilities_buffer = ((MainWindow*)parentWidget())->getAbilitiesNames();
-    for( auto it = abilities_buffer.begin(); it < abilities_buffer.end(); it++ ) abilities->addItem(*it);
+    MainWindow::populateSortedComboBox(abilities, ((MainWindow*)parentWidget())->getAbilitiesNames());
 
     //getting the abilities width (to be used later)
     int abilities_width = abilities->minimumSizeHint().width();
@@ -496,16 +486,14 @@ void DefenseMoveWindow::createAtk2GroupBox() {
     items->setObjectName("atk2_items_combobox");
 
     //populating it
-    auto items_buffer = ((MainWindow*)parentWidget())->getItemsNames();
-    for( auto it = items_buffer.begin(); it < items_buffer.end(); it++ ) items->addItem(*it);
+    MainWindow::populateSortedComboBox(items, ((MainWindow*)parentWidget())->getItemsNames());
 
     form_layout->addRow(tr("Item:"), items);
 
     //TERA TYPE
     QComboBox* tera_type2 = new QComboBox;
     tera_type2->setObjectName("atk2_teratype_combobox");
-    auto teratypes2_buffer = ((MainWindow*)parentWidget())->getTypesNames();
-    for( auto it = teratypes2_buffer.begin(); it < teratypes2_buffer.end(); it++ ) tera_type2->addItem(*it);
+    MainWindow::populateSortedComboBox(tera_type2, ((MainWindow*)parentWidget())->getTypesNames());
     tera_type2->setMaximumWidth(abilities_width);
     form_layout->addRow(tr("Tera Type:"), tera_type2);
 
@@ -575,8 +563,7 @@ void DefenseMoveWindow::createAtk2GroupBox() {
     moves->setObjectName("atk2_moves_combobox");
 
     //populating it
-    auto moves_buffer = ((MainWindow*)parentWidget())->getMovesNames();
-    for( auto it = moves_buffer.begin(); it < moves_buffer.end(); it++ ) moves->addItem(*it);
+    MainWindow::populateSortedComboBox(moves, ((MainWindow*)parentWidget())->getMovesNames());
 
     move_name_layout->addWidget(moves);
 
@@ -599,8 +586,7 @@ void DefenseMoveWindow::createAtk2GroupBox() {
     move_types->setObjectName("atk2_movetypes_combobox");
 
     //populating it
-    auto movetypes_buffer = ((MainWindow*)parentWidget())->getTypesNames();
-    for( auto it = movetypes_buffer.begin(); it < movetypes_buffer.end(); it++ ) move_types->addItem(*it);
+    MainWindow::populateSortedComboBox(move_types, ((MainWindow*)parentWidget())->getTypesNames());
 
     move_info_layout->addWidget(move_types);
 
@@ -716,8 +702,7 @@ void DefenseMoveWindow::createDefendingGroupBox() {
 
     QComboBox* tera_type_combobox = new QComboBox;
     tera_type_combobox->setObjectName("defending_tera_type");
-    auto teratypes_buffer = ((MainWindow*)parentWidget())->getTypesNames();
-    for( auto it = teratypes_buffer.begin(); it < teratypes_buffer.end(); it++ ) tera_type_combobox->addItem(*it);
+    MainWindow::populateSortedComboBox(tera_type_combobox, ((MainWindow*)parentWidget())->getTypesNames());
     defending_layout->addWidget(tera_type_combobox, Qt::AlignLeft);
 
     QLabel* terastallized_label = new QLabel(tr("Terastallized:"));
@@ -774,12 +759,34 @@ void DefenseMoveWindow::createDefendingGroupBox() {
     terrain_layout->addWidget(terrain_combobox);
 
     modifier_layout->addLayout(terrain_layout);
+
+    //RUIN ABILITIES
+    QHBoxLayout* ruin_layout = new QHBoxLayout;
+    ruin_layout->setAlignment(Qt::AlignLeft);
+
+    QLabel* ruin_label = new QLabel(tr("Ruin:"));
+    ruin_layout->addWidget(ruin_label);
+
+    QLabel* sword_ruin_label = new QLabel(tr("Sword (−25% Def)"));
+    ruin_layout->addWidget(sword_ruin_label);
+    QCheckBox* sword_ruin_cb = new QCheckBox;
+    sword_ruin_cb->setObjectName("sword_of_ruin_checkbox");
+    ruin_layout->addWidget(sword_ruin_cb);
+
+    QLabel* beads_ruin_label = new QLabel(tr("Beads (−25% SpDef)"));
+    ruin_layout->addWidget(beads_ruin_label);
+    QCheckBox* beads_ruin_cb = new QCheckBox;
+    beads_ruin_cb->setObjectName("beads_of_ruin_checkbox");
+    ruin_layout->addWidget(beads_ruin_cb);
+
+    modifier_layout->addLayout(ruin_layout);
 }
 
 void DefenseMoveWindow::setMove1(int index) {
-    Move selected_move((Moves)index);
+    int origIdx = atk1_groupbox->findChild<QComboBox*>("atk1_moves_combobox")->currentData(Qt::UserRole).toInt();
+    Move selected_move((Moves)origIdx);
 
-    atk1_groupbox->findChild<QComboBox*>("atk1_movetypes_combobox")->setCurrentIndex(selected_move.getMoveType());
+    MainWindow::setComboByOriginalIdx(atk1_groupbox->findChild<QComboBox*>("atk1_movetypes_combobox"), selected_move.getMoveType());
 
     QComboBox* target = atk1_groupbox->findChild<QComboBox*>("atk1_target_combobox");
     if( selected_move.isSpread() ) { target->setCurrentIndex(Move::Target::DOUBLE); target->setVisible(true); }
@@ -809,7 +816,8 @@ void DefenseMoveWindow::setMove1(int index) {
 }
 
 void DefenseMoveWindow::setSpecies1(int index) {
-    Pokemon selected_pokemon(index + 1);
+    int orig = atk1_groupbox->findChild<QComboBox*>("atk1_species_combobox")->currentData(Qt::UserRole).toInt();
+    Pokemon selected_pokemon(orig + 1);
 
     //setting correct sprite
     QPixmap sprite_pixmap;
@@ -823,10 +831,10 @@ void DefenseMoveWindow::setSpecies1(int index) {
 
     //setting correct types
     QComboBox* type1 = atk1_groupbox->findChild<QComboBox*>("atk1_type1_combobox");
-    type1->setCurrentIndex(selected_pokemon.getTypes()[0][0]);
+    MainWindow::setComboByOriginalIdx(type1, selected_pokemon.getTypes()[0][0]);
 
     QComboBox* type2 = atk1_groupbox->findChild<QComboBox*>("atk1_type2_combobox");
-    type2->setCurrentIndex(selected_pokemon.getTypes()[0][1]);
+    MainWindow::setComboByOriginalIdx(type2, selected_pokemon.getTypes()[0][1]);
 
     if( selected_pokemon.getTypes()[0][0] == selected_pokemon.getTypes()[0][1] ) { type2->setVisible(false); type2->setVisible(false); }
     else { type2->setVisible(true); type2->setVisible(true); }
@@ -835,7 +843,7 @@ void DefenseMoveWindow::setSpecies1(int index) {
     QComboBox* form = atk1_groupbox->findChild<QComboBox*>("atk1_forms_combobox");
     if( selected_pokemon.getFormesNumber() > 1 ) {
         form->clear();
-        for(unsigned int i = 0; i < selected_pokemon.getFormesNumber(); i++) form->addItem(((MainWindow*)this->parentWidget())->retrieveFormName(index + 1, i));
+        for(unsigned int i = 0; i < selected_pokemon.getFormesNumber(); i++) form->addItem(((MainWindow*)this->parentWidget())->retrieveFormName(orig + 1, i));
         form->setCurrentIndex(0);
         form->setVisible(true);
     }
@@ -847,11 +855,12 @@ void DefenseMoveWindow::setSpecies1(int index) {
 
     //setting correct ability
     QComboBox* ability = atk1_groupbox->findChild<QComboBox*>("atk1_abilities_combobox");
-    ability->setCurrentIndex(selected_pokemon.getPossibleAbilities()[0][0]);
+    MainWindow::setComboByOriginalIdx(ability, selected_pokemon.getPossibleAbilities()[0][0]);
 }
 
 void DefenseMoveWindow::setForm1(int index) {
-    Pokemon selected_pokemon(atk1_groupbox->findChild<QComboBox*>("atk1_species_combobox")->currentIndex() + 1);
+    int orig = atk1_groupbox->findChild<QComboBox*>("atk1_species_combobox")->currentData(Qt::UserRole).toInt();
+    Pokemon selected_pokemon(orig + 1);
 
     //setting correct sprite
     QPixmap sprite_pixmap;
@@ -870,21 +879,22 @@ void DefenseMoveWindow::setForm1(int index) {
 
     //setting correct types
     QComboBox* type1 = atk1_groupbox->findChild<QComboBox*>("atk1_type1_combobox");
-    type1->setCurrentIndex(selected_pokemon.getTypes()[index][0]);
+    MainWindow::setComboByOriginalIdx(type1, selected_pokemon.getTypes()[index][0]);
 
     QComboBox* type2 = atk1_groupbox->findChild<QComboBox*>("atk1_type2_combobox");
-    type2->setCurrentIndex(selected_pokemon.getTypes()[index][1]);
+    MainWindow::setComboByOriginalIdx(type2, selected_pokemon.getTypes()[index][1]);
 
     if( selected_pokemon.getTypes()[index][0] == selected_pokemon.getTypes()[index][1] ) { type2->setVisible(false); type2->setVisible(false); }
     else { type2->setVisible(true); type2->setVisible(true); }
 
     //setting correct ability
     QComboBox* ability = atk1_groupbox->findChild<QComboBox*>("atk1_abilities_combobox");
-    ability->setCurrentIndex(selected_pokemon.getPossibleAbilities()[index][0]);
+    MainWindow::setComboByOriginalIdx(ability, selected_pokemon.getPossibleAbilities()[index][0]);
 }
 
 void DefenseMoveWindow::setForm2(int index) {
-    Pokemon selected_pokemon(atk2_groupbox->findChild<QComboBox*>("atk2_species_combobox")->currentIndex() + 1);
+    int orig = atk2_groupbox->findChild<QComboBox*>("atk2_species_combobox")->currentData(Qt::UserRole).toInt();
+    Pokemon selected_pokemon(orig + 1);
 
     //setting correct sprite
     QPixmap sprite_pixmap;
@@ -903,23 +913,24 @@ void DefenseMoveWindow::setForm2(int index) {
 
     //setting correct types
     QComboBox* type1 = atk2_groupbox->findChild<QComboBox*>("atk2_type1_combobox");
-    type1->setCurrentIndex(selected_pokemon.getTypes()[index][0]);
+    MainWindow::setComboByOriginalIdx(type1, selected_pokemon.getTypes()[index][0]);
 
     QComboBox* type2 = atk2_groupbox->findChild<QComboBox*>("atk2_type2_combobox");
-    type2->setCurrentIndex(selected_pokemon.getTypes()[index][1]);
+    MainWindow::setComboByOriginalIdx(type2, selected_pokemon.getTypes()[index][1]);
 
     if( selected_pokemon.getTypes()[index][0] == selected_pokemon.getTypes()[index][1] ) { type2->setVisible(false); type2->setVisible(false); }
     else { type2->setVisible(true); type2->setVisible(true); }
 
     //setting correct ability
     QComboBox* ability = atk2_groupbox->findChild<QComboBox*>("atk2_abilities_combobox");
-    ability->setCurrentIndex(selected_pokemon.getPossibleAbilities()[index][0]);
+    MainWindow::setComboByOriginalIdx(ability, selected_pokemon.getPossibleAbilities()[index][0]);
 }
 
 void DefenseMoveWindow::setMove2(int index) {
-    Move selected_move((Moves)index);
+    int origIdx = atk2_groupbox->findChild<QComboBox*>("atk2_moves_combobox")->currentData(Qt::UserRole).toInt();
+    Move selected_move((Moves)origIdx);
 
-    atk2_groupbox->findChild<QComboBox*>("atk2_movetypes_combobox")->setCurrentIndex(selected_move.getMoveType());
+    MainWindow::setComboByOriginalIdx(atk2_groupbox->findChild<QComboBox*>("atk2_movetypes_combobox"), selected_move.getMoveType());
 
     QComboBox* target = atk2_groupbox->findChild<QComboBox*>("atk2_target_combobox");
     if( selected_move.isSpread() ) { target->setCurrentIndex(Move::Target::DOUBLE); target->setVisible(true); }
@@ -949,7 +960,8 @@ void DefenseMoveWindow::setMove2(int index) {
 }
 
 void DefenseMoveWindow::setSpecies2(int index) {
-    Pokemon selected_pokemon(index + 1);
+    int orig = atk2_groupbox->findChild<QComboBox*>("atk2_species_combobox")->currentData(Qt::UserRole).toInt();
+    Pokemon selected_pokemon(orig + 1);
 
     //setting correct sprite
     QPixmap sprite_pixmap;
@@ -963,10 +975,10 @@ void DefenseMoveWindow::setSpecies2(int index) {
 
     //setting correct types
     QComboBox* type1 = atk2_groupbox->findChild<QComboBox*>("atk2_type1_combobox");
-    type1->setCurrentIndex(selected_pokemon.getTypes()[0][0]);
+    MainWindow::setComboByOriginalIdx(type1, selected_pokemon.getTypes()[0][0]);
 
     QComboBox* type2 = atk2_groupbox->findChild<QComboBox*>("atk2_type2_combobox");
-    type2->setCurrentIndex(selected_pokemon.getTypes()[0][1]);
+    MainWindow::setComboByOriginalIdx(type2, selected_pokemon.getTypes()[0][1]);
 
     if( selected_pokemon.getTypes()[0][0] == selected_pokemon.getTypes()[0][1] ) { type2->setVisible(false); type2->setVisible(false); }
     else { type2->setVisible(true); type2->setVisible(true); }
@@ -975,7 +987,7 @@ void DefenseMoveWindow::setSpecies2(int index) {
     QComboBox* form = atk2_groupbox->findChild<QComboBox*>("atk2_forms_combobox");
     if( selected_pokemon.getFormesNumber() > 1 ) {
         form->clear();
-        for(unsigned int i = 0; i < selected_pokemon.getFormesNumber(); i++) form->addItem(((MainWindow*)this->parentWidget())->retrieveFormName(index + 1, i));
+        for(unsigned int i = 0; i < selected_pokemon.getFormesNumber(); i++) form->addItem(((MainWindow*)this->parentWidget())->retrieveFormName(orig + 1, i));
         form->setCurrentIndex(0);
         form->setVisible(true);
     }
@@ -987,7 +999,7 @@ void DefenseMoveWindow::setSpecies2(int index) {
 
     //setting correct ability
     QComboBox* ability = atk2_groupbox->findChild<QComboBox*>("atk2_abilities_combobox");
-    ability->setCurrentIndex(selected_pokemon.getPossibleAbilities()[0][0]);
+    MainWindow::setComboByOriginalIdx(ability, selected_pokemon.getPossibleAbilities()[0][0]);
 }
 
 void DefenseMoveWindow::activateAtk2(int state) {
@@ -1015,21 +1027,21 @@ void DefenseMoveWindow::activateAtk2(int state) {
 }
 
 void DefenseMoveWindow::solveMove(const bool preset, const QString& preset_name) {
-    Pokemon attacking1(atk1_groupbox->findChild<QComboBox*>("atk1_species_combobox")->currentIndex()+1);
+    Pokemon attacking1(atk1_groupbox->findChild<QComboBox*>("atk1_species_combobox")->currentData(Qt::UserRole).toInt()+1);
     attacking1.setForm(atk1_groupbox->findChild<QComboBox*>("atk1_forms_combobox")->currentIndex());
 
-    attacking1.setType(0, (Type)atk1_groupbox->findChild<QComboBox*>("atk1_type1_combobox")->currentIndex());
-    attacking1.setType(1, (Type)atk1_groupbox->findChild<QComboBox*>("atk1_type2_combobox")->currentIndex());
-    attacking1.setNature((Stats::Nature)atk1_groupbox->findChild<QComboBox*>("atk1_nature_combobox")->currentIndex());
-    attacking1.setAbility((Ability)atk1_groupbox->findChild<QComboBox*>("atk1_abilities_combobox")->currentIndex());
-    attacking1.setItem(Item(atk1_groupbox->findChild<QComboBox*>("atk1_items_combobox")->currentIndex()));
-    attacking1.setTeraType((Type)atk1_groupbox->findChild<QComboBox*>("atk1_teratype_combobox")->currentIndex());
+    attacking1.setType(0, (Type)atk1_groupbox->findChild<QComboBox*>("atk1_type1_combobox")->currentData(Qt::UserRole).toInt());
+    attacking1.setType(1, (Type)atk1_groupbox->findChild<QComboBox*>("atk1_type2_combobox")->currentData(Qt::UserRole).toInt());
+    attacking1.setNature((Stats::Nature)atk1_groupbox->findChild<QComboBox*>("atk1_nature_combobox")->currentData(Qt::UserRole).toInt());
+    attacking1.setAbility((Ability)atk1_groupbox->findChild<QComboBox*>("atk1_abilities_combobox")->currentData(Qt::UserRole).toInt());
+    attacking1.setItem(Item(atk1_groupbox->findChild<QComboBox*>("atk1_items_combobox")->currentData(Qt::UserRole).toInt()));
+    attacking1.setTeraType((Type)atk1_groupbox->findChild<QComboBox*>("atk1_teratype_combobox")->currentData(Qt::UserRole).toInt());
     attacking1.setTerastallized(atk1_groupbox->findChild<QCheckBox*>("atk1_terastallized")->isChecked());
 
-    Move attacking1_move((Moves)atk1_groupbox->findChild<QComboBox*>("atk1_moves_combobox")->currentIndex());
+    Move attacking1_move((Moves)atk1_groupbox->findChild<QComboBox*>("atk1_moves_combobox")->currentData(Qt::UserRole).toInt());
     if( atk1_groupbox->findChild<QComboBox*>("atk1_target_combobox")->currentIndex() == Move::Target::SINGLE ) attacking1_move.setTarget(Move::Target::SINGLE);
     else attacking1_move.setTarget(Move::Target::DOUBLE);
-    attacking1_move.setMoveType((Type)atk1_groupbox->findChild<QComboBox*>("atk1_movetypes_combobox")->currentIndex());
+    attacking1_move.setMoveType((Type)atk1_groupbox->findChild<QComboBox*>("atk1_movetypes_combobox")->currentData(Qt::UserRole).toInt());
     attacking1_move.setMoveCategory((Move::Category)atk1_groupbox->findChild<QComboBox*>("atk1_movecategories_combobox")->currentIndex());
     attacking1_move.setBasePower(atk1_groupbox->findChild<QSpinBox*>("atk1_movebp_spinbox")->value());
 
@@ -1051,21 +1063,21 @@ void DefenseMoveWindow::solveMove(const bool preset, const QString& preset_name)
     attacking1.setEV(stat, atk1_groupbox->findChild<QSpinBox*>("atk1_ev_spinbox")->value());
     attacking1.setModifier(stat, atk1_groupbox->findChild<QSpinBox*>("atk1_modifier_spinbox")->value());
 
-    Pokemon attacking2(atk2_groupbox->findChild<QComboBox*>("atk2_species_combobox")->currentIndex()+1);
+    Pokemon attacking2(atk2_groupbox->findChild<QComboBox*>("atk2_species_combobox")->currentData(Qt::UserRole).toInt()+1);
     attacking2.setForm(atk2_groupbox->findChild<QComboBox*>("atk2_forms_combobox")->currentIndex());
 
-    attacking2.setType(0, (Type)atk2_groupbox->findChild<QComboBox*>("atk2_type1_combobox")->currentIndex());
-    attacking2.setType(1, (Type)atk2_groupbox->findChild<QComboBox*>("atk2_type2_combobox")->currentIndex());
-    attacking2.setNature((Stats::Nature)atk2_groupbox->findChild<QComboBox*>("atk2_nature_combobox")->currentIndex());
-    attacking2.setAbility((Ability)atk2_groupbox->findChild<QComboBox*>("atk2_abilities_combobox")->currentIndex());
-    attacking2.setItem(Item(atk2_groupbox->findChild<QComboBox*>("atk2_items_combobox")->currentIndex()));
-    attacking2.setTeraType((Type)atk2_groupbox->findChild<QComboBox*>("atk2_teratype_combobox")->currentIndex());
+    attacking2.setType(0, (Type)atk2_groupbox->findChild<QComboBox*>("atk2_type1_combobox")->currentData(Qt::UserRole).toInt());
+    attacking2.setType(1, (Type)atk2_groupbox->findChild<QComboBox*>("atk2_type2_combobox")->currentData(Qt::UserRole).toInt());
+    attacking2.setNature((Stats::Nature)atk2_groupbox->findChild<QComboBox*>("atk2_nature_combobox")->currentData(Qt::UserRole).toInt());
+    attacking2.setAbility((Ability)atk2_groupbox->findChild<QComboBox*>("atk2_abilities_combobox")->currentData(Qt::UserRole).toInt());
+    attacking2.setItem(Item(atk2_groupbox->findChild<QComboBox*>("atk2_items_combobox")->currentData(Qt::UserRole).toInt()));
+    attacking2.setTeraType((Type)atk2_groupbox->findChild<QComboBox*>("atk2_teratype_combobox")->currentData(Qt::UserRole).toInt());
     attacking2.setTerastallized(atk2_groupbox->findChild<QCheckBox*>("atk2_terastallized")->isChecked());
 
-    Move attacking2_move((Moves)atk2_groupbox->findChild<QComboBox*>("atk2_moves_combobox")->currentIndex());
+    Move attacking2_move((Moves)atk2_groupbox->findChild<QComboBox*>("atk2_moves_combobox")->currentData(Qt::UserRole).toInt());
     if( atk2_groupbox->findChild<QComboBox*>("atk2_target_combobox")->currentIndex() == Move::Target::SINGLE ) attacking2_move.setTarget(Move::Target::SINGLE);
     else attacking2_move.setTarget(Move::Target::DOUBLE);
-    attacking2_move.setMoveType((Type)atk2_groupbox->findChild<QComboBox*>("atk2_movetypes_combobox")->currentIndex());
+    attacking2_move.setMoveType((Type)atk2_groupbox->findChild<QComboBox*>("atk2_movetypes_combobox")->currentData(Qt::UserRole).toInt());
     attacking2_move.setMoveCategory((Move::Category)atk2_groupbox->findChild<QComboBox*>("atk2_movecategories_combobox")->currentIndex());
     attacking2_move.setBasePower(atk2_groupbox->findChild<QSpinBox*>("atk2_movebp_spinbox")->value());
 
@@ -1096,8 +1108,10 @@ void DefenseMoveWindow::solveMove(const bool preset, const QString& preset_name)
         (float)defending_groupbox->findChild<QSpinBox*>("defending_hp_modifier")->value(),
         (int16_t)defending_groupbox->findChild<QSpinBox*>("defending_def_modifier")->value(),
         (int16_t)defending_groupbox->findChild<QSpinBox*>("defending_spdef_modifier")->value(),
-        (Type)defending_groupbox->findChild<QComboBox*>("defending_tera_type")->currentIndex(),
-        defending_groupbox->findChild<QCheckBox*>("defending_terastallized")->isChecked()
+        (Type)defending_groupbox->findChild<QComboBox*>("defending_tera_type")->currentData(Qt::UserRole).toInt(),
+        defending_groupbox->findChild<QCheckBox*>("defending_terastallized")->isChecked(),
+        modifier_groupbox->findChild<QCheckBox*>("sword_of_ruin_checkbox")->isChecked(),
+        modifier_groupbox->findChild<QCheckBox*>("beads_of_ruin_checkbox")->isChecked()
     );
 
     if( !preset ) ((MainWindow*)parentWidget())->addDefenseTurn(turn, def_mod);
@@ -1110,8 +1124,8 @@ void DefenseMoveWindow::setAsBlank() {
     //atk1_groupbox->findChild<QComboBox*>("atk1_type1_combobox")->setCurrentIndex(0);
     //atk1_groupbox->findChild<QComboBox*>("atk1_type2_combobox")->setCurrentIndex(0);
     atk1_groupbox->findChild<QComboBox*>("atk1_forms_combobox")->setCurrentIndex(0);
-    atk1_groupbox->findChild<QComboBox*>("atk1_nature_combobox")->setCurrentIndex(0);
-    atk1_groupbox->findChild<QComboBox*>("atk1_items_combobox")->setCurrentIndex(0);
+    MainWindow::setComboByOriginalIdx(atk1_groupbox->findChild<QComboBox*>("atk1_nature_combobox"), 0); // Hardy
+    MainWindow::setComboByOriginalIdx(atk1_groupbox->findChild<QComboBox*>("atk1_items_combobox"), 0); // None
     //atk1_groupbox->findChild<QComboBox*>("atk1_abilities_combobox")->setCurrentIndex(0);
 
     atk1_groupbox->findChild<QSpinBox*>("atk1_iv_spinbox")->setValue(31);
@@ -1130,8 +1144,8 @@ void DefenseMoveWindow::setAsBlank() {
     //atk2_groupbox->findChild<QComboBox*>("atk2_type2_combobox")->setCurrentIndex(0);
     atk2_groupbox->findChild<QComboBox*>("atk2_species_combobox")->setCurrentIndex(0);
     atk2_groupbox->findChild<QComboBox*>("atk2_forms_combobox")->setCurrentIndex(0);
-    atk2_groupbox->findChild<QComboBox*>("atk2_nature_combobox")->setCurrentIndex(0);
-    atk2_groupbox->findChild<QComboBox*>("atk2_items_combobox")->setCurrentIndex(0);
+    MainWindow::setComboByOriginalIdx(atk2_groupbox->findChild<QComboBox*>("atk2_nature_combobox"), 0); // Hardy
+    MainWindow::setComboByOriginalIdx(atk2_groupbox->findChild<QComboBox*>("atk2_items_combobox"), 0); // None
     //atk2_groupbox->findChild<QComboBox*>("atk2_abilities_combobox")->setCurrentIndex(0);
 
     atk2_groupbox->findChild<QSpinBox*>("atk2_iv_spinbox")->setValue(31);
@@ -1146,6 +1160,8 @@ void DefenseMoveWindow::setAsBlank() {
 
     modifier_groupbox->findChild<QComboBox*>("weather_combobox")->setCurrentIndex(0);
     modifier_groupbox->findChild<QComboBox*>("terrain_combobox")->setCurrentIndex(0);
+    modifier_groupbox->findChild<QCheckBox*>("sword_of_ruin_checkbox")->setChecked(false);
+    modifier_groupbox->findChild<QCheckBox*>("beads_of_ruin_checkbox")->setChecked(false);
 
     defending_groupbox->findChild<QSpinBox*>("defending_def_modifier")->setValue(0);
     defending_groupbox->findChild<QSpinBox*>("defending_spdef_modifier")->setValue(0);
@@ -1159,23 +1175,23 @@ void DefenseMoveWindow::setAsBlank() {
 
 void DefenseMoveWindow::setAsTurn(const Turn &theTurn, const defense_modifier &theDefenseModifier) {
     //atk1
-    atk1_groupbox->findChild<QComboBox*>("atk1_species_combobox")->setCurrentIndex(theTurn.getMoves()[0].first.getPokedexNumber()-1);
-    atk1_groupbox->findChild<QComboBox*>("atk1_type1_combobox")->setCurrentIndex(theTurn.getMoves()[0].first.getTypes()[theTurn.getMoves()[0].first.getForm()][0]);
-    atk1_groupbox->findChild<QComboBox*>("atk1_type2_combobox")->setCurrentIndex(theTurn.getMoves()[0].first.getTypes()[theTurn.getMoves()[0].first.getForm()][1]);
+    MainWindow::setComboByOriginalIdx(atk1_groupbox->findChild<QComboBox*>("atk1_species_combobox"), theTurn.getMoves()[0].first.getPokedexNumber()-1);
+    MainWindow::setComboByOriginalIdx(atk1_groupbox->findChild<QComboBox*>("atk1_type1_combobox"), theTurn.getMoves()[0].first.getTypes()[theTurn.getMoves()[0].first.getForm()][0]);
+    MainWindow::setComboByOriginalIdx(atk1_groupbox->findChild<QComboBox*>("atk1_type2_combobox"), theTurn.getMoves()[0].first.getTypes()[theTurn.getMoves()[0].first.getForm()][1]);
     atk1_groupbox->findChild<QComboBox*>("atk1_forms_combobox")->setCurrentIndex(theTurn.getMoves()[0].first.getForm());
-    atk1_groupbox->findChild<QComboBox*>("atk1_nature_combobox")->setCurrentIndex(theTurn.getMoves()[0].first.getNature());
-    atk1_groupbox->findChild<QComboBox*>("atk1_items_combobox")->setCurrentIndex(theTurn.getMoves()[0].first.getItem().getIndex());
-    atk1_groupbox->findChild<QComboBox*>("atk1_abilities_combobox")->setCurrentIndex(theTurn.getMoves()[0].first.getAbility());
+    MainWindow::setComboByOriginalIdx(atk1_groupbox->findChild<QComboBox*>("atk1_nature_combobox"), theTurn.getMoves()[0].first.getNature());
+    MainWindow::setComboByOriginalIdx(atk1_groupbox->findChild<QComboBox*>("atk1_items_combobox"), theTurn.getMoves()[0].first.getItem().getIndex());
+    MainWindow::setComboByOriginalIdx(atk1_groupbox->findChild<QComboBox*>("atk1_abilities_combobox"), theTurn.getMoves()[0].first.getAbility());
 
-    atk1_groupbox->findChild<QComboBox*>("atk1_moves_combobox")->setCurrentIndex(theTurn.getMoves()[0].second.getMoveIndex());
+    MainWindow::setComboByOriginalIdx(atk1_groupbox->findChild<QComboBox*>("atk1_moves_combobox"), theTurn.getMoves()[0].second.getMoveIndex());
     atk1_groupbox->findChild<QComboBox*>("atk1_target_combobox")->setCurrentIndex(theTurn.getMoves()[0].second.getTarget());
-    atk1_groupbox->findChild<QComboBox*>("atk1_movetypes_combobox")->setCurrentIndex(theTurn.getMoves()[0].second.getMoveType());
+    MainWindow::setComboByOriginalIdx(atk1_groupbox->findChild<QComboBox*>("atk1_movetypes_combobox"), theTurn.getMoves()[0].second.getMoveType());
     atk1_groupbox->findChild<QComboBox*>("atk1_movecategories_combobox")->setCurrentIndex(theTurn.getMoves()[0].second.getMoveCategory());
     atk1_groupbox->findChild<QSpinBox*>("atk1_movebp_spinbox")->setValue(theTurn.getMoves()[0].second.getBasePower());
 
     atk1_groupbox->findChild<QCheckBox*>("atk1_crit")->setChecked(theTurn.getMoves()[0].second.isCrit());
     atk1_groupbox->findChild<QCheckBox*>("atk1_z")->setChecked(theTurn.getMoves()[0].second.isZ());
-    atk1_groupbox->findChild<QComboBox*>("atk1_teratype_combobox")->setCurrentIndex(theTurn.getMoves()[0].first.getTeraType());
+    MainWindow::setComboByOriginalIdx(atk1_groupbox->findChild<QComboBox*>("atk1_teratype_combobox"), theTurn.getMoves()[0].first.getTeraType());
     atk1_groupbox->findChild<QCheckBox*>("atk1_terastallized")->setChecked(theTurn.getMoves()[0].first.isTerastallized());
 
     Stats::Stat stat;
@@ -1188,23 +1204,23 @@ void DefenseMoveWindow::setAsTurn(const Turn &theTurn, const defense_modifier &t
 
     if(theTurn.getMoveNum() > 1) {
         //atk2
-        atk2_groupbox->findChild<QComboBox*>("atk2_species_combobox")->setCurrentIndex(theTurn.getMoves()[1].first.getPokedexNumber()-1);
-        atk2_groupbox->findChild<QComboBox*>("atk2_type1_combobox")->setCurrentIndex(theTurn.getMoves()[1].first.getTypes()[theTurn.getMoves()[1].first.getForm()][0]);
-        atk2_groupbox->findChild<QComboBox*>("atk2_type2_combobox")->setCurrentIndex(theTurn.getMoves()[1].first.getTypes()[theTurn.getMoves()[1].first.getForm()][1]);
+        MainWindow::setComboByOriginalIdx(atk2_groupbox->findChild<QComboBox*>("atk2_species_combobox"), theTurn.getMoves()[1].first.getPokedexNumber()-1);
+        MainWindow::setComboByOriginalIdx(atk2_groupbox->findChild<QComboBox*>("atk2_type1_combobox"), theTurn.getMoves()[1].first.getTypes()[theTurn.getMoves()[1].first.getForm()][0]);
+        MainWindow::setComboByOriginalIdx(atk2_groupbox->findChild<QComboBox*>("atk2_type2_combobox"), theTurn.getMoves()[1].first.getTypes()[theTurn.getMoves()[1].first.getForm()][1]);
         atk2_groupbox->findChild<QComboBox*>("atk2_forms_combobox")->setCurrentIndex(theTurn.getMoves()[1].first.getForm());
-        atk2_groupbox->findChild<QComboBox*>("atk2_nature_combobox")->setCurrentIndex(theTurn.getMoves()[1].first.getNature());
-        atk2_groupbox->findChild<QComboBox*>("atk2_items_combobox")->setCurrentIndex(theTurn.getMoves()[1].first.getItem().getIndex());
-        atk2_groupbox->findChild<QComboBox*>("atk2_abilities_combobox")->setCurrentIndex(theTurn.getMoves()[1].first.getAbility());
+        MainWindow::setComboByOriginalIdx(atk2_groupbox->findChild<QComboBox*>("atk2_nature_combobox"), theTurn.getMoves()[1].first.getNature());
+        MainWindow::setComboByOriginalIdx(atk2_groupbox->findChild<QComboBox*>("atk2_items_combobox"), theTurn.getMoves()[1].first.getItem().getIndex());
+        MainWindow::setComboByOriginalIdx(atk2_groupbox->findChild<QComboBox*>("atk2_abilities_combobox"), theTurn.getMoves()[1].first.getAbility());
 
-        atk2_groupbox->findChild<QComboBox*>("atk2_moves_combobox")->setCurrentIndex(theTurn.getMoves()[1].second.getMoveIndex());
+        MainWindow::setComboByOriginalIdx(atk2_groupbox->findChild<QComboBox*>("atk2_moves_combobox"), theTurn.getMoves()[1].second.getMoveIndex());
         atk2_groupbox->findChild<QComboBox*>("atk2_target_combobox")->setCurrentIndex(theTurn.getMoves()[1].second.getTarget());
-        atk2_groupbox->findChild<QComboBox*>("atk2_movetypes_combobox")->setCurrentIndex(theTurn.getMoves()[1].second.getMoveType());
+        MainWindow::setComboByOriginalIdx(atk2_groupbox->findChild<QComboBox*>("atk2_movetypes_combobox"), theTurn.getMoves()[1].second.getMoveType());
         atk2_groupbox->findChild<QComboBox*>("atk2_movecategories_combobox")->setCurrentIndex(theTurn.getMoves()[1].second.getMoveCategory());
         atk2_groupbox->findChild<QSpinBox*>("atk2_movebp_spinbox")->setValue(theTurn.getMoves()[1].second.getBasePower());
 
         atk2_groupbox->findChild<QCheckBox*>("atk2_crit")->setChecked(theTurn.getMoves()[1].second.isCrit());
         atk2_groupbox->findChild<QCheckBox*>("atk2_z")->setChecked(theTurn.getMoves()[1].second.isZ());
-        atk2_groupbox->findChild<QComboBox*>("atk2_teratype_combobox")->setCurrentIndex(theTurn.getMoves()[1].first.getTeraType());
+        MainWindow::setComboByOriginalIdx(atk2_groupbox->findChild<QComboBox*>("atk2_teratype_combobox"), theTurn.getMoves()[1].first.getTeraType());
         atk2_groupbox->findChild<QCheckBox*>("atk2_terastallized")->setChecked(theTurn.getMoves()[1].first.isTerastallized());
 
         Stats::Stat stat2;
@@ -1224,8 +1240,10 @@ void DefenseMoveWindow::setAsTurn(const Turn &theTurn, const defense_modifier &t
     defending_groupbox->findChild<QSpinBox*>("defending_def_modifier")->setValue(std::get<1>(theDefenseModifier));
     defending_groupbox->findChild<QSpinBox*>("defending_spdef_modifier")->setValue(std::get<2>(theDefenseModifier));
     defending_groupbox->findChild<QSpinBox*>("defending_hp_modifier")->setValue(std::get<0>(theDefenseModifier));
-    defending_groupbox->findChild<QComboBox*>("defending_tera_type")->setCurrentIndex(std::get<3>(theDefenseModifier));
+    MainWindow::setComboByOriginalIdx(defending_groupbox->findChild<QComboBox*>("defending_tera_type"), std::get<3>(theDefenseModifier));
     defending_groupbox->findChild<QCheckBox*>("defending_terastallized")->setChecked(std::get<4>(theDefenseModifier));
+    modifier_groupbox->findChild<QCheckBox*>("sword_of_ruin_checkbox")->setChecked(std::get<5>(theDefenseModifier));
+    modifier_groupbox->findChild<QCheckBox*>("beads_of_ruin_checkbox")->setChecked(std::get<6>(theDefenseModifier));
     defending_groupbox->findChild<QSpinBox*>("defending_hits_modifier")->setValue(theTurn.getHits()+1);
 
     tabs->setCurrentIndex(0);
