@@ -130,8 +130,8 @@ PNGs en `db/sprites/`, nombrados `{dex}.png` (forma base) o `{dex}-{form}.png` (
 
 ```cpp
 // defense_modifier: por turno en el cálculo defensivo
-typedef std::tuple<float, int16_t, int16_t, Type, bool, bool, bool> defense_modifier;
-// campos: HP%, mod_DEF, mod_SPDEF, tera_type, terastallized, sword_of_ruin, beads_of_ruin
+typedef std::tuple<float, int16_t, int16_t, Type, bool, bool, bool, bool, bool, bool> defense_modifier;
+// campos: HP%, mod_DEF, mod_SPDEF, tera_type, terastallized, sword_of_ruin, beads_of_ruin, tablets_of_ruin, vessel_of_ruin, helping_hand
 
 // attack_modifier: por turno en el cálculo ofensivo
 typedef std::tuple<int16_t, int16_t, Type, bool, bool, bool, bool, bool, bool> attack_modifier;
@@ -239,14 +239,14 @@ Las Ruin abilities son efectos de campo activos mientras el Pokémon correspondi
 **Helping Hand**: ×1.5 al daño del movimiento del atacante, aplicado en `calculateOtherModifier`.
 
 Estos efectos se almacenan como flags en la clase `Pokemon` (`ruin_sword`, `ruin_beads`, `ruin_tablets`, `ruin_vessel`, `helping_hand`) y se setean desde los modifier tuples antes de cada llamada a `getKOProbability`:
-- `defense_modifier` get<5/6>: sword_of_ruin, beads_of_ruin (setter en defensor)
+- `defense_modifier` get<5/6>: sword_of_ruin, beads_of_ruin (setter en defensor); get<7/8/9>: tablets, vessel, helping_hand (setter en atacante — se aplican reconstruyendo el Turn con una copia del atacante en `resistMoveLoopThread`)
 - `attack_modifier` get<4/5/6/7/8>: tablets, vessel, sword, beads, helping_hand (tablets/vessel/helping_hand en atacante; sword/beads en copia local del defensor dentro de `koMove`)
 
 **Nota sobre Foul Play y Tablets of Ruin**: Foul Play usa el ATK del **defensor**, no del atacante, por lo que Tablets of Ruin (que reduce el ATK del atacante) no se aplica en Foul Play. Esto es correcto mecánicamente.
 
-**UI**: Los checkboxes se encuentran en la sección "Modifiers:" de cada ventana:
-- `DefenseMoveWindow`: Sword of Ruin (−25% Def) y Beads of Ruin (−25% SpDef)
-- `AttackMoveWindow`: los 4 Ruin abilities + Helping Hand (×1.5)
+**UI**: Ambas ventanas exponen los mismos 5 checkboxes en su sección "Modifiers:" (Field:):
+- `DefenseMoveWindow`: Tablets (−25% Atk), Vessel (−25% SpAtk), Sword (−25% Def), Beads (−25% SpDef), Helping Hand (×1.5)
+- `AttackMoveWindow`: ídem
 
 ### Notas críticas sobre habilidades
 - **`Huge_Power`/`Pure_Power`**: solo aplica ×2 al **atacante** en ataques físicos normales. En **Foul Play** aplica al **defensor** (correcto, porque Foul Play usa el ATK del defensor). En Photon Geyser, solo afecta a la rama de ATK, no a la de SpATK.
@@ -334,6 +334,7 @@ Los tres ficheros deben tener siempre el **mismo número de entradas**.
 
 - El typo `Psichic` en el enum (`moves.hpp`) debería ser `Psychic`, pero corregirlo rompería los índices binarios ya guardados en presets XML de usuarios
 - Los presets XML no guardan el `attack_modifier` completo (Tera del atacante por turno); si se añade en el futuro habría que versionar el formato XML
+- Los presets XML guardan los 5 checkboxes de Ruin + Helping Hand del `defense_modifier` (get<5..9>); los campos son opcionales en la carga (fallback a false) para compatibilidad con presets antiguos
 - `NATURE_NUM` y `AUTO_NATURE` tienen el mismo valor numérico (25); el combobox de naturaleza tiene 26 ítems (índices 0–24 = naturales reales, índice 25 = Auto)
 - El enum `Status` usa `NO_STATUS` (no `HEALTHY`) como valor neutro — importante al implementar habilidades que dependen del estado
 - Algunas formas del binario no tienen sprite disponible en Smogon/PS: formas Totem (Raticate #20, Marowak #105), Lucario G-Max (no existe en los juegos — posible error en el binario), Zeraora G-Max, Maushold-Three, Toxtricity-Low-Key-Gmax. El juego muestra sprite en blanco para esas formas.

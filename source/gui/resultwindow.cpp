@@ -549,7 +549,7 @@ QString ResultWindow::getCompleteString(const Turn& theTurn, const Pokemon& theD
 
     //DEFENDING POKEMON
     QString vs_string = "vs. ";
-    defender_result = vs_string + getDefendPokemon(theDefendingPokemon, std::make_tuple(theDefendingPokemon.getEV(Stats::HP), theDefendingPokemon.getEV(Stats::DEF), theDefendingPokemon.getEV(Stats::SPDEF)), std::make_tuple((float)100, (int16_t)theDefendingPokemon.getModifier(Stats::DEF), (int16_t)theDefendingPokemon.getModifier(Stats::SPDEF), theDefendingPokemon.getTeraType(), theDefendingPokemon.isTerastallized(), false, false), theTurn.getMoves()[0].second, isDualDefense);
+    defender_result = vs_string + getDefendPokemon(theDefendingPokemon, std::make_tuple(theDefendingPokemon.getEV(Stats::HP), theDefendingPokemon.getEV(Stats::DEF), theDefendingPokemon.getEV(Stats::SPDEF)), std::make_tuple((float)100, (int16_t)theDefendingPokemon.getModifier(Stats::DEF), (int16_t)theDefendingPokemon.getModifier(Stats::SPDEF), theDefendingPokemon.getTeraType(), theDefendingPokemon.isTerastallized(), false, false, false, false, false), theTurn.getMoves()[0].second, isDualDefense);
 
     //MODIFIERS
     modifier_result = getModifiers(theTurn);

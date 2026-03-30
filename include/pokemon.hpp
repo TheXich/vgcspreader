@@ -22,8 +22,8 @@
 
 class Turn;
 
-// defense_modifier: HP%, mod_DEF, mod_SPDEF, tera_type, terastallized, sword_of_ruin, beads_of_ruin
-typedef std::tuple<float, int16_t, int16_t, Type, bool, bool, bool> defense_modifier;
+// defense_modifier: HP%, mod_DEF, mod_SPDEF, tera_type, terastallized, sword_of_ruin, beads_of_ruin, tablets_of_ruin, vessel_of_ruin, helping_hand
+typedef std::tuple<float, int16_t, int16_t, Type, bool, bool, bool, bool, bool, bool> defense_modifier;
 // attack_modifier: mod_ATK, mod_SPATK, tera_type, terastallized, tablets_of_ruin, vessel_of_ruin, sword_of_ruin, beads_of_ruin, helping_hand
 typedef std::tuple<int16_t, int16_t, Type, bool, bool, bool, bool, bool, bool> attack_modifier;
 typedef std::pair<DefenseResult, AttackResult> FinalResult;

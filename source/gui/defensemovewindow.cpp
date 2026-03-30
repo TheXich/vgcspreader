@@ -760,12 +760,24 @@ void DefenseMoveWindow::createDefendingGroupBox() {
 
     modifier_layout->addLayout(terrain_layout);
 
-    //RUIN ABILITIES
+    //RUIN ABILITIES + HELPING HAND
     QHBoxLayout* ruin_layout = new QHBoxLayout;
     ruin_layout->setAlignment(Qt::AlignLeft);
 
-    QLabel* ruin_label = new QLabel(tr("Ruin:"));
+    QLabel* ruin_label = new QLabel(tr("Field:"));
     ruin_layout->addWidget(ruin_label);
+
+    QLabel* tablets_label = new QLabel(tr("Tablets (−25% Atk)"));
+    ruin_layout->addWidget(tablets_label);
+    QCheckBox* tablets_cb = new QCheckBox;
+    tablets_cb->setObjectName("tablets_of_ruin_checkbox");
+    ruin_layout->addWidget(tablets_cb);
+
+    QLabel* vessel_label = new QLabel(tr("Vessel (−25% SpAtk)"));
+    ruin_layout->addWidget(vessel_label);
+    QCheckBox* vessel_cb = new QCheckBox;
+    vessel_cb->setObjectName("vessel_of_ruin_checkbox");
+    ruin_layout->addWidget(vessel_cb);
 
     QLabel* sword_ruin_label = new QLabel(tr("Sword (−25% Def)"));
     ruin_layout->addWidget(sword_ruin_label);
@@ -778,6 +790,12 @@ void DefenseMoveWindow::createDefendingGroupBox() {
     QCheckBox* beads_ruin_cb = new QCheckBox;
     beads_ruin_cb->setObjectName("beads_of_ruin_checkbox");
     ruin_layout->addWidget(beads_ruin_cb);
+
+    QLabel* hh_label = new QLabel(tr("Helping Hand (×1.5)"));
+    ruin_layout->addWidget(hh_label);
+    QCheckBox* hh_cb = new QCheckBox;
+    hh_cb->setObjectName("helping_hand_checkbox");
+    ruin_layout->addWidget(hh_cb);
 
     modifier_layout->addLayout(ruin_layout);
 }
@@ -1111,7 +1129,10 @@ void DefenseMoveWindow::solveMove(const bool preset, const QString& preset_name)
         (Type)defending_groupbox->findChild<QComboBox*>("defending_tera_type")->currentData(Qt::UserRole).toInt(),
         defending_groupbox->findChild<QCheckBox*>("defending_terastallized")->isChecked(),
         modifier_groupbox->findChild<QCheckBox*>("sword_of_ruin_checkbox")->isChecked(),
-        modifier_groupbox->findChild<QCheckBox*>("beads_of_ruin_checkbox")->isChecked()
+        modifier_groupbox->findChild<QCheckBox*>("beads_of_ruin_checkbox")->isChecked(),
+        modifier_groupbox->findChild<QCheckBox*>("tablets_of_ruin_checkbox")->isChecked(),
+        modifier_groupbox->findChild<QCheckBox*>("vessel_of_ruin_checkbox")->isChecked(),
+        modifier_groupbox->findChild<QCheckBox*>("helping_hand_checkbox")->isChecked()
     );
 
     if( !preset ) ((MainWindow*)parentWidget())->addDefenseTurn(turn, def_mod);
@@ -1162,6 +1183,9 @@ void DefenseMoveWindow::setAsBlank() {
     modifier_groupbox->findChild<QComboBox*>("terrain_combobox")->setCurrentIndex(0);
     modifier_groupbox->findChild<QCheckBox*>("sword_of_ruin_checkbox")->setChecked(false);
     modifier_groupbox->findChild<QCheckBox*>("beads_of_ruin_checkbox")->setChecked(false);
+    modifier_groupbox->findChild<QCheckBox*>("tablets_of_ruin_checkbox")->setChecked(false);
+    modifier_groupbox->findChild<QCheckBox*>("vessel_of_ruin_checkbox")->setChecked(false);
+    modifier_groupbox->findChild<QCheckBox*>("helping_hand_checkbox")->setChecked(false);
 
     defending_groupbox->findChild<QSpinBox*>("defending_def_modifier")->setValue(0);
     defending_groupbox->findChild<QSpinBox*>("defending_spdef_modifier")->setValue(0);
@@ -1244,6 +1268,9 @@ void DefenseMoveWindow::setAsTurn(const Turn &theTurn, const defense_modifier &t
     defending_groupbox->findChild<QCheckBox*>("defending_terastallized")->setChecked(std::get<4>(theDefenseModifier));
     modifier_groupbox->findChild<QCheckBox*>("sword_of_ruin_checkbox")->setChecked(std::get<5>(theDefenseModifier));
     modifier_groupbox->findChild<QCheckBox*>("beads_of_ruin_checkbox")->setChecked(std::get<6>(theDefenseModifier));
+    modifier_groupbox->findChild<QCheckBox*>("tablets_of_ruin_checkbox")->setChecked(std::get<7>(theDefenseModifier));
+    modifier_groupbox->findChild<QCheckBox*>("vessel_of_ruin_checkbox")->setChecked(std::get<8>(theDefenseModifier));
+    modifier_groupbox->findChild<QCheckBox*>("helping_hand_checkbox")->setChecked(std::get<9>(theDefenseModifier));
     defending_groupbox->findChild<QSpinBox*>("defending_hits_modifier")->setValue(theTurn.getHits()+1);
 
     tabs->setCurrentIndex(0);

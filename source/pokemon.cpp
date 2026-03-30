@@ -1135,9 +1135,21 @@ void Pokemon::resistMoveLoopThread(Pokemon theDefender, const std::vector<Turn>&
         theDefender.setTerastallized(std::get<4>(theDefModifiers[it]));
         theDefender.setRuinSword(std::get<5>(theDefModifiers[it]));
         theDefender.setRuinBeads(std::get<6>(theDefModifiers[it]));
+
+        // Apply attacker-side modifiers (tablets/vessel/helping_hand) to attackers in a copy of the turn
+        Turn modified_turn;
+        for(auto& mp : theTurn[it].getMoves()) {
+            Pokemon atk_copy = mp.first;
+            atk_copy.setRuinTablets(std::get<7>(theDefModifiers[it]));
+            atk_copy.setRuinVessel(std::get<8>(theDefModifiers[it]));
+            atk_copy.setHelpingHand(std::get<9>(theDefModifiers[it]));
+            modified_turn.addMove(atk_copy, mp.second);
+        }
+        modified_turn.setHits(theTurn[it].getHits());
+
         float ko_prob;
         if( theDefender.getEV(Stats::HP) + theDefender.getEV(Stats::DEF) + theDefender.getEV(Stats::SPDEF) > theAssignableEVS ) to_add = false;
-        else if( (ko_prob = theDefender.getKOProbability(theTurn[it])) > 0 ) {
+        else if( (ko_prob = theDefender.getKOProbability(modified_turn)) > 0 ) {
             buffer_mutex.lock();
             theResultBuffer[it][theDefender.getEV(Stats::HP) + theDefender.getEV(Stats::DEF) * ARRAY_SIZE + theDefender.getEV(Stats::SPDEF) * ARRAY_SIZE * ARRAY_SIZE] = ko_prob;
             buffer_mutex.unlock();

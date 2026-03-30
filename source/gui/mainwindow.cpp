@@ -1099,6 +1099,31 @@ void MainWindow::addAsPreset(const QString& theName, const Turn& theTurn, const 
     terastallized_node->SetText(std::get<4>(std::get<2>(presets.back())));
     title_node->InsertEndChild(terastallized_node);
 
+    //sword of ruin
+    tinyxml2::XMLElement* sword_node = xml_preset.NewElement("SwordOfRuin");
+    sword_node->SetText(std::get<5>(std::get<2>(presets.back())));
+    title_node->InsertEndChild(sword_node);
+
+    //beads of ruin
+    tinyxml2::XMLElement* beads_node = xml_preset.NewElement("BeadsOfRuin");
+    beads_node->SetText(std::get<6>(std::get<2>(presets.back())));
+    title_node->InsertEndChild(beads_node);
+
+    //tablets of ruin
+    tinyxml2::XMLElement* tablets_node = xml_preset.NewElement("TabletsOfRuin");
+    tablets_node->SetText(std::get<7>(std::get<2>(presets.back())));
+    title_node->InsertEndChild(tablets_node);
+
+    //vessel of ruin
+    tinyxml2::XMLElement* vessel_node = xml_preset.NewElement("VesselOfRuin");
+    vessel_node->SetText(std::get<8>(std::get<2>(presets.back())));
+    title_node->InsertEndChild(vessel_node);
+
+    //helping hand
+    tinyxml2::XMLElement* helping_hand_node = xml_preset.NewElement("HelpingHand");
+    helping_hand_node->SetText(std::get<9>(std::get<2>(presets.back())));
+    title_node->InsertEndChild(helping_hand_node);
+
     xml_preset.LastChild()->InsertEndChild(title_node);
 
     xml_preset.SaveFile("presets.xml");
@@ -1204,6 +1229,16 @@ void MainWindow::LoadPresetsFromFile() {
             std::get<3>(std::get<2>(buffer)) = tera_elem ? (Type)std::atoi(tera_elem->GetText()) : Type::Typeless;
             auto* tera_bool_elem = move_element_temp->NextSiblingElement("Terastallized");
             std::get<4>(std::get<2>(buffer)) = tera_bool_elem ? (bool)std::atoi(tera_bool_elem->GetText()) : false;
+            auto* sword_elem = move_element_temp->NextSiblingElement("SwordOfRuin");
+            std::get<5>(std::get<2>(buffer)) = sword_elem ? (bool)std::atoi(sword_elem->GetText()) : false;
+            auto* beads_elem = move_element_temp->NextSiblingElement("BeadsOfRuin");
+            std::get<6>(std::get<2>(buffer)) = beads_elem ? (bool)std::atoi(beads_elem->GetText()) : false;
+            auto* tablets_elem = move_element_temp->NextSiblingElement("TabletsOfRuin");
+            std::get<7>(std::get<2>(buffer)) = tablets_elem ? (bool)std::atoi(tablets_elem->GetText()) : false;
+            auto* vessel_elem = move_element_temp->NextSiblingElement("VesselOfRuin");
+            std::get<8>(std::get<2>(buffer)) = vessel_elem ? (bool)std::atoi(vessel_elem->GetText()) : false;
+            auto* hh_elem = move_element_temp->NextSiblingElement("HelpingHand");
+            std::get<9>(std::get<2>(buffer)) = hh_elem ? (bool)std::atoi(hh_elem->GetText()) : false;
 
             presets.push_back(buffer);
             element = element->NextSiblingElement();
