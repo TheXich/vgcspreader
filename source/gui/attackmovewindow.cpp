@@ -6,8 +6,39 @@
 #include <QCheckBox>
 #include <QFormLayout>
 #include <QDebug>
+#include <QSpinBox>
 
 #include "mainwindow.hpp"
+
+// Returns {min_hits, max_hits} for multi-hit moves, {0, 0} for non-multi-hit.
+static std::pair<int,int> multiHitRange(Moves m) {
+    switch(m) {
+        case Moves::Bullet_Seed:
+        case Moves::Icicle_Spear:
+        case Moves::Pin_Missile:
+        case Moves::Rock_Blast:
+        case Moves::Tail_Slap:
+        case Moves::Scale_Shot:
+        case Moves::Water_Shuriken:
+            return {2, 5};
+        case Moves::Arm_Thrust:
+            return {3, 5};
+        case Moves::Population_Bomb:
+            return {1, 10};
+        case Moves::Double_Hit:
+        case Moves::Double_Kick:
+        case Moves::Dual_Chop:
+        case Moves::Bonemerang:
+        case Moves::Gear_Grind:
+        case Moves::Tachyon_Cutter:
+            return {2, 2};
+        case Moves::Surging_Strikes:
+        case Moves::Triple_Axel:
+            return {3, 3};
+        default:
+            return {0, 0};
+    }
+}
 
 //a lot of this class is basicly recycled from defensemovewindow.cpp, maybe they should inherit from a common source
 
@@ -356,6 +387,19 @@ void AttackMoveWindow::createMoveGroupbox() {
     z->setObjectName("z");
     move_info_layout->addWidget(z);
 
+    //multi-hit (shown only for multi-hit moves)
+    QLabel* multihit_label = new QLabel(tr("Hits:"));
+    multihit_label->setObjectName("move_multihit_label");
+    multihit_label->setVisible(false);
+    move_info_layout->addWidget(multihit_label);
+
+    QSpinBox* multihit_spinbox = new QSpinBox;
+    multihit_spinbox->setObjectName("move_multihit_spinbox");
+    multihit_spinbox->setRange(1, 10);
+    multihit_spinbox->setValue(1);
+    multihit_spinbox->setVisible(false);
+    move_info_layout->addWidget(multihit_spinbox);
+
     //setting signals
     connect(moves, SIGNAL(currentIndexChanged(int)), this, SLOT(setMove(int)));
     connect(move_category, SIGNAL(currentIndexChanged(int)), this, SLOT(setMoveCategory(int)));
@@ -529,6 +573,23 @@ void AttackMoveWindow::setMove(int index) {
         defending_pokemon_groupbox->findChild<QLabel*>("def_modifier_label")->setText(tr("Sp. Def Modifier"));
         atk_modifier_groupbox->findChild<QLabel*>("attacking_atk_modifier_label")->setText(tr("Sp. Attack Modifier"));
     }
+
+    // Multi-hit support
+    {
+        auto [min_h, max_h] = multiHitRange((Moves)origIdx);
+        QLabel* mh_label = move_groupbox->findChild<QLabel*>("move_multihit_label");
+        QSpinBox* mh_spinbox = move_groupbox->findChild<QSpinBox*>("move_multihit_spinbox");
+        if(max_h > 0) {
+            mh_spinbox->setRange(min_h, max_h);
+            mh_spinbox->setValue(min_h);
+            mh_spinbox->setEnabled(min_h != max_h);
+            mh_label->setVisible(true);
+            mh_spinbox->setVisible(true);
+        } else {
+            mh_label->setVisible(false);
+            mh_spinbox->setVisible(false);
+        }
+    }
 }
 void AttackMoveWindow::setSpecies(int index) {
     int orig = defending_pokemon_groupbox->findChild<QComboBox*>("def_species_combobox")->currentData(Qt::UserRole).toInt();
@@ -648,6 +709,13 @@ void AttackMoveWindow::solveMove(void) {
     attacking1.setEV(Stats::HP, defending_pokemon_groupbox->findChild<QSpinBox*>("hp_ev_spinbox")->value());
     attacking1.setCurrentHPPercentage(defending_pokemon_groupbox->findChild<QSpinBox*>("hp_perc_spinbox")->value());
 
+    // Apply multi-hit count if applicable
+    {
+        QSpinBox* mh_sb = move_groupbox->findChild<QSpinBox*>("move_multihit_spinbox");
+        if(mh_sb && mh_sb->isVisible())
+            attacking1_move.setMultiHitCount(mh_sb->value());
+    }
+
     Turn turn;
     turn.addMove(Pokemon(1), attacking1_move); //adding a random pokemon in the turn since when using the turn class in an offensive manner Pokemon is ignored
     turn.setHits(atk_modifier_groupbox->findChild<QSpinBox*>("attacking_hits_modifier")->value());
@@ -688,6 +756,9 @@ void AttackMoveWindow::setAsBlank() {
     move_groupbox->findChild<QComboBox*>("moves_combobox")->setCurrentIndex(0);
     move_groupbox->findChild<QCheckBox*>("crit")->setChecked(false);
     move_groupbox->findChild<QCheckBox*>("z")->setChecked(false);
+    move_groupbox->findChild<QLabel*>("move_multihit_label")->setVisible(false);
+    move_groupbox->findChild<QSpinBox*>("move_multihit_spinbox")->setVisible(false);
+    move_groupbox->findChild<QSpinBox*>("move_multihit_spinbox")->setValue(1);
 
     move_modifier_groupbox->findChild<QComboBox*>("weather_combobox")->setCurrentIndex(0);
     move_modifier_groupbox->findChild<QComboBox*>("terrain_combobox")->setCurrentIndex(0);
@@ -726,6 +797,12 @@ void AttackMoveWindow::setAsTurn(const Turn& theTurn, const Pokemon& theDefendin
     defending_pokemon_groupbox->findChild<QSpinBox*>("hp_perc_spinbox")->setValue(theDefendingPokemon.getCurrentHPPercentage());
 
     MainWindow::setComboByOriginalIdx(move_groupbox->findChild<QComboBox*>("moves_combobox"), theTurn.getMoves()[0].second.getMoveIndex());
+    // Restore multi-hit count (setMove() triggered by setComboByOriginalIdx set the spinbox range/visibility; now restore saved value)
+    {
+        QSpinBox* mh_spinbox = move_groupbox->findChild<QSpinBox*>("move_multihit_spinbox");
+        if(mh_spinbox && mh_spinbox->isVisible())
+            mh_spinbox->setValue((int)theTurn.getMoves()[0].second.getMultiHitCount());
+    }
     move_groupbox->findChild<QComboBox*>("target_combobox")->setCurrentIndex(theTurn.getMoves()[0].second.getTarget());
     MainWindow::setComboByOriginalIdx(move_groupbox->findChild<QComboBox*>("movetypes_combobox"), theTurn.getMoves()[0].second.getMoveType());
     move_groupbox->findChild<QComboBox*>("movecategories_combobox")->setCurrentIndex(theTurn.getMoves()[0].second.getMoveCategory());

@@ -16,6 +16,36 @@
 #include "turn.hpp"
 #include "items.hpp"
 
+// Returns {min_hits, max_hits} for multi-hit moves, {0, 0} for non-multi-hit.
+static std::pair<int,int> multiHitRange(Moves m) {
+    switch(m) {
+        case Moves::Bullet_Seed:
+        case Moves::Icicle_Spear:
+        case Moves::Pin_Missile:
+        case Moves::Rock_Blast:
+        case Moves::Tail_Slap:
+        case Moves::Scale_Shot:
+        case Moves::Water_Shuriken:
+            return {2, 5};
+        case Moves::Arm_Thrust:
+            return {3, 5};
+        case Moves::Population_Bomb:
+            return {1, 10};
+        case Moves::Double_Hit:
+        case Moves::Double_Kick:
+        case Moves::Dual_Chop:
+        case Moves::Bonemerang:
+        case Moves::Gear_Grind:
+        case Moves::Tachyon_Cutter:
+            return {2, 2};
+        case Moves::Surging_Strikes:
+        case Moves::Triple_Axel:
+            return {3, 3};
+        default:
+            return {0, 0};
+    }
+}
+
 DefenseMoveWindow::DefenseMoveWindow(QWidget* parent, Qt::WindowFlags f) : QDialog(parent, f) {
     QVBoxLayout* main_layout = new QVBoxLayout;
 
@@ -325,6 +355,19 @@ void DefenseMoveWindow::createAtk1GroupBox() {
     z->setObjectName("atk1_z");
     move_info_layout->addWidget(z);
 
+    //multi-hit (shown only for multi-hit moves)
+    QLabel* multihit_label = new QLabel(tr("Hits:"));
+    multihit_label->setObjectName("atk1_multihit_label");
+    multihit_label->setVisible(false);
+    move_info_layout->addWidget(multihit_label);
+
+    QSpinBox* multihit_spinbox = new QSpinBox;
+    multihit_spinbox->setObjectName("atk1_multihit_spinbox");
+    multihit_spinbox->setRange(1, 10);
+    multihit_spinbox->setValue(1);
+    multihit_spinbox->setVisible(false);
+    move_info_layout->addWidget(multihit_spinbox);
+
     //adding everything to the layout
     atk1_layout->addLayout(main_form_layout);
 
@@ -626,6 +669,19 @@ void DefenseMoveWindow::createAtk2GroupBox() {
     z->setObjectName("atk2_z");
     move_info_layout->addWidget(z);
 
+    //multi-hit (shown only for multi-hit moves)
+    QLabel* multihit_label2 = new QLabel(tr("Hits:"));
+    multihit_label2->setObjectName("atk2_multihit_label");
+    multihit_label2->setVisible(false);
+    move_info_layout->addWidget(multihit_label2);
+
+    QSpinBox* multihit_spinbox2 = new QSpinBox;
+    multihit_spinbox2->setObjectName("atk2_multihit_spinbox");
+    multihit_spinbox2->setRange(1, 10);
+    multihit_spinbox2->setValue(1);
+    multihit_spinbox2->setVisible(false);
+    move_info_layout->addWidget(multihit_spinbox2);
+
     //adding everything to the layout
     atk2_layout->addLayout(main_form_layout);
 
@@ -831,6 +887,23 @@ void DefenseMoveWindow::setMove1(int index) {
         atk1_groupbox->findChild<QLabel*>("atk1_ev_label")->setText(tr("Sp. Atk EV"));
         atk1_groupbox->findChild<QLabel*>("atk1_modifier_label")->setText(tr("Sp. Atk Modifier"));
     }
+
+    // Multi-hit support
+    {
+        auto [min_h, max_h] = multiHitRange((Moves)origIdx);
+        QLabel* mh_label = atk1_groupbox->findChild<QLabel*>("atk1_multihit_label");
+        QSpinBox* mh_spinbox = atk1_groupbox->findChild<QSpinBox*>("atk1_multihit_spinbox");
+        if(max_h > 0) {
+            mh_spinbox->setRange(min_h, max_h);
+            mh_spinbox->setValue(min_h);
+            mh_spinbox->setEnabled(min_h != max_h);
+            mh_label->setVisible(true);
+            mh_spinbox->setVisible(true);
+        } else {
+            mh_label->setVisible(false);
+            mh_spinbox->setVisible(false);
+        }
+    }
 }
 
 void DefenseMoveWindow::setSpecies1(int index) {
@@ -975,6 +1048,23 @@ void DefenseMoveWindow::setMove2(int index) {
         atk2_groupbox->findChild<QLabel*>("atk2_ev_label")->setText(tr("Sp. Atk EV"));
         atk2_groupbox->findChild<QLabel*>("atk2_modifier_label")->setText(tr("Sp. Atk Modifier"));
     }
+
+    // Multi-hit support
+    {
+        auto [min_h, max_h] = multiHitRange((Moves)origIdx);
+        QLabel* mh_label = atk2_groupbox->findChild<QLabel*>("atk2_multihit_label");
+        QSpinBox* mh_spinbox = atk2_groupbox->findChild<QSpinBox*>("atk2_multihit_spinbox");
+        if(max_h > 0) {
+            mh_spinbox->setRange(min_h, max_h);
+            mh_spinbox->setValue(min_h);
+            mh_spinbox->setEnabled(min_h != max_h);
+            mh_label->setVisible(true);
+            mh_spinbox->setVisible(true);
+        } else {
+            mh_label->setVisible(false);
+            mh_spinbox->setVisible(false);
+        }
+    }
 }
 
 void DefenseMoveWindow::setSpecies2(int index) {
@@ -1042,6 +1132,20 @@ void DefenseMoveWindow::activateAtk2(int state) {
     atk2_groupbox->findChild<QSpinBox*>("atk2_movebp_spinbox")->setEnabled(value);
     atk2_groupbox->findChild<QCheckBox*>("atk2_crit")->setEnabled(value);
     atk2_groupbox->findChild<QCheckBox*>("atk2_z")->setEnabled(value);
+
+    // Multi-hit spinbox: only re-enable if it's visible AND variable hit
+    QSpinBox* mh_sb = atk2_groupbox->findChild<QSpinBox*>("atk2_multihit_spinbox");
+    QLabel* mh_label = atk2_groupbox->findChild<QLabel*>("atk2_multihit_label");
+    if(mh_sb->isVisible()) {
+        if(value) {
+            int origIdx = atk2_groupbox->findChild<QComboBox*>("atk2_moves_combobox")->currentData(Qt::UserRole).toInt();
+            auto [min_h, max_h] = multiHitRange((Moves)origIdx);
+            mh_sb->setEnabled(min_h != max_h);
+        } else {
+            mh_sb->setEnabled(false);
+        }
+        mh_label->setEnabled(value);
+    }
 }
 
 void DefenseMoveWindow::solveMove(const bool preset, const QString& preset_name) {
@@ -1071,6 +1175,13 @@ void DefenseMoveWindow::solveMove(const bool preset, const QString& preset_name)
 
     attacking1_move.setWeather((Move::Weather)modifier_groupbox->findChild<QComboBox*>("weather_combobox")->currentIndex());
     attacking1_move.setTerrain((Move::Terrain)modifier_groupbox->findChild<QComboBox*>("terrain_combobox")->currentIndex());
+
+    // Apply multi-hit count if applicable
+    {
+        QSpinBox* mh_sb = atk1_groupbox->findChild<QSpinBox*>("atk1_multihit_spinbox");
+        if(mh_sb && mh_sb->isVisible())
+            attacking1_move.setMultiHitCount(mh_sb->value());
+    }
 
     //now setting pokemon 1 iv/ev/modifier
     Stats::Stat stat;
@@ -1107,6 +1218,13 @@ void DefenseMoveWindow::solveMove(const bool preset, const QString& preset_name)
 
     attacking2_move.setWeather((Move::Weather)modifier_groupbox->findChild<QComboBox*>("weather_combobox")->currentIndex());
     attacking2_move.setTerrain((Move::Terrain)modifier_groupbox->findChild<QComboBox*>("terrain_combobox")->currentIndex());
+
+    // Apply multi-hit count if applicable
+    {
+        QSpinBox* mh_sb = atk2_groupbox->findChild<QSpinBox*>("atk2_multihit_spinbox");
+        if(mh_sb && mh_sb->isVisible())
+            attacking2_move.setMultiHitCount(mh_sb->value());
+    }
 
     //now setting pokemon 2 iv/ev/modifier
     Stats::Stat stat2;
@@ -1158,6 +1276,9 @@ void DefenseMoveWindow::setAsBlank() {
     atk1_groupbox->findChild<QCheckBox*>("atk1_z")->setChecked(false);
     atk1_groupbox->findChild<QComboBox*>("atk1_teratype_combobox")->setCurrentIndex(0);
     atk1_groupbox->findChild<QCheckBox*>("atk1_terastallized")->setChecked(false);
+    atk1_groupbox->findChild<QLabel*>("atk1_multihit_label")->setVisible(false);
+    atk1_groupbox->findChild<QSpinBox*>("atk1_multihit_spinbox")->setVisible(false);
+    atk1_groupbox->findChild<QSpinBox*>("atk1_multihit_spinbox")->setValue(1);
 
     //atk2
     atk2_groupbox->findChild<QCheckBox*>("atk2_activated")->setChecked(true);
@@ -1178,6 +1299,9 @@ void DefenseMoveWindow::setAsBlank() {
     atk2_groupbox->findChild<QCheckBox*>("atk2_z")->setChecked(false);
     atk2_groupbox->findChild<QComboBox*>("atk2_teratype_combobox")->setCurrentIndex(0);
     atk2_groupbox->findChild<QCheckBox*>("atk2_terastallized")->setChecked(false);
+    atk2_groupbox->findChild<QLabel*>("atk2_multihit_label")->setVisible(false);
+    atk2_groupbox->findChild<QSpinBox*>("atk2_multihit_spinbox")->setVisible(false);
+    atk2_groupbox->findChild<QSpinBox*>("atk2_multihit_spinbox")->setValue(1);
 
     modifier_groupbox->findChild<QComboBox*>("weather_combobox")->setCurrentIndex(0);
     modifier_groupbox->findChild<QComboBox*>("terrain_combobox")->setCurrentIndex(0);
@@ -1208,6 +1332,12 @@ void DefenseMoveWindow::setAsTurn(const Turn &theTurn, const defense_modifier &t
     MainWindow::setComboByOriginalIdx(atk1_groupbox->findChild<QComboBox*>("atk1_abilities_combobox"), theTurn.getMoves()[0].first.getAbility());
 
     MainWindow::setComboByOriginalIdx(atk1_groupbox->findChild<QComboBox*>("atk1_moves_combobox"), theTurn.getMoves()[0].second.getMoveIndex());
+    // Restore multi-hit count for atk1
+    {
+        QSpinBox* mh_spinbox = atk1_groupbox->findChild<QSpinBox*>("atk1_multihit_spinbox");
+        if(mh_spinbox && mh_spinbox->isVisible())
+            mh_spinbox->setValue((int)theTurn.getMoves()[0].second.getMultiHitCount());
+    }
     atk1_groupbox->findChild<QComboBox*>("atk1_target_combobox")->setCurrentIndex(theTurn.getMoves()[0].second.getTarget());
     MainWindow::setComboByOriginalIdx(atk1_groupbox->findChild<QComboBox*>("atk1_movetypes_combobox"), theTurn.getMoves()[0].second.getMoveType());
     atk1_groupbox->findChild<QComboBox*>("atk1_movecategories_combobox")->setCurrentIndex(theTurn.getMoves()[0].second.getMoveCategory());
@@ -1237,6 +1367,12 @@ void DefenseMoveWindow::setAsTurn(const Turn &theTurn, const defense_modifier &t
         MainWindow::setComboByOriginalIdx(atk2_groupbox->findChild<QComboBox*>("atk2_abilities_combobox"), theTurn.getMoves()[1].first.getAbility());
 
         MainWindow::setComboByOriginalIdx(atk2_groupbox->findChild<QComboBox*>("atk2_moves_combobox"), theTurn.getMoves()[1].second.getMoveIndex());
+        // Restore multi-hit count for atk2
+        {
+            QSpinBox* mh_spinbox = atk2_groupbox->findChild<QSpinBox*>("atk2_multihit_spinbox");
+            if(mh_spinbox && mh_spinbox->isVisible())
+                mh_spinbox->setValue((int)theTurn.getMoves()[1].second.getMultiHitCount());
+        }
         atk2_groupbox->findChild<QComboBox*>("atk2_target_combobox")->setCurrentIndex(theTurn.getMoves()[1].second.getTarget());
         MainWindow::setComboByOriginalIdx(atk2_groupbox->findChild<QComboBox*>("atk2_movetypes_combobox"), theTurn.getMoves()[1].second.getMoveType());
         atk2_groupbox->findChild<QComboBox*>("atk2_movecategories_combobox")->setCurrentIndex(theTurn.getMoves()[1].second.getMoveCategory());

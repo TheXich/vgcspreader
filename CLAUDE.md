@@ -168,9 +168,23 @@ Las naturalezas que **suben SPE** (Timid, Jolly, Hasty, Naive) nunca se prueban 
 - El resultado muestra "Tera-{Tipo} NombrePokemon" cuando está activo
 
 ### Movimientos multi-golpe
-- Surging Strikes (índice 372): Water/Physical/25 BP × 3, siempre crit
-- Wicked Blow (índice 373): Dark/Physical/75 BP, siempre crit
-- `isAlwaysCrit()` en `pokemon.cpp` maneja ambos
+
+#### Arquitectura
+- `Move::multi_hit_count` (campo en `include/move.hpp`, default=1): golpes que da el movimiento en un solo uso.
+- `Turn::getMovesEffective()` (`source/turn.cpp`) repite cada entry del vector `multi_hit_count` veces por ciclo HKO.
+- El campo se guarda en el Turn (via Move), por lo que los presets lo preservan automáticamente.
+
+#### UI (ambas ventanas: attack y defense)
+- Al seleccionar un movimiento multi-golpe aparece el spinbox **"Hits:"** junto al selector de movimiento. Se oculta para movimientos normales.
+- Spinbox editable (variable hits): Bullet Seed, Icicle Spear, Pin Missile, Rock Blast, Tail Slap, Scale Shot, Water Shuriken → 2–5; Arm Thrust → 3–5; Population Bomb → 1–10.
+- Spinbox visible pero desactivado (hits fijos): Double Hit/Kick, Dual Chop, Bonemerang, Gear Grind, Tachyon Cutter → 2; Surging Strikes → 3; Triple Axel → 3.
+- La función helper `multiHitRange(Moves) → {min, max}` está definida como `static` al principio de `attackmovewindow.cpp` y `defensemovewindow.cpp` (duplicada).
+
+#### Casos especiales
+- **Surging Strikes**: hits fijos = 3, cada golpe es siempre crit (manejado por `isAlwaysCrit()` en `pokemon.cpp`, no por la UI).
+- **Wicked Blow**: 1 golpe, siempre crit (`isAlwaysCrit()`). No tiene spinbox multi-golpe.
+- **Triple Axel**: hits fijos = 3, pero BP no aumenta progresivamente en el cálculo (se usa el BP del DB = 20 para los 3 golpes). Limitación conocida.
+- **`isAlwaysCrit()`** en `pokemon.cpp` maneja Surging Strikes y Wicked Blow.
 
 ### Daño variable (Eruption/Water Spout/Dragon Energy)
 - BP = base_power × (HP_actual / HP_max), mínimo 1

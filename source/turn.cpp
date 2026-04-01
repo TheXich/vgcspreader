@@ -54,7 +54,8 @@ std::vector<std::pair<Pokemon, Move>> Turn::getMovesEffective() const {
 
     for(unsigned int i = 0; i < hits; i++)
         for( auto it = moves.begin(); it < moves.end(); it++ )
-            buffer.push_back(*it);
+            for(unsigned int h = 0; h < it->second.getMultiHitCount(); h++)
+                buffer.push_back(*it);
 
     return buffer;
 
