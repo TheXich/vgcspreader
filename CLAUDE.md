@@ -375,6 +375,7 @@ Dragon Claw, Shadow Claw, Dire Claw (añadidos a `isSlicingMove()` en `pokemon.c
 La base de datos (`personal_species.bin`) incluye las nuevas Megas de Champions. Fueron añadidas mediante el script `build_db.py` más dos adiciones manuales:
 - **Mega Eelektross** (#596-1): Electric, HP/Atk/Def/SpA/SpD/Spe = 85/145/80/135/90/80. Sin sprite disponible aún en Serebii.
 - **Mega Falinks** (#783-1): Fighting, 65/135/135/70/65/100. Sin sprite disponible aún.
+- **Mega Floette** (#670-2): Fairy, HP/Atk/Def/SpA/SpD/Spe = 74/85/87/155/148/102 (BST=651). Forma 2 de Floette (form index 2 en binario, entry 1243). Sprite descargado de Serebii (`670-m.png` → `670-2.png`). La forma 1 (#670-1) es Floette-E (AZ's Floette, BST=551).
 
 Los sprites de las demás Megas Champions (~37 nuevas) se descargaron de Serebii (`pokemonhome/pokemon/small/NNN-m.png`) y están en `db/sprites/` + `resources.qrc`.
 
