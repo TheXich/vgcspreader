@@ -1,6 +1,6 @@
 # CLAUDE.md — vgcspreader
 
-Calculadora de daño VGC (Video Game Championship) con optimización de EV spreads. Proyecto Qt5/C++.
+Calculadora de daño VGC (Video Game Championship) con optimización de EV spreads para **Pokémon Champions** (Gen 10). Proyecto Qt5/C++.
 
 ---
 
@@ -344,6 +344,44 @@ Los tres ficheros deben tener siempre el **mismo número de entradas**.
 
 ---
 
+## Cambios para Pokémon Champions (Gen 10)
+
+### Sistema de stat points (SPs)
+- Los EVs clásicos se reemplazaron por **Stat Points (SPs)**
+- Cada SP suma +1 al stat directamente (antes: 4 EVs = +1)
+- Máximo por stat: **32 SPs** (antes: 252 EVs)
+- No hay pool compartido (antes: 510 totales); cada stat puede tener 0–32 SPs independientemente
+- Fórmula nueva: `HP = floor((base×2 + 31) × 50/100) + 60 + SP`
+- Fórmula stats: `stat = floor((floor((base×2 + 31) × 50/100) + 5 + SP) × nature)`
+- Los IVs están fijados a 31 y el nivel a 50 (Champions los fuerza)
+- En la GUI los spinboxes pasan de rango 0–252 a **0–32** y se llaman "SPs"
+
+### Cambios de movimientos (Champions)
+| Movimiento | BP anterior | BP nuevo |
+|-----------|-------------|---------|
+| Beak Blast | 100 | 120 |
+| Fire Lash | 80 | 90 |
+| First Impression | 90 | 100 |
+| Night Daze | 85 | 90 |
+| Spirit Shackle | 80 | 90 |
+| Trop Kick | 70 | 85 |
+| Infernal Parade | 50 | 65 |
+| Mountain Gale | 80 | 120 |
+
+### Movimientos que ahora son Slice (Sharpness)
+Dragon Claw, Shadow Claw, Dire Claw (añadidos a `isSlicingMove()` en `pokemon.cpp`)
+
+### Nuevas Mega Evoluciones (Champions/Legends ZA)
+La base de datos (`personal_species.bin`) incluye las nuevas Megas de Champions. Fueron añadidas mediante el script `build_db.py` más dos adiciones manuales:
+- **Mega Eelektross** (#596-1): Electric, HP/Atk/Def/SpA/SpD/Spe = 85/145/80/135/90/80. Sin sprite disponible aún en Serebii.
+- **Mega Falinks** (#783-1): Fighting, 65/135/135/70/65/100. Sin sprite disponible aún.
+
+Los sprites de las demás Megas Champions (~37 nuevas) se descargaron de Serebii (`pokemonhome/pokemon/small/NNN-m.png`) y están en `db/sprites/` + `resources.qrc`.
+
+**Referencia de sprites Champions en Serebii**: `https://www.serebii.net/pokemonhome/pokemon/small/NNN-m.png` donde NNN es el número de Pokédex con ceros (e.g. `149-m.png` para Mega Dragonite). Para Z-variants: `-mz.png` (Mega Absol Z = `359-mz.png`). Para variantes X/Y: `-mx.png`, `-my.png`.
+
+---
+
 ## Pendientes / mejoras conocidas
 
 - El typo `Psichic` en el enum (`moves.hpp`) debería ser `Psychic`, pero corregirlo rompería los índices binarios ya guardados en presets XML de usuarios
@@ -351,5 +389,6 @@ Los tres ficheros deben tener siempre el **mismo número de entradas**.
 - Los presets XML guardan los 5 checkboxes de Ruin + Helping Hand del `defense_modifier` (get<5..9>); los campos son opcionales en la carga (fallback a false) para compatibilidad con presets antiguos
 - `NATURE_NUM` y `AUTO_NATURE` tienen el mismo valor numérico (25); el combobox de naturaleza tiene 26 ítems (índices 0–24 = naturales reales, índice 25 = Auto)
 - El enum `Status` usa `NO_STATUS` (no `HEALTHY`) como valor neutro — importante al implementar habilidades que dependen del estado
-- Algunas formas del binario no tienen sprite disponible en Smogon/PS: formas Totem (Raticate #20, Marowak #105), Lucario G-Max (no existe en los juegos — posible error en el binario), Zeraora G-Max, Maushold-Three, Toxtricity-Low-Key-Gmax. El juego muestra sprite en blanco para esas formas.
+- Algunas formas del binario no tienen sprite disponible: Mega Eelektross (#596-1), Mega Falinks (#783-1) — no indexadas aún en Serebii. Formas Totem (Raticate #20, Marowak #105), Lucario G-Max, Zeraora G-Max, Maushold-Three, Toxtricity-Low-Key-Gmax.
 - Los nombres de formas en la GUI son genéricos ("Form 1", "Form 2"…); hay código comentado que sugería usar `db/forms.txt` — pendiente de implementar nombres propios por forma
+- Con el sistema de SPs de Champions, el pool compartido ya no existe — la variable `MAX_EVS = 192` se mantiene como referencia pero no es un límite real en Champions (cada stat es independiente). El cálculo de spreads óptimos sigue usando suma de SPs como proxy de "coste total".

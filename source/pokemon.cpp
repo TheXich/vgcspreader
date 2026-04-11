@@ -113,7 +113,8 @@ uint8_t Pokemon::calculateEVSNextStat(Pokemon thePokemon, const Stats::Stat& the
 
 void Pokemon::calculateTotal() {
     //calculate hp
-    total[Stats::HP] = ((2 * base[form][Stats::HP] + stats.getIV(Stats::HP) + stats.getEV(Stats::HP)/4) * stats.getLevel())/100 + stats.getLevel() + 10;
+    // Champions formula: HP = floor((base*2 + 31) * 50 / 100) + 60 + SP
+    total[Stats::HP] = (2 * base[form][Stats::HP] + 31) * 50 / 100 + 60 + stats.getEV(Stats::HP);
     boosted[Stats::HP] = total[Stats::HP];
 
     float nature_multiplier = 1;
@@ -129,7 +130,8 @@ void Pokemon::calculateTotal() {
     else if( stats.getNature() == Stats::BOLD || stats.getNature() == Stats::TIMID || stats.getNature() == Stats::MODEST || stats.getNature() == Stats::CALM ) nature_multiplier = 0.9;
     else nature_multiplier = 1;
 
-    total[Stats::ATK] = (((((2 * base[form][Stats::ATK] + stats.getIV(Stats::ATK) + stats.getEV(Stats::ATK)/4) * stats.getLevel())/100)+5) * nature_multiplier);
+    // Champions formula: stat = floor((floor((base*2+31)*50/100) + 5 + SP) * nature)
+    total[Stats::ATK] = ((2 * base[form][Stats::ATK] + 31) * 50 / 100 + 5 + stats.getEV(Stats::ATK)) * nature_multiplier;
     boosted[Stats::ATK] = total[Stats::ATK] * atk_modifier_multiplier;
 
     //calculate def
@@ -143,7 +145,7 @@ void Pokemon::calculateTotal() {
     else if( stats.getNature() == Stats::HASTY || stats.getNature() == Stats::MILD || stats.getNature() == Stats::LONELY || stats.getNature() == Stats::GENTLE ) nature_multiplier = 0.9;
     else nature_multiplier = 1;
 
-    total[Stats::DEF] = (((((2 * base[form][Stats::DEF] + stats.getIV(Stats::DEF) + stats.getEV(Stats::DEF)/4) * stats.getLevel())/100)+5) * nature_multiplier);
+    total[Stats::DEF] = ((2 * base[form][Stats::DEF] + 31) * 50 / 100 + 5 + stats.getEV(Stats::DEF)) * nature_multiplier;
     boosted[Stats::DEF] = total[Stats::DEF] * def_modifier_multiplier;
 
     //calculate spatk
@@ -157,7 +159,7 @@ void Pokemon::calculateTotal() {
     else if( stats.getNature() == Stats::ADAMANT || stats.getNature() == Stats::IMPISH || stats.getNature() == Stats::JOLLY || stats.getNature() == Stats::CAREFUL ) nature_multiplier = 0.9;
     else nature_multiplier = 1;
 
-    total[Stats::SPATK] = (((((2 * base[form][Stats::SPATK] + stats.getIV(Stats::SPATK) + stats.getEV(Stats::SPATK)/4) * stats.getLevel())/100)+5) * nature_multiplier);
+    total[Stats::SPATK] = ((2 * base[form][Stats::SPATK] + 31) * 50 / 100 + 5 + stats.getEV(Stats::SPATK)) * nature_multiplier;
     boosted[Stats::SPATK] = total[Stats::SPATK] * spatk_modifier_multiplier;
 
     //calculate spdef
@@ -171,7 +173,7 @@ void Pokemon::calculateTotal() {
     else if( stats.getNature() == Stats::NAUGHTY || stats.getNature() == Stats::LAX || stats.getNature() == Stats::NAIVE || stats.getNature() == Stats::RASH ) nature_multiplier = 0.9;
     else nature_multiplier = 1;
 
-    total[Stats::SPDEF] = (((((2 * base[form][Stats::SPDEF] + stats.getIV(Stats::SPDEF) + stats.getEV(Stats::SPDEF)/4) * stats.getLevel())/100)+5) * nature_multiplier);
+    total[Stats::SPDEF] = ((2 * base[form][Stats::SPDEF] + 31) * 50 / 100 + 5 + stats.getEV(Stats::SPDEF)) * nature_multiplier;
     boosted[Stats::SPDEF] = total[Stats::SPDEF] * spdef_modifier_multiplier;
 
     //calculate spe
@@ -185,7 +187,7 @@ void Pokemon::calculateTotal() {
     else if( stats.getNature() == Stats::BRAVE || stats.getNature() == Stats::RELAXED || stats.getNature() == Stats::QUIET || stats.getNature() == Stats::SASSY ) nature_multiplier = 0.9;
     else nature_multiplier = 1;
 
-    total[Stats::SPE] = (((((2 * base[form][Stats::SPE] + stats.getIV(Stats::SPE) + stats.getEV(Stats::SPE)/4) * stats.getLevel())/100)+5) * nature_multiplier);
+    total[Stats::SPE] = ((2 * base[form][Stats::SPE] + 31) * 50 / 100 + 5 + stats.getEV(Stats::SPE)) * nature_multiplier;
     boosted[Stats::SPE] = total[Stats::SPE] * spe_modifier_multiplier;
 
     //evaluate if it is grounded
@@ -581,11 +583,14 @@ static bool isSlicingMove(const Moves moveIndex) {
         case Moves::Aqua_Cutter:
         case Moves::Bitter_Blade:
         case Moves::Cross_Poison:
+        case Moves::Dire_Claw:       // Champions: added slice flag
+        case Moves::Dragon_Claw:     // Champions: added slice flag
         case Moves::Kowtow_Cleave:
         case Moves::Leaf_Blade:
         case Moves::Night_Slash:
         case Moves::Psycho_Cut:
         case Moves::Sacred_Sword:
+        case Moves::Shadow_Claw:     // Champions: added slice flag
         case Moves::Solar_Blade:   // Solar Blade (slicing) — not SolarBeam (beam)
         case Moves::Tachyon_Cutter:
             return true;
@@ -842,8 +847,9 @@ float Pokemon::getKOProbability(const Turn& theTurn) const {
 }
 
 int Pokemon::outspeedPokemon(const std::vector<Pokemon>& theVector) {
-    const unsigned int MAX_EVS = 510;
-    const unsigned int MAX_EVS_SINGLE_STAT = 252;
+    // Champions: each stat has 0-32 SPs (Stat Points), no shared pool
+    const unsigned int MAX_EVS = 192;
+    const unsigned int MAX_EVS_SINGLE_STAT = 32;
 
     Pokemon defender = *this;
 
@@ -988,8 +994,9 @@ DefenseResult Pokemon::resistMove(const std::vector<Turn>& theTurn, const std::v
 }
 
 std::pair<std::vector<std::tuple<uint8_t, uint8_t, uint8_t>>, std::vector<std::tuple<uint8_t, uint8_t, uint8_t>>> Pokemon::resistMoveLoop(const std::vector<Turn>& theTurn, const std::vector<defense_modifier>& theDefModifiers, const bool isSimplified, const Move::Category simplifiedType) {
-    const unsigned int MAX_EVS = 510;
-    const unsigned int MAX_EVS_SINGLE_STAT = 252;
+    // Champions: each stat has 0-32 SPs (Stat Points), no shared pool
+    const unsigned int MAX_EVS = 192;
+    const unsigned int MAX_EVS_SINGLE_STAT = 32;
     const unsigned int ARRAY_SIZE = MAX_EVS_SINGLE_STAT + 1;
 
     unsigned int THREAD_NUM = std::thread::hardware_concurrency();
@@ -1195,8 +1202,9 @@ AttackResult Pokemon::koMove(const std::vector<Turn>& theTurn, const std::vector
     }
 
     //algorithm here
-    const unsigned int MAX_EVS = 510;
-    const unsigned int MAX_EVS_SINGLE_STAT = 252;
+    // Champions: each stat has 0-32 SPs (Stat Points), no shared pool
+    const unsigned int MAX_EVS = 192;
+    const unsigned int MAX_EVS_SINGLE_STAT = 32;
     const unsigned int ARRAY_SIZE = MAX_EVS_SINGLE_STAT + 1;
 
     Pokemon attacker = *this;

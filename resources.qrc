@@ -1379,5 +1379,51 @@
         <file>db/sprites/931-1.png</file>
         <file>db/sprites/931-2.png</file>
         <file>db/sprites/931-3.png</file>
+        <file>db/sprites/12-1.png</file>
+        <file>db/sprites/121-1.png</file>
+        <file>db/sprites/149-1.png</file>
+        <file>db/sprites/154-1.png</file>
+        <file>db/sprites/160-1.png</file>
+        <file>db/sprites/227-1.png</file>
+        <file>db/sprites/26-2.png</file>
+        <file>db/sprites/26-3.png</file>
+        <file>db/sprites/3-2.png</file>
+        <file>db/sprites/358-1.png</file>
+        <file>db/sprites/359-2.png</file>
+        <file>db/sprites/398-1.png</file>
+        <file>db/sprites/445-2.png</file>
+        <file>db/sprites/448-2.png</file>
+        <file>db/sprites/478-1.png</file>
+        <file>db/sprites/485-1.png</file>
+        <file>db/sprites/491-1.png</file>
+        <file>db/sprites/500-1.png</file>
+        <file>db/sprites/530-1.png</file>
+        <file>db/sprites/545-1.png</file>
+        <file>db/sprites/560-1.png</file>
+        <file>db/sprites/58-1.png</file>
+        <file>db/sprites/59-1.png</file>
+        <file>db/sprites/6-3.png</file>
+        <file>db/sprites/609-1.png</file>
+        <file>db/sprites/623-1.png</file>
+        <file>db/sprites/652-1.png</file>
+        <file>db/sprites/655-1.png</file>
+        <file>db/sprites/678-2.png</file>
+        <file>db/sprites/687-1.png</file>
+        <file>db/sprites/689-1.png</file>
+        <file>db/sprites/691-1.png</file>
+        <file>db/sprites/701-1.png</file>
+        <file>db/sprites/71-1.png</file>
+        <file>db/sprites/740-1.png</file>
+        <file>db/sprites/768-1.png</file>
+        <file>db/sprites/78-1.png</file>
+        <file>db/sprites/780-1.png</file>
+        <file>db/sprites/79-1.png</file>
+        <file>db/sprites/801-3.png</file>
+        <file>db/sprites/807-1.png</file>
+        <file>db/sprites/83-1.png</file>
+        <file>db/sprites/9-2.png</file>
+        <file>db/sprites/952-1.png</file>
+        <file>db/sprites/970-1.png</file>
+        <file>db/sprites/978-4.png</file>
     </qresource>
 </RCC>

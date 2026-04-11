@@ -473,7 +473,7 @@ void MainWindow::createDefendingPokemonGroupBox() {
     defending_layout->addWidget(iv_groupbox);
 
     //already assigned evs
-    QGroupBox* assigned_groupbox = new QGroupBox(tr("Already assigned EVS:"));
+    QGroupBox* assigned_groupbox = new QGroupBox(tr("Already assigned SPs:"));
 
     QFormLayout* assigned_layout = new QFormLayout;
     assigned_groupbox->setLayout(assigned_layout);
@@ -481,38 +481,38 @@ void MainWindow::createDefendingPokemonGroupBox() {
     //hp evs
     QSpinBox* assigned_hp = new QSpinBox;
     assigned_hp->setObjectName("defending_hpev_spinbox");
-    assigned_hp->setRange(0, 252);
-    assigned_layout->addRow(tr("HP EVS:"), assigned_hp);
+    assigned_hp->setRange(0, 32);
+    assigned_layout->addRow(tr("HP SPs:"), assigned_hp);
 
-    //atk evs
+    //atk sps
     QSpinBox* assigned_atk = new QSpinBox;
     assigned_atk->setObjectName("defending_atkev_spinbox");
-    assigned_atk->setRange(0, 252);
-    assigned_layout->addRow(tr("Atk EVS:"), assigned_atk);
+    assigned_atk->setRange(0, 32);
+    assigned_layout->addRow(tr("Atk SPs:"), assigned_atk);
 
-    //def evs
+    //def sps
     QSpinBox* assigned_def = new QSpinBox;
     assigned_def->setObjectName("defending_defev_spinbox");
-    assigned_def->setRange(0, 252);
-    assigned_layout->addRow(tr("Def EVS:"), assigned_def);
+    assigned_def->setRange(0, 32);
+    assigned_layout->addRow(tr("Def SPs:"), assigned_def);
 
-    //spatk evs
+    //spatk sps
     QSpinBox* assigned_spatk = new QSpinBox;
     assigned_spatk->setObjectName("defending_spatkev_spinbox");
-    assigned_spatk->setRange(0, 252);
-    assigned_layout->addRow(tr("Sp. Atk EVS:"), assigned_spatk);
+    assigned_spatk->setRange(0, 32);
+    assigned_layout->addRow(tr("Sp. Atk SPs:"), assigned_spatk);
 
-    //spdef evs
+    //spdef sps
     QSpinBox* assigned_spdef = new QSpinBox;
     assigned_spdef->setObjectName("defending_spdefev_spinbox");
-    assigned_spdef->setRange(0, 252);
-    assigned_layout->addRow(tr("Sp. Def EVS:"), assigned_spdef);
+    assigned_spdef->setRange(0, 32);
+    assigned_layout->addRow(tr("Sp. Def SPs:"), assigned_spdef);
 
-    //spe evs
+    //spe sps
     QSpinBox* assigned_spe = new QSpinBox;
     assigned_spe->setObjectName("defending_speev_spinbox");
-    assigned_spe->setRange(0, 252);
-    assigned_layout->addRow(tr("Spe EVS:"), assigned_spe);
+    assigned_spe->setRange(0, 32);
+    assigned_layout->addRow(tr("Spe SPs:"), assigned_spe);
 
     defending_layout->addWidget(assigned_groupbox);
 
