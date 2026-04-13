@@ -260,7 +260,7 @@ void DefenseMoveWindow::createAtk1GroupBox() {
     modifiers_layout->addWidget(ev_label);
 
     QSpinBox* ev = new QSpinBox;
-    ev->setRange(0, 252);
+    ev->setRange(0, 32);
     ev->setObjectName("atk1_ev_spinbox");
     modifiers_layout->addWidget(ev);
 
@@ -574,7 +574,7 @@ void DefenseMoveWindow::createAtk2GroupBox() {
     modifiers_layout->addWidget(ev_label);
 
     QSpinBox* ev = new QSpinBox;
-    ev->setRange(0, 252);
+    ev->setRange(0, 32);
     ev->setObjectName("atk2_ev_spinbox");
     modifiers_layout->addWidget(ev);
 

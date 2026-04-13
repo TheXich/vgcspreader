@@ -848,7 +848,7 @@ float Pokemon::getKOProbability(const Turn& theTurn) const {
 
 int Pokemon::outspeedPokemon(const std::vector<Pokemon>& theVector) {
     // Champions: each stat has 0-32 SPs (Stat Points), no shared pool
-    const unsigned int MAX_EVS = 192;
+    const unsigned int MAX_EVS = 66;
     const unsigned int MAX_EVS_SINGLE_STAT = 32;
 
     Pokemon defender = *this;
@@ -995,7 +995,7 @@ DefenseResult Pokemon::resistMove(const std::vector<Turn>& theTurn, const std::v
 
 std::pair<std::vector<std::tuple<uint8_t, uint8_t, uint8_t>>, std::vector<std::tuple<uint8_t, uint8_t, uint8_t>>> Pokemon::resistMoveLoop(const std::vector<Turn>& theTurn, const std::vector<defense_modifier>& theDefModifiers, const bool isSimplified, const Move::Category simplifiedType) {
     // Champions: each stat has 0-32 SPs (Stat Points), no shared pool
-    const unsigned int MAX_EVS = 192;
+    const unsigned int MAX_EVS = 66;
     const unsigned int MAX_EVS_SINGLE_STAT = 32;
     const unsigned int ARRAY_SIZE = MAX_EVS_SINGLE_STAT + 1;
 
@@ -1131,7 +1131,8 @@ std::pair<std::vector<std::tuple<uint8_t, uint8_t, uint8_t>>, std::vector<std::t
 }
 
 void Pokemon::resistMoveLoopThread(Pokemon theDefender, const std::vector<Turn>& theTurn, std::vector<std::tuple<uint8_t, uint8_t, uint8_t>>& theResult, const std::vector<defense_modifier>& theDefModifiers, std::vector<std::vector<float>>& theResultBuffer, const unsigned int theAssignableEVS) {
-    const unsigned int ARRAY_SIZE = 253; //this should be passed as an argument by the main thread but ehi...am i lazy or not?
+    const unsigned int MAX_EVS_SINGLE_STAT = 32;
+    const unsigned int ARRAY_SIZE = MAX_EVS_SINGLE_STAT + 1;
 
     bool to_add = true;
     for(unsigned int it = 0; it < theTurn.size(); it++ ) {
@@ -1203,7 +1204,7 @@ AttackResult Pokemon::koMove(const std::vector<Turn>& theTurn, const std::vector
 
     //algorithm here
     // Champions: each stat has 0-32 SPs (Stat Points), no shared pool
-    const unsigned int MAX_EVS = 192;
+    const unsigned int MAX_EVS = 66;
     const unsigned int MAX_EVS_SINGLE_STAT = 32;
     const unsigned int ARRAY_SIZE = MAX_EVS_SINGLE_STAT + 1;
 
@@ -1243,7 +1244,7 @@ AttackResult Pokemon::koMove(const std::vector<Turn>& theTurn, const std::vector
 
             attacker.setEV(Stats::ATK, atk_assigned);
 
-            const unsigned int ARRAY_SIZE = 253;
+            const unsigned int ARRAY_SIZE = MAX_EVS_SINGLE_STAT + 1;
 
             bool to_add = true;
             for(unsigned int it = 0; it < theTurn.size(); it++ ) {

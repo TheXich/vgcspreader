@@ -350,11 +350,12 @@ Los tres ficheros deben tener siempre el **mismo número de entradas**.
 - Los EVs clásicos se reemplazaron por **Stat Points (SPs)**
 - Cada SP suma +1 al stat directamente (antes: 4 EVs = +1)
 - Máximo por stat: **32 SPs** (antes: 252 EVs)
-- No hay pool compartido (antes: 510 totales); cada stat puede tener 0–32 SPs independientemente
+- Pool total: **66 SPs** repartidos entre los 6 stats (antes: 510 EVs / 192 en cálculo interno)
 - Fórmula nueva: `HP = floor((base×2 + 31) × 50/100) + 60 + SP`
 - Fórmula stats: `stat = floor((floor((base×2 + 31) × 50/100) + 5 + SP) × nature)`
 - Los IVs están fijados a 31 y el nivel a 50 (Champions los fuerza)
-- En la GUI los spinboxes pasan de rango 0–252 a **0–32** y se llaman "SPs"
+- En la GUI los spinboxes tienen rango **0–32** en todos los sitios (mainwindow, attackmovewindow, defensemovewindow)
+- En el cálculo interno: `MAX_EVS = 66`, `MAX_EVS_SINGLE_STAT = 32`
 
 ### Cambios de movimientos (Champions)
 | Movimiento | BP anterior | BP nuevo |
@@ -392,4 +393,4 @@ Los sprites de las demás Megas Champions (~37 nuevas) se descargaron de Serebii
 - El enum `Status` usa `NO_STATUS` (no `HEALTHY`) como valor neutro — importante al implementar habilidades que dependen del estado
 - Algunas formas del binario no tienen sprite disponible: Mega Eelektross (#596-1), Mega Falinks (#783-1) — no indexadas aún en Serebii. Formas Totem (Raticate #20, Marowak #105), Lucario G-Max, Zeraora G-Max, Maushold-Three, Toxtricity-Low-Key-Gmax.
 - Los nombres de formas en la GUI son genéricos ("Form 1", "Form 2"…); hay código comentado que sugería usar `db/forms.txt` — pendiente de implementar nombres propios por forma
-- Con el sistema de SPs de Champions, el pool compartido ya no existe — la variable `MAX_EVS = 192` se mantiene como referencia pero no es un límite real en Champions (cada stat es independiente). El cálculo de spreads óptimos sigue usando suma de SPs como proxy de "coste total".
+- El pool total de SPs es **66** (`MAX_EVS = 66` en `pokemon.cpp`), con máximo **32** por stat (`MAX_EVS_SINGLE_STAT = 32`). El cálculo de spreads óptimos usa la suma de SPs asignados como proxy de "coste total" y respeta ambos límites.

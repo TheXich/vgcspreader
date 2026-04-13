@@ -239,7 +239,7 @@ void AttackMoveWindow::createDefendingPokemonGroupbox() {
 
     QSpinBox* hp_ev = new QSpinBox;
     hp_ev->setObjectName("hp_ev_spinbox");
-    hp_ev->setRange(0, 252);
+    hp_ev->setRange(0, 32);
     modifiers_hp_layout->addWidget(hp_ev);
 
     //hp perc
@@ -277,7 +277,7 @@ void AttackMoveWindow::createDefendingPokemonGroupbox() {
     modifiers_layout->addWidget(ev_label);
 
     QSpinBox* ev = new QSpinBox;
-    ev->setRange(0, 252);
+    ev->setRange(0, 32);
     ev->setObjectName("def_ev_spinbox");
     modifiers_layout->addWidget(ev);
 
