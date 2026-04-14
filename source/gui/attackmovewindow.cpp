@@ -537,6 +537,12 @@ void AttackMoveWindow::createModifierGroupbox() {
     hh_cb->setObjectName("helping_hand_checkbox");
     ruin_layout->addWidget(hh_cb);
 
+    QLabel* fg_label = new QLabel(tr("Friend Guard (×0.75)"));
+    ruin_layout->addWidget(fg_label);
+    QCheckBox* fg_cb = new QCheckBox;
+    fg_cb->setObjectName("friend_guard_checkbox");
+    ruin_layout->addWidget(fg_cb);
+
     modifier_layout->addLayout(ruin_layout);
 }
 
@@ -733,8 +739,9 @@ void AttackMoveWindow::solveMove(void) {
     bool sword_ruin   = move_modifier_groupbox->findChild<QCheckBox*>("sword_of_ruin_checkbox")->isChecked();
     bool beads_ruin   = move_modifier_groupbox->findChild<QCheckBox*>("beads_of_ruin_checkbox")->isChecked();
     bool helping_hand = move_modifier_groupbox->findChild<QCheckBox*>("helping_hand_checkbox")->isChecked();
+    bool friend_guard = move_modifier_groupbox->findChild<QCheckBox*>("friend_guard_checkbox")->isChecked();
 
-    ((MainWindow*)parentWidget())->addAttackTurn(turn, attacking1, std::make_tuple(atk_mod, spatk_mod, atk_tera, atk_terastallized, tablets_ruin, vessel_ruin, sword_ruin, beads_ruin, helping_hand));
+    ((MainWindow*)parentWidget())->addAttackTurn(turn, attacking1, std::make_tuple(atk_mod, spatk_mod, atk_tera, atk_terastallized, tablets_ruin, vessel_ruin, sword_ruin, beads_ruin, helping_hand, friend_guard));
 }
 
 void AttackMoveWindow::setAsBlank() {
@@ -772,6 +779,7 @@ void AttackMoveWindow::setAsBlank() {
     move_modifier_groupbox->findChild<QCheckBox*>("sword_of_ruin_checkbox")->setChecked(false);
     move_modifier_groupbox->findChild<QCheckBox*>("beads_of_ruin_checkbox")->setChecked(false);
     move_modifier_groupbox->findChild<QCheckBox*>("helping_hand_checkbox")->setChecked(false);
+    move_modifier_groupbox->findChild<QCheckBox*>("friend_guard_checkbox")->setChecked(false);
 }
 
 void AttackMoveWindow::setAsTurn(const Turn& theTurn, const Pokemon& theDefendingPokemon, const attack_modifier& theAttackModifier) {
@@ -826,6 +834,7 @@ void AttackMoveWindow::setAsTurn(const Turn& theTurn, const Pokemon& theDefendin
     move_modifier_groupbox->findChild<QCheckBox*>("sword_of_ruin_checkbox")->setChecked(std::get<6>(theAttackModifier));
     move_modifier_groupbox->findChild<QCheckBox*>("beads_of_ruin_checkbox")->setChecked(std::get<7>(theAttackModifier));
     move_modifier_groupbox->findChild<QCheckBox*>("helping_hand_checkbox")->setChecked(std::get<8>(theAttackModifier));
+    move_modifier_groupbox->findChild<QCheckBox*>("friend_guard_checkbox")->setChecked(std::get<9>(theAttackModifier));
 }
 
 void AttackMoveWindow::setMoveCategory(int index) {

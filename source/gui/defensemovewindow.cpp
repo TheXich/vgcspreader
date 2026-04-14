@@ -853,6 +853,12 @@ void DefenseMoveWindow::createDefendingGroupBox() {
     hh_cb->setObjectName("helping_hand_checkbox");
     ruin_layout->addWidget(hh_cb);
 
+    QLabel* fg_label = new QLabel(tr("Friend Guard (×0.75)"));
+    ruin_layout->addWidget(fg_label);
+    QCheckBox* fg_cb = new QCheckBox;
+    fg_cb->setObjectName("friend_guard_checkbox");
+    ruin_layout->addWidget(fg_cb);
+
     modifier_layout->addLayout(ruin_layout);
 }
 
@@ -1250,7 +1256,8 @@ void DefenseMoveWindow::solveMove(const bool preset, const QString& preset_name)
         modifier_groupbox->findChild<QCheckBox*>("beads_of_ruin_checkbox")->isChecked(),
         modifier_groupbox->findChild<QCheckBox*>("tablets_of_ruin_checkbox")->isChecked(),
         modifier_groupbox->findChild<QCheckBox*>("vessel_of_ruin_checkbox")->isChecked(),
-        modifier_groupbox->findChild<QCheckBox*>("helping_hand_checkbox")->isChecked()
+        modifier_groupbox->findChild<QCheckBox*>("helping_hand_checkbox")->isChecked(),
+        modifier_groupbox->findChild<QCheckBox*>("friend_guard_checkbox")->isChecked()
     );
 
     if( !preset ) ((MainWindow*)parentWidget())->addDefenseTurn(turn, def_mod);
@@ -1310,6 +1317,7 @@ void DefenseMoveWindow::setAsBlank() {
     modifier_groupbox->findChild<QCheckBox*>("tablets_of_ruin_checkbox")->setChecked(false);
     modifier_groupbox->findChild<QCheckBox*>("vessel_of_ruin_checkbox")->setChecked(false);
     modifier_groupbox->findChild<QCheckBox*>("helping_hand_checkbox")->setChecked(false);
+    modifier_groupbox->findChild<QCheckBox*>("friend_guard_checkbox")->setChecked(false);
 
     defending_groupbox->findChild<QSpinBox*>("defending_def_modifier")->setValue(0);
     defending_groupbox->findChild<QSpinBox*>("defending_spdef_modifier")->setValue(0);
@@ -1407,6 +1415,7 @@ void DefenseMoveWindow::setAsTurn(const Turn &theTurn, const defense_modifier &t
     modifier_groupbox->findChild<QCheckBox*>("tablets_of_ruin_checkbox")->setChecked(std::get<7>(theDefenseModifier));
     modifier_groupbox->findChild<QCheckBox*>("vessel_of_ruin_checkbox")->setChecked(std::get<8>(theDefenseModifier));
     modifier_groupbox->findChild<QCheckBox*>("helping_hand_checkbox")->setChecked(std::get<9>(theDefenseModifier));
+    modifier_groupbox->findChild<QCheckBox*>("friend_guard_checkbox")->setChecked(std::get<10>(theDefenseModifier));
     defending_groupbox->findChild<QSpinBox*>("defending_hits_modifier")->setValue(theTurn.getHits()+1);
 
     tabs->setCurrentIndex(0);

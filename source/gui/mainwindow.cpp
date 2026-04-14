@@ -1124,6 +1124,11 @@ void MainWindow::addAsPreset(const QString& theName, const Turn& theTurn, const 
     helping_hand_node->SetText(std::get<9>(std::get<2>(presets.back())));
     title_node->InsertEndChild(helping_hand_node);
 
+    //friend guard
+    tinyxml2::XMLElement* friend_guard_node = xml_preset.NewElement("FriendGuard");
+    friend_guard_node->SetText(std::get<10>(std::get<2>(presets.back())));
+    title_node->InsertEndChild(friend_guard_node);
+
     xml_preset.LastChild()->InsertEndChild(title_node);
 
     xml_preset.SaveFile("presets.xml");
@@ -1239,6 +1244,8 @@ void MainWindow::LoadPresetsFromFile() {
             std::get<8>(std::get<2>(buffer)) = vessel_elem ? (bool)std::atoi(vessel_elem->GetText()) : false;
             auto* hh_elem = move_element_temp->NextSiblingElement("HelpingHand");
             std::get<9>(std::get<2>(buffer)) = hh_elem ? (bool)std::atoi(hh_elem->GetText()) : false;
+            auto* fg_elem = move_element_temp->NextSiblingElement("FriendGuard");
+            std::get<10>(std::get<2>(buffer)) = fg_elem ? (bool)std::atoi(fg_elem->GetText()) : false;
 
             presets.push_back(buffer);
             element = element->NextSiblingElement();

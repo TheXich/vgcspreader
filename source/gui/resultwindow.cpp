@@ -65,7 +65,7 @@ void ResultWindow::createResultGroupBox() {
 
     result_layout->addSpacing(15);
 
-    QLabel* remaining_evs = new QLabel(tr("Remaining EVS: ")+"0");
+    QLabel* remaining_evs = new QLabel(tr("Remaining SPs: ")+"0");
     remaining_evs->setObjectName("remaining_evs");
     result_layout->addWidget(remaining_evs);
 
@@ -549,7 +549,7 @@ QString ResultWindow::getCompleteString(const Turn& theTurn, const Pokemon& theD
 
     //DEFENDING POKEMON
     QString vs_string = "vs. ";
-    defender_result = vs_string + getDefendPokemon(theDefendingPokemon, std::make_tuple(theDefendingPokemon.getEV(Stats::HP), theDefendingPokemon.getEV(Stats::DEF), theDefendingPokemon.getEV(Stats::SPDEF)), std::make_tuple((float)100, (int16_t)theDefendingPokemon.getModifier(Stats::DEF), (int16_t)theDefendingPokemon.getModifier(Stats::SPDEF), theDefendingPokemon.getTeraType(), theDefendingPokemon.isTerastallized(), false, false, false, false, false), theTurn.getMoves()[0].second, isDualDefense);
+    defender_result = vs_string + getDefendPokemon(theDefendingPokemon, std::make_tuple(theDefendingPokemon.getEV(Stats::HP), theDefendingPokemon.getEV(Stats::DEF), theDefendingPokemon.getEV(Stats::SPDEF)), std::make_tuple((float)100, (int16_t)theDefendingPokemon.getModifier(Stats::DEF), (int16_t)theDefendingPokemon.getModifier(Stats::SPDEF), theDefendingPokemon.getTeraType(), theDefendingPokemon.isTerastallized(), false, false, false, false, false, false), theTurn.getMoves()[0].second, isDualDefense);
 
     //MODIFIERS
     modifier_result = getModifiers(theTurn);
@@ -626,7 +626,7 @@ void ResultWindow::setResultType(int index) {
         int rem_spe = result_pokemon->getEV(Stats::SPE);
         if( rem_spe < 0 ) rem_spe = result_pokemon->getEV(Stats::SPE);
 
-        result_groupbox->findChild<QLabel*>("remaining_evs")->setText(tr("Remaining EVS: ")+QString::number(508 - rem_hp - rem_def - rem_spdef - rem_atk - rem_spatk - rem_spe));
+        result_groupbox->findChild<QLabel*>("remaining_evs")->setText(tr("Remaining SPs: ")+QString::number(66 - rem_hp - rem_def - rem_spdef - rem_atk - rem_spatk - rem_spe));
 
         //calculating the defense tier on a copy of the pokemon
         Pokemon tier_buffer = *result_pokemon;

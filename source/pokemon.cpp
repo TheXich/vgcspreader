@@ -48,6 +48,7 @@ Pokemon::Pokemon(const unsigned int thePokedexNumber, const Stats& theStats) {
     ruin_tablets = false;
     ruin_vessel = false;
     helping_hand = false;
+    friend_guard = false;
 
     pokedex_number = thePokedexNumber;
 
@@ -389,6 +390,9 @@ float Pokemon::calculateOtherModifier(const Pokemon& theAttacker, const Move& th
 
     // Helping Hand: ×1.5 to the attacker's move damage
     if( theAttacker.helping_hand ) modifier = modifier * 1.5f;
+
+    // Friend Guard (ally ability): ×0.75 to damage received by this Pokémon
+    if( friend_guard ) modifier = modifier * 0.75f;
 
     // Collision Course / Electro Drift (Gen 9): 5461/4096 ≈ 1.333× bonus when super-effective
     if( (theMove.getMoveIndex() == Moves::Collision_Course || theMove.getMoveIndex() == Moves::Electro_Drift) &&
@@ -984,9 +988,22 @@ DefenseResult Pokemon::resistMove(const std::vector<Turn>& theTurn, const std::v
             buffer.setTerastallized(std::get<4>(theDefModifiers[it]));
             buffer.setRuinSword(std::get<5>(theDefModifiers[it]));
             buffer.setRuinBeads(std::get<6>(theDefModifiers[it]));
-            returnable.def_ko_prob[i].push_back(buffer.getKOProbability(theTurn[it]));
-            returnable.def_damage_perc[i].push_back(buffer.getDamagePercentage(theTurn[it]));
-            returnable.def_damage_int[i].push_back(buffer.getDamageInt(theTurn[it]));
+            buffer.setFriendGuard(std::get<10>(theDefModifiers[it]));
+
+            // Apply attacker-side modifiers (tablets/vessel/helping_hand) for accurate display
+            Turn display_turn;
+            for(auto& mp : theTurn[it].getMoves()) {
+                Pokemon atk_copy = mp.first;
+                atk_copy.setRuinTablets(std::get<7>(theDefModifiers[it]));
+                atk_copy.setRuinVessel(std::get<8>(theDefModifiers[it]));
+                atk_copy.setHelpingHand(std::get<9>(theDefModifiers[it]));
+                display_turn.addMove(atk_copy, mp.second);
+            }
+            display_turn.setHits(theTurn[it].getHits());
+
+            returnable.def_ko_prob[i].push_back(buffer.getKOProbability(display_turn));
+            returnable.def_damage_perc[i].push_back(buffer.getDamagePercentage(display_turn));
+            returnable.def_damage_int[i].push_back(buffer.getDamageInt(display_turn));
         }
     }
 
@@ -1143,6 +1160,7 @@ void Pokemon::resistMoveLoopThread(Pokemon theDefender, const std::vector<Turn>&
         theDefender.setTerastallized(std::get<4>(theDefModifiers[it]));
         theDefender.setRuinSword(std::get<5>(theDefModifiers[it]));
         theDefender.setRuinBeads(std::get<6>(theDefModifiers[it]));
+        theDefender.setFriendGuard(std::get<10>(theDefModifiers[it]));
 
         // Apply attacker-side modifiers (tablets/vessel/helping_hand) to attackers in a copy of the turn
         Turn modified_turn;
@@ -1260,6 +1278,7 @@ AttackResult Pokemon::koMove(const std::vector<Turn>& theTurn, const std::vector
                 Pokemon def_copy = theDefendingPokemon[it];
                 def_copy.setRuinSword(std::get<6>(theAtkModifier[it]));
                 def_copy.setRuinBeads(std::get<7>(theAtkModifier[it]));
+                def_copy.setFriendGuard(std::get<9>(theAtkModifier[it]));
 
                 //reversing because of the offensive nature of the calc
                 Turn temp_turn;

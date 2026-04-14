@@ -22,10 +22,10 @@
 
 class Turn;
 
-// defense_modifier: HP%, mod_DEF, mod_SPDEF, tera_type, terastallized, sword_of_ruin, beads_of_ruin, tablets_of_ruin, vessel_of_ruin, helping_hand
-typedef std::tuple<float, int16_t, int16_t, Type, bool, bool, bool, bool, bool, bool> defense_modifier;
-// attack_modifier: mod_ATK, mod_SPATK, tera_type, terastallized, tablets_of_ruin, vessel_of_ruin, sword_of_ruin, beads_of_ruin, helping_hand
-typedef std::tuple<int16_t, int16_t, Type, bool, bool, bool, bool, bool, bool> attack_modifier;
+// defense_modifier: HP%, mod_DEF, mod_SPDEF, tera_type, terastallized, sword_of_ruin, beads_of_ruin, tablets_of_ruin, vessel_of_ruin, helping_hand, friend_guard
+typedef std::tuple<float, int16_t, int16_t, Type, bool, bool, bool, bool, bool, bool, bool> defense_modifier;
+// attack_modifier: mod_ATK, mod_SPATK, tera_type, terastallized, tablets_of_ruin, vessel_of_ruin, sword_of_ruin, beads_of_ruin, helping_hand, friend_guard
+typedef std::tuple<int16_t, int16_t, Type, bool, bool, bool, bool, bool, bool, bool> attack_modifier;
 typedef std::pair<DefenseResult, AttackResult> FinalResult;
 
 class EVCalculationInput;
@@ -72,6 +72,7 @@ class Pokemon {
         bool ruin_tablets;  // Tablets of Ruin active: ×0.75 to this Pokémon's ATK
         bool ruin_vessel;   // Vessel of Ruin active: ×0.75 to this Pokémon's SpAtk
         bool helping_hand;  // Helping Hand active: ×1.5 to moves used by this Pokémon
+        bool friend_guard;  // Friend Guard active (ally ability): ×0.75 to damage received by this Pokémon
 
         void calculateTotal();
         std::vector<int> getDamage(const Pokemon& theAttacker, Move theMove) const;
@@ -126,6 +127,7 @@ class Pokemon {
         void setRuinTablets(const bool v) { ruin_tablets = v; }
         void setRuinVessel(const bool v) { ruin_vessel = v; }
         void setHelpingHand(const bool v) { helping_hand = v; }
+        void setFriendGuard(const bool v) { friend_guard = v; }
         void abortCalculation() { abort_calculation = true; }
 
         unsigned int getPokedexNumber() const { return pokedex_number; }
@@ -154,6 +156,7 @@ class Pokemon {
         bool getRuinTablets() const { return ruin_tablets; }
         bool getRuinVessel() const { return ruin_vessel; }
         bool getHelpingHand() const { return helping_hand; }
+        bool getFriendGuard() const { return friend_guard; }
         float getDEFTier() const;
         float getSPDEFTier() const;
 
