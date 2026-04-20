@@ -937,17 +937,11 @@ void DefenseMoveWindow::setSpecies1(int index) {
     else { type2->setVisible(true); type2->setVisible(true); }
 
     //setting correct form
-    QComboBox* form = atk1_groupbox->findChild<QComboBox*>("atk1_forms_combobox");
-    if( selected_pokemon.getFormesNumber() > 1 ) {
-        form->clear();
-        for(unsigned int i = 0; i < selected_pokemon.getFormesNumber(); i++) form->addItem(((MainWindow*)this->parentWidget())->retrieveFormName(orig + 1, i));
+    {
+        QComboBox* form = atk1_groupbox->findChild<QComboBox*>("atk1_forms_combobox");
+        MainWindow::populateFormCombo(form, orig + 1, selected_pokemon.getFormesNumber());
         form->setCurrentIndex(0);
-        form->setVisible(true);
-    }
-
-    else {
-        form->setCurrentIndex(0);
-        form->setVisible(false);
+        form->setVisible(form->count() > 1);
     }
 
     //setting correct ability
@@ -959,13 +953,15 @@ void DefenseMoveWindow::setForm1(int index) {
     int orig = atk1_groupbox->findChild<QComboBox*>("atk1_species_combobox")->currentData(Qt::UserRole).toInt();
     Pokemon selected_pokemon(orig + 1);
 
+    int form_idx = atk1_groupbox->findChild<QComboBox*>("atk1_forms_combobox")->currentData(Qt::UserRole).toInt();
+
     //setting correct sprite
     QPixmap sprite_pixmap;
     QString sprite_path;
     bool load_result;
 
-    if( index == 0 ) sprite_path = ":/db/sprites/" + QString::number(selected_pokemon.getPokedexNumber()) + ".png";
-    else sprite_path = ":/db/sprites/" + QString::number(selected_pokemon.getPokedexNumber()) + "-" + QString::number(index) + ".png";
+    if( form_idx == 0 ) sprite_path = ":/db/sprites/" + QString::number(selected_pokemon.getPokedexNumber()) + ".png";
+    else sprite_path = ":/db/sprites/" + QString::number(selected_pokemon.getPokedexNumber()) + "-" + QString::number(form_idx) + ".png";
 
     sprite_pixmap.load(sprite_path);
     const int SPRITE_SCALE_FACTOR = 2;
@@ -976,30 +972,32 @@ void DefenseMoveWindow::setForm1(int index) {
 
     //setting correct types
     QComboBox* type1 = atk1_groupbox->findChild<QComboBox*>("atk1_type1_combobox");
-    MainWindow::setComboByOriginalIdx(type1, selected_pokemon.getTypes()[index][0]);
+    MainWindow::setComboByOriginalIdx(type1, selected_pokemon.getTypes()[form_idx][0]);
 
     QComboBox* type2 = atk1_groupbox->findChild<QComboBox*>("atk1_type2_combobox");
-    MainWindow::setComboByOriginalIdx(type2, selected_pokemon.getTypes()[index][1]);
+    MainWindow::setComboByOriginalIdx(type2, selected_pokemon.getTypes()[form_idx][1]);
 
-    if( selected_pokemon.getTypes()[index][0] == selected_pokemon.getTypes()[index][1] ) { type2->setVisible(false); type2->setVisible(false); }
+    if( selected_pokemon.getTypes()[form_idx][0] == selected_pokemon.getTypes()[form_idx][1] ) { type2->setVisible(false); type2->setVisible(false); }
     else { type2->setVisible(true); type2->setVisible(true); }
 
     //setting correct ability
     QComboBox* ability = atk1_groupbox->findChild<QComboBox*>("atk1_abilities_combobox");
-    MainWindow::setComboByOriginalIdx(ability, selected_pokemon.getPossibleAbilities()[index][0]);
+    MainWindow::setComboByOriginalIdx(ability, selected_pokemon.getPossibleAbilities()[form_idx][0]);
 }
 
 void DefenseMoveWindow::setForm2(int index) {
     int orig = atk2_groupbox->findChild<QComboBox*>("atk2_species_combobox")->currentData(Qt::UserRole).toInt();
     Pokemon selected_pokemon(orig + 1);
 
+    int form_idx = atk2_groupbox->findChild<QComboBox*>("atk2_forms_combobox")->currentData(Qt::UserRole).toInt();
+
     //setting correct sprite
     QPixmap sprite_pixmap;
     QString sprite_path;
     bool load_result;
 
-    if( index == 0 ) sprite_path = ":/db/sprites/" + QString::number(selected_pokemon.getPokedexNumber()) + ".png";
-    else sprite_path = ":/db/sprites/" + QString::number(selected_pokemon.getPokedexNumber()) + "-" + QString::number(index) + ".png";
+    if( form_idx == 0 ) sprite_path = ":/db/sprites/" + QString::number(selected_pokemon.getPokedexNumber()) + ".png";
+    else sprite_path = ":/db/sprites/" + QString::number(selected_pokemon.getPokedexNumber()) + "-" + QString::number(form_idx) + ".png";
 
     sprite_pixmap.load(sprite_path);
     const int SPRITE_SCALE_FACTOR = 2;
@@ -1010,17 +1008,17 @@ void DefenseMoveWindow::setForm2(int index) {
 
     //setting correct types
     QComboBox* type1 = atk2_groupbox->findChild<QComboBox*>("atk2_type1_combobox");
-    MainWindow::setComboByOriginalIdx(type1, selected_pokemon.getTypes()[index][0]);
+    MainWindow::setComboByOriginalIdx(type1, selected_pokemon.getTypes()[form_idx][0]);
 
     QComboBox* type2 = atk2_groupbox->findChild<QComboBox*>("atk2_type2_combobox");
-    MainWindow::setComboByOriginalIdx(type2, selected_pokemon.getTypes()[index][1]);
+    MainWindow::setComboByOriginalIdx(type2, selected_pokemon.getTypes()[form_idx][1]);
 
-    if( selected_pokemon.getTypes()[index][0] == selected_pokemon.getTypes()[index][1] ) { type2->setVisible(false); type2->setVisible(false); }
+    if( selected_pokemon.getTypes()[form_idx][0] == selected_pokemon.getTypes()[form_idx][1] ) { type2->setVisible(false); type2->setVisible(false); }
     else { type2->setVisible(true); type2->setVisible(true); }
 
     //setting correct ability
     QComboBox* ability = atk2_groupbox->findChild<QComboBox*>("atk2_abilities_combobox");
-    MainWindow::setComboByOriginalIdx(ability, selected_pokemon.getPossibleAbilities()[index][0]);
+    MainWindow::setComboByOriginalIdx(ability, selected_pokemon.getPossibleAbilities()[form_idx][0]);
 }
 
 void DefenseMoveWindow::setMove2(int index) {
@@ -1098,17 +1096,11 @@ void DefenseMoveWindow::setSpecies2(int index) {
     else { type2->setVisible(true); type2->setVisible(true); }
 
     //setting correct form
-    QComboBox* form = atk2_groupbox->findChild<QComboBox*>("atk2_forms_combobox");
-    if( selected_pokemon.getFormesNumber() > 1 ) {
-        form->clear();
-        for(unsigned int i = 0; i < selected_pokemon.getFormesNumber(); i++) form->addItem(((MainWindow*)this->parentWidget())->retrieveFormName(orig + 1, i));
+    {
+        QComboBox* form = atk2_groupbox->findChild<QComboBox*>("atk2_forms_combobox");
+        MainWindow::populateFormCombo(form, orig + 1, selected_pokemon.getFormesNumber());
         form->setCurrentIndex(0);
-        form->setVisible(true);
-    }
-
-    else {
-        form->setCurrentIndex(0);
-        form->setVisible(false);
+        form->setVisible(form->count() > 1);
     }
 
     //setting correct ability
@@ -1156,7 +1148,7 @@ void DefenseMoveWindow::activateAtk2(int state) {
 
 void DefenseMoveWindow::solveMove(const bool preset, const QString& preset_name) {
     Pokemon attacking1(atk1_groupbox->findChild<QComboBox*>("atk1_species_combobox")->currentData(Qt::UserRole).toInt()+1);
-    attacking1.setForm(atk1_groupbox->findChild<QComboBox*>("atk1_forms_combobox")->currentIndex());
+    attacking1.setForm(atk1_groupbox->findChild<QComboBox*>("atk1_forms_combobox")->currentData(Qt::UserRole).toInt());
 
     attacking1.setType(0, (Type)atk1_groupbox->findChild<QComboBox*>("atk1_type1_combobox")->currentData(Qt::UserRole).toInt());
     attacking1.setType(1, (Type)atk1_groupbox->findChild<QComboBox*>("atk1_type2_combobox")->currentData(Qt::UserRole).toInt());
@@ -1199,7 +1191,7 @@ void DefenseMoveWindow::solveMove(const bool preset, const QString& preset_name)
     attacking1.setModifier(stat, atk1_groupbox->findChild<QSpinBox*>("atk1_modifier_spinbox")->value());
 
     Pokemon attacking2(atk2_groupbox->findChild<QComboBox*>("atk2_species_combobox")->currentData(Qt::UserRole).toInt()+1);
-    attacking2.setForm(atk2_groupbox->findChild<QComboBox*>("atk2_forms_combobox")->currentIndex());
+    attacking2.setForm(atk2_groupbox->findChild<QComboBox*>("atk2_forms_combobox")->currentData(Qt::UserRole).toInt());
 
     attacking2.setType(0, (Type)atk2_groupbox->findChild<QComboBox*>("atk2_type1_combobox")->currentData(Qt::UserRole).toInt());
     attacking2.setType(1, (Type)atk2_groupbox->findChild<QComboBox*>("atk2_type2_combobox")->currentData(Qt::UserRole).toInt());
@@ -1334,7 +1326,7 @@ void DefenseMoveWindow::setAsTurn(const Turn &theTurn, const defense_modifier &t
     MainWindow::setComboByOriginalIdx(atk1_groupbox->findChild<QComboBox*>("atk1_species_combobox"), theTurn.getMoves()[0].first.getPokedexNumber()-1);
     MainWindow::setComboByOriginalIdx(atk1_groupbox->findChild<QComboBox*>("atk1_type1_combobox"), theTurn.getMoves()[0].first.getTypes()[theTurn.getMoves()[0].first.getForm()][0]);
     MainWindow::setComboByOriginalIdx(atk1_groupbox->findChild<QComboBox*>("atk1_type2_combobox"), theTurn.getMoves()[0].first.getTypes()[theTurn.getMoves()[0].first.getForm()][1]);
-    atk1_groupbox->findChild<QComboBox*>("atk1_forms_combobox")->setCurrentIndex(theTurn.getMoves()[0].first.getForm());
+    MainWindow::setFormComboByFormIdx(atk1_groupbox->findChild<QComboBox*>("atk1_forms_combobox"), theTurn.getMoves()[0].first.getForm());
     MainWindow::setComboByOriginalIdx(atk1_groupbox->findChild<QComboBox*>("atk1_nature_combobox"), theTurn.getMoves()[0].first.getNature());
     MainWindow::setComboByOriginalIdx(atk1_groupbox->findChild<QComboBox*>("atk1_items_combobox"), theTurn.getMoves()[0].first.getItem().getIndex());
     MainWindow::setComboByOriginalIdx(atk1_groupbox->findChild<QComboBox*>("atk1_abilities_combobox"), theTurn.getMoves()[0].first.getAbility());
@@ -1369,7 +1361,7 @@ void DefenseMoveWindow::setAsTurn(const Turn &theTurn, const defense_modifier &t
         MainWindow::setComboByOriginalIdx(atk2_groupbox->findChild<QComboBox*>("atk2_species_combobox"), theTurn.getMoves()[1].first.getPokedexNumber()-1);
         MainWindow::setComboByOriginalIdx(atk2_groupbox->findChild<QComboBox*>("atk2_type1_combobox"), theTurn.getMoves()[1].first.getTypes()[theTurn.getMoves()[1].first.getForm()][0]);
         MainWindow::setComboByOriginalIdx(atk2_groupbox->findChild<QComboBox*>("atk2_type2_combobox"), theTurn.getMoves()[1].first.getTypes()[theTurn.getMoves()[1].first.getForm()][1]);
-        atk2_groupbox->findChild<QComboBox*>("atk2_forms_combobox")->setCurrentIndex(theTurn.getMoves()[1].first.getForm());
+        MainWindow::setFormComboByFormIdx(atk2_groupbox->findChild<QComboBox*>("atk2_forms_combobox"), theTurn.getMoves()[1].first.getForm());
         MainWindow::setComboByOriginalIdx(atk2_groupbox->findChild<QComboBox*>("atk2_nature_combobox"), theTurn.getMoves()[1].first.getNature());
         MainWindow::setComboByOriginalIdx(atk2_groupbox->findChild<QComboBox*>("atk2_items_combobox"), theTurn.getMoves()[1].first.getItem().getIndex());
         MainWindow::setComboByOriginalIdx(atk2_groupbox->findChild<QComboBox*>("atk2_abilities_combobox"), theTurn.getMoves()[1].first.getAbility());
@@ -1422,18 +1414,7 @@ void DefenseMoveWindow::setAsTurn(const Turn &theTurn, const defense_modifier &t
 }
 
 QString DefenseMoveWindow::retrieveFormName(const int species, const int form) {
-    //this function is written with the help of Kaphotics here: https://github.com/kwsch/PKHeX/issues/2259
-    if( form == 0 ) return "Base";
-
-    /*const int MAX_SPECIES = 804;
-    int index = MAX_SPECIES;
-    for (int i = 1; i <= MAX_SPECIES; i++) {
-        if (i == species) return forms_names[index + form - 1];
-        Pokemon selected_pokemon(i);
-        index += selected_pokemon.getFormesNumber() - 1;
-    }*/
-
-    else return "Form " + QString::number(form);
+    return MainWindow::retrieveFormName(species, form);
 }
 
 void DefenseMoveWindow::setMoveCategory1(int index) {

@@ -418,4 +418,5 @@ Thunderous Kick
 Tidy Up
 Triple Axel
 Victory Dance
+Wave Crash
 Wildbolt Storm

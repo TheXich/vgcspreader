@@ -103,7 +103,10 @@ class MainWindow : public QDialog {
         void solveMovePreset(const int index);
 
         //MISC
-        QString retrieveFormName(const int species, const int form);
+        static QString retrieveFormName(const int species, const int form);
+        static bool isGMaxForm(int dex, int form);
+        static void populateFormCombo(QComboBox* combo, int dex, int form_count);
+        static void setFormComboByFormIdx(QComboBox* combo, int form_idx);
 
         static void populateSortedComboBox(QComboBox* combo, const std::vector<QString>& names);
         static void setComboByOriginalIdx(QComboBox* combo, int originalIdx);

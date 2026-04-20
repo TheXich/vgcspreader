@@ -155,16 +155,13 @@ void MainWindow::setDefendingPokemonSpecies(int index) {
     else defending_groupbox->findChild<QComboBox*>("defending_type2_combobox")->setVisible(true);
 
     //setting correct form
-    if( selected_pokemon.getFormesNumber() > 1 ) {
-        defending_groupbox->findChild<QComboBox*>("defending_forms_combobox")->clear();
-        for(unsigned int i = 0; i < selected_pokemon.getFormesNumber(); i++) defending_groupbox->findChild<QComboBox*>("defending_forms_combobox")->addItem(retrieveFormName(index+1, i));
-        defending_groupbox->findChild<QComboBox*>("defending_forms_combobox")->setCurrentIndex(0);
-        defending_groupbox->findChild<QComboBox*>("defending_forms_combobox")->setVisible(true);
-    }
-
-    else {
-        defending_groupbox->findChild<QComboBox*>("defending_forms_combobox")->setVisible(false);
-        defending_groupbox->findChild<QComboBox*>("defending_forms_combobox")->setCurrentIndex(0);
+    {
+        QComboBox* forms_combo = defending_groupbox->findChild<QComboBox*>("defending_forms_combobox");
+        int dex = orig + 1;
+        populateFormCombo(forms_combo, dex, selected_pokemon.getFormesNumber());
+        forms_combo->setCurrentIndex(0);
+        // hide if only "Base" remains (all alt forms were G-Max)
+        forms_combo->setVisible(forms_combo->count() > 1);
     }
 }
 
@@ -177,8 +174,9 @@ void MainWindow::setDefendingPokemonForm(int index) {
     QString sprite_path;
     bool load_result;
 
-    if( index == 0 ) sprite_path = ":/db/sprites/" + QString::number(selected_pokemon.getPokedexNumber()) + ".png";
-    else sprite_path = ":/db/sprites/" + QString::number(selected_pokemon.getPokedexNumber()) + "-" + QString::number(index) + ".png";
+    int form_idx = defending_groupbox->findChild<QComboBox*>("defending_forms_combobox")->currentData(Qt::UserRole).toInt();
+    if( form_idx == 0 ) sprite_path = ":/db/sprites/" + QString::number(selected_pokemon.getPokedexNumber()) + ".png";
+    else sprite_path = ":/db/sprites/" + QString::number(selected_pokemon.getPokedexNumber()) + "-" + QString::number(form_idx) + ".png";
 
     sprite_pixmap.load(sprite_path);
     const int SPRITE_SCALE_FACTOR = 2;
@@ -188,13 +186,13 @@ void MainWindow::setDefendingPokemonForm(int index) {
     sprite->setPixmap(sprite_pixmap);
 
     //setting ability
-    setComboByOriginalIdx(defending_groupbox->findChild<QComboBox*>("defending_abilities_combobox"), selected_pokemon.getPossibleAbilities()[index][0]);
+    setComboByOriginalIdx(defending_groupbox->findChild<QComboBox*>("defending_abilities_combobox"), selected_pokemon.getPossibleAbilities()[form_idx][0]);
 
     //setting correct types
-    setComboByOriginalIdx(defending_groupbox->findChild<QComboBox*>("defending_type1_combobox"), selected_pokemon.getTypes()[index][0]);
-    setComboByOriginalIdx(defending_groupbox->findChild<QComboBox*>("defending_type2_combobox"), selected_pokemon.getTypes()[index][1]);
+    setComboByOriginalIdx(defending_groupbox->findChild<QComboBox*>("defending_type1_combobox"), selected_pokemon.getTypes()[form_idx][0]);
+    setComboByOriginalIdx(defending_groupbox->findChild<QComboBox*>("defending_type2_combobox"), selected_pokemon.getTypes()[form_idx][1]);
 
-    if( selected_pokemon.getTypes()[index][0] == selected_pokemon.getTypes()[index][1] ) defending_groupbox->findChild<QComboBox*>("defending_type2_combobox")->setVisible(false);
+    if( selected_pokemon.getTypes()[form_idx][0] == selected_pokemon.getTypes()[form_idx][1] ) defending_groupbox->findChild<QComboBox*>("defending_type2_combobox")->setVisible(false);
     else defending_groupbox->findChild<QComboBox*>("defending_type2_combobox")->setVisible(true);
 }
 
@@ -787,7 +785,7 @@ void MainWindow::clear(QAbstractButton* theButton) {
 
 void MainWindow::calculate() {
     selected_pokemon = new Pokemon(defending_groupbox->findChild<QComboBox*>("defending_species_combobox")->currentData(Qt::UserRole).toInt()+1);
-    selected_pokemon->setForm(defending_groupbox->findChild<QComboBox*>("defending_forms_combobox")->currentIndex());
+    selected_pokemon->setForm(defending_groupbox->findChild<QComboBox*>("defending_forms_combobox")->currentData(Qt::UserRole).toInt());
     selected_pokemon->setType(0, (Type)defending_groupbox->findChild<QComboBox*>("defending_type1_combobox")->currentData(Qt::UserRole).toInt());
     selected_pokemon->setType(1, (Type)defending_groupbox->findChild<QComboBox*>("defending_type2_combobox")->currentData(Qt::UserRole).toInt());
     selected_pokemon->setNature((Stats::Nature)defending_groupbox->findChild<QComboBox*>("defending_nature_combobox")->currentData(Qt::UserRole).toInt());
@@ -829,19 +827,256 @@ void MainWindow::calculate() {
     future_watcher.setFuture(future);
 }
 
-QString MainWindow::retrieveFormName(const int species, const int form) {
-    //this function is written with the help of Kaphotics here: https://github.com/kwsch/PKHeX/issues/2259
-    if( form == 0 ) return "Base";
+/*static*/ bool MainWindow::isGMaxForm(int dex, int form) {
+    static const QSet<QPair<int,int>> gmax_forms = {
+        {3,2}, {6,3}, {9,2}, {12,1}, {68,1}, {94,2}, {99,1}, {131,1}, {133,2}, {143,1},
+        {448,2}, {569,1}, {807,1}, {809,1}, {812,1}, {815,1}, {818,1}, {823,1}, {826,1},
+        {834,1}, {839,1}, {841,1}, {842,1}, {844,1}, {849,2}, {849,3}, {851,1}, {858,1},
+        {861,1}, {869,1}, {879,1}, {884,1}, {890,1}, {892,2}, {892,3}
+    };
+    return gmax_forms.contains({dex, form});
+}
 
-    /*const int MAX_SPECIES = 804;
-    int index = MAX_SPECIES;
-    for (int i = 1; i <= MAX_SPECIES; i++) {
-        if (i == species) return forms_names[index + form - 1];
-        Pokemon selected_pokemon(i);
-        index += selected_pokemon.getFormesNumber() - 1;
-    }*/
+/*static*/ void MainWindow::populateFormCombo(QComboBox* combo, int dex, int form_count) {
+    combo->clear();
+    for (int i = 0; i < form_count; i++) {
+        if (isGMaxForm(dex, i)) continue;
+        QString name = (i == 0) ? "Base" : retrieveFormName(dex, i);
+        combo->addItem(name);
+        combo->setItemData(combo->count() - 1, i, Qt::UserRole);
+    }
+}
 
-    else return "Form " + QString::number(form);
+/*static*/ void MainWindow::setFormComboByFormIdx(QComboBox* combo, int form_idx) {
+    for (int i = 0; i < combo->count(); i++) {
+        if (combo->itemData(i, Qt::UserRole).toInt() == form_idx) {
+            combo->setCurrentIndex(i);
+            return;
+        }
+    }
+    combo->setCurrentIndex(0);
+}
+
+/*static*/ QString MainWindow::retrieveFormName(const int species, const int form) {
+    if (form == 0) return "Base";
+
+    using FKey = QPair<int,int>;
+    static const QHash<FKey, QString> form_names = {
+        // ── GEN 1 ─────────────────────────────────────────────────────────
+        {{3,1},"Mega"},         {{3,2},"G-Max"},
+        {{6,1},"Mega X"},       {{6,2},"Mega Y"},       {{6,3},"G-Max"},
+        {{9,1},"Mega"},         {{9,2},"G-Max"},
+        {{12,1},"G-Max"},
+        {{15,1},"Mega"},
+        {{18,1},"Mega"},
+        {{19,1},"Alola"},
+        {{20,1},"Alola"},       {{20,2},"Alola Totem"},
+        {{26,1},"Alola"},
+        {{27,1},"Alola"},
+        {{28,1},"Alola"},
+        {{36,1},"Mega"},
+        {{37,1},"Alola"},
+        {{38,1},"Alola"},
+        {{50,1},"Alola"},
+        {{51,1},"Alola"},
+        {{52,1},"Alola"},       {{52,2},"Galar"},       {{52,3},"G-Max"},
+        {{53,1},"Alola"},
+        {{58,1},"Hisui"},
+        {{59,1},"Hisui"},
+        {{65,1},"Mega"},
+        {{68,1},"G-Max"},
+        {{71,1},"Mega"},
+        {{74,1},"Alola"},
+        {{75,1},"Alola"},
+        {{76,1},"Alola"},
+        {{77,1},"Galar"},
+        {{78,1},"Galar"},
+        {{79,1},"Galar"},
+        {{80,1},"Galar"},       {{80,2},"Mega"},
+        {{83,1},"Galar"},
+        {{88,1},"Alola"},
+        {{89,1},"Alola"},
+        {{94,1},"Mega"},        {{94,2},"G-Max"},
+        {{99,1},"G-Max"},
+        {{100,1},"Hisui"},
+        {{101,1},"Hisui"},
+        {{103,1},"Alola"},
+        {{105,1},"Alola"},      {{105,2},"Alola Totem"},
+        {{110,1},"Galar"},
+        {{115,1},"Mega"},
+        {{121,1},"Mega"},
+        {{122,1},"Galar"},
+        {{127,1},"Mega"},
+        {{128,1},"Paldea (Combat)"},{{128,2},"Paldea (Blaze)"},{{128,3},"Paldea (Aqua)"},
+        {{130,1},"Mega"},
+        {{131,1},"G-Max"},
+        {{133,1},"Partner"},    {{133,2},"G-Max"},
+        {{142,1},"Mega"},
+        {{143,1},"G-Max"},
+        {{144,1},"Galar"},
+        {{145,1},"Galar"},
+        {{146,1},"Galar"},
+        {{149,1},"Mega"},
+        {{150,1},"Mega X"},     {{150,2},"Mega Y"},
+        // ── GEN 2 ─────────────────────────────────────────────────────────
+        {{154,1},"Mega"},
+        {{157,1},"Hisui"},
+        {{160,1},"Mega"},
+        {{172,1},"Spiky"},
+        {{181,1},"Mega"},
+        {{194,1},"Paldea"},
+        {{199,1},"Galar"},
+        {{208,1},"Mega"},
+        {{211,1},"Hisui"},
+        {{212,1},"Mega"},
+        {{214,1},"Mega"},
+        {{215,1},"Hisui"},
+        {{222,1},"Galar"},
+        {{229,1},"Mega"},
+        {{248,1},"Mega"},
+        // ── GEN 3 ─────────────────────────────────────────────────────────
+        {{254,1},"Mega"},
+        {{257,1},"Mega"},
+        {{260,1},"Mega"},
+        {{263,1},"Galar"},
+        {{264,1},"Galar"},
+        {{282,1},"Mega"},
+        {{302,1},"Mega"},
+        {{303,1},"Mega"},
+        {{306,1},"Mega"},
+        {{308,1},"Mega"},
+        {{310,1},"Mega"},
+        {{319,1},"Mega"},
+        {{323,1},"Mega"},
+        {{334,1},"Mega"},
+        {{351,1},"Rainy"},      {{351,2},"Snowy"},      {{351,3},"Sunny"},
+        {{354,1},"Mega"},
+        {{358,1},"Mega"},
+        {{359,1},"Mega"},       {{359,2},"Mega Z"},
+        {{362,1},"Mega"},
+        {{373,1},"Mega"},
+        {{376,1},"Mega"},
+        {{380,1},"Mega"},
+        {{381,1},"Mega"},
+        {{382,1},"Primal"},
+        {{383,1},"Primal"},
+        {{386,1},"Attack"},     {{386,2},"Defense"},    {{386,3},"Speed"},
+        // ── GEN 4 ─────────────────────────────────────────────────────────
+        {{413,1},"Sandy"},      {{413,2},"Trash"},
+        {{421,1},"Sunshine"},
+        {{428,1},"Mega"},
+        {{445,1},"Mega"},       {{445,2},"Mega B"},
+        {{448,1},"Mega"},       {{448,2},"G-Max"},
+        {{460,1},"Mega"},
+        {{475,1},"Mega"},
+        {{479,1},"Fan"},        {{479,2},"Frost"},      {{479,3},"Heat"},
+        {{479,4},"Mow"},        {{479,5},"Wash"},
+        {{483,1},"Origin"},
+        {{484,1},"Origin"},
+        {{487,1},"Origin"},
+        {{492,1},"Sky"},
+        {{493,1},"Bug"},    {{493,2},"Dark"},   {{493,3},"Dragon"},
+        {{493,4},"Electric"},{{493,5},"Fairy"},  {{493,6},"Fighting"},
+        {{493,7},"Fire"},   {{493,8},"Flying"}, {{493,9},"Ghost"},
+        {{493,10},"Grass"}, {{493,11},"Ground"},{{493,12},"Ice"},
+        {{493,13},"Poison"},{{493,14},"Psychic"},{{493,15},"Rock"},
+        {{493,16},"Steel"}, {{493,17},"Water"},
+        // ── GEN 5 ─────────────────────────────────────────────────────────
+        {{503,1},"Hisui"},
+        {{549,1},"Hisui"},
+        {{550,1},"Blue-Striped"},{{550,2},"White-Striped"},
+        {{554,1},"Galar"},
+        {{555,1},"Galar"},      {{555,2},"Galar Zen"},  {{555,3},"Zen"},
+        {{562,1},"Galar"},
+        {{569,1},"G-Max"},
+        {{570,1},"Hisui"},
+        // Mega Eelektross (Champions)
+        {{604,1},"Mega"},
+        {{571,1},"Hisui"},
+        {{618,1},"Galar"},
+        {{628,1},"Hisui"},
+        {{641,1},"Therian"},
+        {{642,1},"Therian"},
+        {{645,1},"Therian"},
+        {{646,1},"Black"},      {{646,2},"White"},
+        {{647,1},"Resolute"},
+        {{648,1},"Pirouette"},
+        {{649,1},"Burn"},       {{649,2},"Chill"},      {{649,3},"Douse"},
+        {{649,4},"Shock"},
+        // ── GEN 6 ─────────────────────────────────────────────────────────
+        {{658,1},"Battle Bond"},{{658,2},"Mega"},       {{658,3},"Ash"},
+        {{668,1},"Female"},
+        {{670,1},"Eternal Flower"},{{670,2},"Mega"},
+        {{678,1},"Female"},
+        {{713,1},"Hisui"},
+        {{716,1},"Active"},
+        {{718,1},"10%"},        {{718,2},"Complete"},
+        {{718,3},"10% (Power)"},{{718,4},"Complete (Power)"},
+        {{724,1},"Hisui"},
+        {{745,1},"Midnight"},   {{745,2},"Dusk"},
+        {{746,1},"School"},
+        {{773,1},"Fighting"},   {{773,2},"Flying"},     {{773,3},"Poison"},
+        {{773,4},"Ground"},     {{773,5},"Rock"},        {{773,6},"Bug"},
+        {{773,7},"Ghost"},      {{773,8},"Steel"},       {{773,9},"Fire"},
+        {{773,10},"Water"},     {{773,11},"Grass"},      {{773,12},"Electric"},
+        {{773,13},"Psychic"},   {{773,14},"Ice"},        {{773,15},"Dragon"},
+        {{773,16},"Dark"},      {{773,17},"Fairy"},
+        {{807,1},"G-Max"},
+        // ── GEN 8 ─────────────────────────────────────────────────────────
+        {{809,1},"G-Max"},
+        {{812,1},"G-Max"},
+        {{815,1},"G-Max"},
+        {{818,1},"G-Max"},
+        {{823,1},"G-Max"},
+        {{826,1},"G-Max"},
+        {{834,1},"G-Max"},
+        {{839,1},"G-Max"},
+        {{841,1},"G-Max"},
+        {{842,1},"G-Max"},
+        {{844,1},"G-Max"},
+        {{845,1},"Gulping"},    {{845,2},"Gorging"},
+        {{849,1},"Low-Key"},    {{849,2},"G-Max"},      {{849,3},"Low-Key G-Max"},
+        {{851,1},"G-Max"},
+        {{854,1},"Antique"},
+        {{855,1},"Antique"},
+        {{858,1},"G-Max"},
+        {{861,1},"G-Max"},
+        {{869,1},"G-Max"},
+        {{870,1},"Mega"},
+        {{875,1},"No-Ice Face"},
+        {{876,1},"Female"},
+        {{877,1},"Hangry"},
+        {{879,1},"G-Max"},
+        {{884,1},"G-Max"},
+        {{888,1},"Crowned"},
+        {{889,1},"Crowned"},
+        {{890,1},"Eternamax"},
+        {{892,1},"Rapid Strike"},{{892,2},"G-Max"},    {{892,3},"Rapid Strike G-Max"},
+        {{893,1},"Dada"},
+        {{898,1},"Ice Rider"},  {{898,2},"Shadow Rider"},
+        // ── GEN 9 ─────────────────────────────────────────────────────────
+        {{901,1},"Blood Moon"},
+        {{902,1},"Female"},
+        {{905,1},"Therian"},
+        {{916,1},"Female"},
+        {{925,1},"Three"},
+        {{931,1},"Blue"},       {{931,2},"Yellow"},     {{931,3},"White"},
+        {{952,1},"Female"},
+        {{964,1},"Hero"},
+        {{970,1},"Female"},
+        {{978,1},"Droopy"},     {{978,2},"Stretchy"},
+        {{982,1},"Three-Segment"},
+        {{999,1},"Roaming"},
+        {{1017,1},"Wellspring"},{{1017,2},"Hearthflame"},{{1017,3},"Cornerstone"},
+        {{1017,4},"Teal Tera"}, {{1017,5},"Wellspring Tera"},
+        {{1017,6},"Hearthflame Tera"},{{1017,7},"Cornerstone Tera"},
+        {{1024,1},"Terastal"},  {{1024,2},"Stellar"},
+    };
+
+    auto it = form_names.find({species, form});
+    if (it != form_names.end()) return *it;
+
+    return "Mega";  // Most unknown alt forms are Champions Megas
 }
 
 void MainWindow::calculateFinished() {

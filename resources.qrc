@@ -73,6 +73,7 @@
         <file>db/sprites/34.png</file>
         <file>db/sprites/35.png</file>
         <file>db/sprites/36.png</file>
+        <file>db/sprites/36-1.png</file>
         <file>db/sprites/37.png</file>
         <file>db/sprites/37-1.png</file>
         <file>db/sprites/38.png</file>
@@ -757,6 +758,7 @@
         <file>db/sprites/602.png</file>
         <file>db/sprites/603.png</file>
         <file>db/sprites/604.png</file>
+        <file>db/sprites/604-1.png</file>
         <file>db/sprites/605.png</file>
         <file>db/sprites/606.png</file>
         <file>db/sprites/607.png</file>
@@ -1121,6 +1123,7 @@
         <file>db/sprites/868.png</file>
         <file>db/sprites/869.png</file>
         <file>db/sprites/870.png</file>
+        <file>db/sprites/870-1.png</file>
         <file>db/sprites/871.png</file>
         <file>db/sprites/872.png</file>
         <file>db/sprites/873.png</file>

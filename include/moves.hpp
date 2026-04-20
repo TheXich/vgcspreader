@@ -425,6 +425,7 @@ enum Moves {
 	Tidy_Up,
 	Triple_Axel,
 	Victory_Dance,
+	Wave_Crash,
 	Wildbolt_Storm
 };
 
