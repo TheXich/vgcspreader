@@ -7,9 +7,16 @@ Calculadora de daño VGC (Video Game Championship) con optimización de EV sprea
 ## Compilar
 
 ```bash
-export PATH="/c/Qt/Tools/mingw810_64/bin:$PATH"
+export PATH="/c/Qt/Tools/mingw810_64/bin:/c/Qt/5.15.2/mingw81_64/bin:$PATH"
 cd "c:/Users/ximob/OneDrive/Documentos/GitHub/vgcspreader"
-mingw32-make -f Makefile.Release
+mingw32-make -f Makefile.Release.Release
+```
+
+Si se modifica `vgcspreader.pro` (añadir fuentes, icono, etc.), regenerar primero con qmake:
+```bash
+export PATH="/c/Qt/Tools/mingw810_64/bin:/c/Qt/5.15.2/mingw81_64/bin:$PATH"
+qmake vgcspreader.pro -o Makefile.Release CONFIG+=release
+mingw32-make -f Makefile.Release.Release
 ```
 
 El ejecutable resultante es `release/vgcspreader.exe`.
@@ -17,7 +24,7 @@ El ejecutable resultante es `release/vgcspreader.exe`.
 Si los cambios son solo en `resources.qrc` (sprites, etc.) y make no los detecta, forzar regeneración:
 ```bash
 rm -f release/qrc_resources.cpp release/qrc_resources.o
-mingw32-make -f Makefile.Release
+mingw32-make -f Makefile.Release.Release
 ```
 
 ---
@@ -374,13 +381,28 @@ Dragon Claw, Shadow Claw, Dire Claw (añadidos a `isSlicingMove()` en `pokemon.c
 
 ### Nuevas Mega Evoluciones (Champions/Legends ZA)
 La base de datos (`personal_species.bin`) incluye las nuevas Megas de Champions. Fueron añadidas mediante el script `build_db.py` más dos adiciones manuales:
-- **Mega Eelektross** (#596-1): Electric, HP/Atk/Def/SpA/SpD/Spe = 85/145/80/135/90/80. Sin sprite disponible aún en Serebii.
-- **Mega Falinks** (#783-1): Fighting, 65/135/135/70/65/100. Sin sprite disponible aún.
-- **Mega Floette** (#670-2): Fairy, HP/Atk/Def/SpA/SpD/Spe = 74/85/87/155/148/102 (BST=651). Forma 2 de Floette (form index 2 en binario, entry 1243). Sprite descargado de Serebii (`670-m.png` → `670-2.png`). La forma 1 (#670-1) es Floette-E (AZ's Floette, BST=551).
+- **Mega Eelektross** (#604-1): Electric, HP/Atk/Def/SpA/SpD/Spe = 85/145/80/135/90/80.
+- **Mega Falinks** (#870-1): Fighting, 65/135/135/70/65/100.
+- **Mega Floette** (#670-2): Fairy, HP/Atk/Def/SpA/SpD/Spe = 74/85/87/155/148/102 (BST=651). Forma 2 de Floette (form index 2 en binario, entry 1243). La forma 1 (#670-1) es Floette-E (AZ's Floette, BST=551). Habilidad: Fairy_Aura (índice 187 en `abilities.hpp`).
 
-Los sprites de las demás Megas Champions (~37 nuevas) se descargaron de Serebii (`pokemonhome/pokemon/small/NNN-m.png`) y están en `db/sprites/` + `resources.qrc`.
+Los sprites de todas las Megas Champions están en `db/sprites/` + `resources.qrc` en formato **40×30 px** (igual que todos los demás). Fuente primaria: **Smogon minisprites** (`smogon.com/forums/media/minisprites/{name}.png`). Para los que Smogon aún no tiene (26-2, 26-3, 448-2), se redimensionan desde los 120×120 de Serebii. El script `tools/fix_mega_sprites.py` automatiza esto: detecta sprites con tamaño incorrecto, descarga el minisprite correcto de Smogon/PS, y redimensiona como fallback.
 
-**Referencia de sprites Champions en Serebii**: `https://www.serebii.net/pokemonhome/pokemon/small/NNN-m.png` donde NNN es el número de Pokédex con ceros (e.g. `149-m.png` para Mega Dragonite). Para Z-variants: `-mz.png` (Mega Absol Z = `359-mz.png`). Para variantes X/Y: `-mx.png`, `-my.png`.
+**Referencia de sprites Champions en Serebii** (solo para descarga inicial, luego redimensionar con el script): `https://www.serebii.net/pokemonhome/pokemon/small/NNN-m.png` donde NNN es el número de Pokédex con ceros. Para Z-variants: `-mz.png`. Para variantes X/Y: `-mx.png`, `-my.png`.
+
+### Habilidades en el binario para formas Mega
+Cuando una forma Mega tiene la habilidad incorrecta en el binario, hay que parchearlo directamente con Python:
+```python
+import struct
+POKEMON_OFFSET = 84; FORM_OFFSET = 28; ABILITY_OFFSET = 8
+with open('db/personal_species.bin', 'rb') as f: data = bytearray(f.read())
+dex = 670  # número de Pokédex
+form_ptr = struct.unpack_from('<H', data, POKEMON_OFFSET * dex + FORM_OFFSET)[0]
+form_num = 2  # 1=primera forma alterna, 2=segunda, etc.
+off = (form_ptr + form_num - 1) * POKEMON_OFFSET + ABILITY_OFFSET
+struct.pack_into('<H', data, off, 187)  # 187 = Fairy_Aura
+with open('db/personal_species.bin', 'wb') as f: f.write(data)
+```
+**Caso real corregido**: Mega Floette (#670-2) tenía `Flower_Veil` (166) en lugar de `Fairy_Aura` (187) — parcheado en el binario.
 
 ---
 
@@ -391,6 +413,6 @@ Los sprites de las demás Megas Champions (~37 nuevas) se descargaron de Serebii
 - Los presets XML guardan los 5 checkboxes de Ruin + Helping Hand del `defense_modifier` (get<5..9>); los campos son opcionales en la carga (fallback a false) para compatibilidad con presets antiguos
 - `NATURE_NUM` y `AUTO_NATURE` tienen el mismo valor numérico (25); el combobox de naturaleza tiene 26 ítems (índices 0–24 = naturales reales, índice 25 = Auto)
 - El enum `Status` usa `NO_STATUS` (no `HEALTHY`) como valor neutro — importante al implementar habilidades que dependen del estado
-- Algunas formas del binario no tienen sprite disponible: Mega Eelektross (#596-1), Mega Falinks (#783-1) — no indexadas aún en Serebii. Formas Totem (Raticate #20, Marowak #105), Lucario G-Max, Zeraora G-Max, Maushold-Three, Toxtricity-Low-Key-Gmax.
+- Algunos sprites Champions no tienen minisprite en Smogon/PS aún: Raichu Mega (#26-2, #26-3), Lucario Gmax (#448-2) — se usan versiones redimensionadas de los Serebii 120×120. Formas Totem (Raticate #20, Marowak #105), Maushold-Three, Toxtricity-Low-Key-Gmax tampoco tienen minisprite disponible.
 - Los nombres de formas en la GUI son genéricos ("Form 1", "Form 2"…); hay código comentado que sugería usar `db/forms.txt` — pendiente de implementar nombres propios por forma
 - El pool total de SPs es **66** (`MAX_EVS = 66` en `pokemon.cpp`), con máximo **32** por stat (`MAX_EVS_SINGLE_STAT = 32`). El cálculo de spreads óptimos usa la suma de SPs asignados como proxy de "coste total" y respeta ambos límites.

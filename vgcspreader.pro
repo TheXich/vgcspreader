@@ -47,3 +47,4 @@ HEADERS += \
 RESOURCES += \
     resources.qrc
 
+RC_ICONS = vgcspreader.ico
