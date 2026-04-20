@@ -190,7 +190,7 @@ Las naturalezas que **suben SPE** (Timid, Jolly, Hasty, Naive) nunca se prueban 
 #### Casos especiales
 - **Surging Strikes**: hits fijos = 3, cada golpe es siempre crit (manejado por `isAlwaysCrit()` en `pokemon.cpp`, no por la UI).
 - **Wicked Blow**: 1 golpe, siempre crit (`isAlwaysCrit()`). No tiene spinbox multi-golpe.
-- **Triple Axel**: hits fijos = 3, pero BP no aumenta progresivamente en el cálculo (se usa el BP del DB = 20 para los 3 golpes). Limitación conocida.
+- **Triple Axel**: hits fijos = 3, BP escalante (20 → 40 → 60). Implementado en `Turn::getMovesEffective()` (`source/turn.cpp`): genera 3 entradas con BP hardcodeado 20/40/60, ignorando el BP del binario y el `multi_hit_count`.
 - **`isAlwaysCrit()`** en `pokemon.cpp` maneja Surging Strikes y Wicked Blow.
 
 ### Daño variable (Eruption/Water Spout/Dragon Energy)

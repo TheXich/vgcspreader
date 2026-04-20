@@ -52,10 +52,21 @@ void Turn::addMove(const Pokemon& thePokemon, const Move& theMove) {
 std::vector<std::pair<Pokemon, Move>> Turn::getMovesEffective() const {
     std::vector<std::pair<Pokemon, Move>> buffer;
 
-    for(unsigned int i = 0; i < hits; i++)
-        for( auto it = moves.begin(); it < moves.end(); it++ )
-            for(unsigned int h = 0; h < it->second.getMultiHitCount(); h++)
-                buffer.push_back(*it);
+    for(unsigned int i = 0; i < hits; i++) {
+        for( auto it = moves.begin(); it < moves.end(); it++ ) {
+            if(it->second.getMoveIndex() == Moves::Triple_Axel) {
+                // Triple Axel: 3 hits with escalating BP (20, 40, 60)
+                for(unsigned int bp : {20u, 40u, 60u}) {
+                    auto entry = *it;
+                    entry.second.setBasePower(bp);
+                    buffer.push_back(entry);
+                }
+            } else {
+                for(unsigned int h = 0; h < it->second.getMultiHitCount(); h++)
+                    buffer.push_back(*it);
+            }
+        }
+    }
 
     return buffer;
 

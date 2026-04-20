@@ -426,7 +426,8 @@ enum Moves {
 	Triple_Axel,
 	Victory_Dance,
 	Wave_Crash,
-	Wildbolt_Storm
+	Wildbolt_Storm,
+	Dual_Wingbeat
 };
 
 #endif

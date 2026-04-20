@@ -34,6 +34,7 @@ static std::pair<int,int> multiHitRange(Moves m) {
         case Moves::Double_Hit:
         case Moves::Double_Kick:
         case Moves::Dual_Chop:
+        case Moves::Dual_Wingbeat:
         case Moves::Bonemerang:
         case Moves::Gear_Grind:
         case Moves::Tachyon_Cutter:
@@ -1176,9 +1177,12 @@ void DefenseMoveWindow::solveMove(const bool preset, const QString& preset_name)
 
     // Apply multi-hit count if applicable
     {
-        QSpinBox* mh_sb = atk1_groupbox->findChild<QSpinBox*>("atk1_multihit_spinbox");
-        if(mh_sb && mh_sb->isVisible())
-            attacking1_move.setMultiHitCount(mh_sb->value());
+        auto [min_h, max_h] = multiHitRange(attacking1_move.getMoveIndex());
+        if(max_h > 0) {
+            QSpinBox* mh_sb = atk1_groupbox->findChild<QSpinBox*>("atk1_multihit_spinbox");
+            int count = (min_h != max_h && mh_sb) ? mh_sb->value() : max_h;
+            attacking1_move.setMultiHitCount(count);
+        }
     }
 
     //now setting pokemon 1 iv/ev/modifier
@@ -1219,9 +1223,12 @@ void DefenseMoveWindow::solveMove(const bool preset, const QString& preset_name)
 
     // Apply multi-hit count if applicable
     {
-        QSpinBox* mh_sb = atk2_groupbox->findChild<QSpinBox*>("atk2_multihit_spinbox");
-        if(mh_sb && mh_sb->isVisible())
-            attacking2_move.setMultiHitCount(mh_sb->value());
+        auto [min_h, max_h] = multiHitRange(attacking2_move.getMoveIndex());
+        if(max_h > 0) {
+            QSpinBox* mh_sb = atk2_groupbox->findChild<QSpinBox*>("atk2_multihit_spinbox");
+            int count = (min_h != max_h && mh_sb) ? mh_sb->value() : max_h;
+            attacking2_move.setMultiHitCount(count);
+        }
     }
 
     //now setting pokemon 2 iv/ev/modifier
