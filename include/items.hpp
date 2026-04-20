@@ -38,7 +38,26 @@ enum Items {
 	Loaded_Dice,
 	Mirror_Herb,
 	Punching_Glove,
-	Eviolite
+	Eviolite,
+	// Type-boosting items (×1.2)
+	Black_Belt,
+	Black_Glasses,
+	Charcoal,
+	Dragon_Fang,
+	Fairy_Feather,
+	Hard_Stone,
+	Magnet,
+	Metal_Coat,
+	Miracle_Seed,
+	Mystic_Water,
+	Never_Melt_Ice,
+	Poison_Barb,
+	Sharp_Beak,
+	Silk_Scarf,
+	Silver_Powder,
+	Soft_Sand,
+	Spell_Tag,
+	Twisted_Spoon
 };
 
 #endif

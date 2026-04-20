@@ -369,6 +369,36 @@ float Pokemon::calculateOtherModifier(const Pokemon& theAttacker, const Move& th
     // Offensive item/ability boosts
     if( theAttacker.getItem() == Items::Life_Orb ) modifier = modifier * 1.3;
 
+    // Type-boosting items (×1.2 to matching type)
+    {
+        static const struct { Items item; Type type; } TYPE_ITEMS[] = {
+            { Items::Black_Belt,     Type::Fighting },
+            { Items::Black_Glasses,  Type::Dark      },
+            { Items::Charcoal,       Type::Fire      },
+            { Items::Dragon_Fang,    Type::Dragon    },
+            { Items::Fairy_Feather,  Type::Fairy     },
+            { Items::Hard_Stone,     Type::Rock      },
+            { Items::Magnet,         Type::Electric  },
+            { Items::Metal_Coat,     Type::Steel     },
+            { Items::Miracle_Seed,   Type::Grass     },
+            { Items::Mystic_Water,   Type::Water     },
+            { Items::Never_Melt_Ice, Type::Ice       },
+            { Items::Poison_Barb,    Type::Poison    },
+            { Items::Sharp_Beak,     Type::Flying    },
+            { Items::Silk_Scarf,     Type::Normal    },
+            { Items::Silver_Powder,  Type::Bug       },
+            { Items::Soft_Sand,      Type::Ground    },
+            { Items::Spell_Tag,      Type::Ghost     },
+            { Items::Twisted_Spoon,  Type::Psychic   },
+        };
+        for( auto& ti : TYPE_ITEMS ) {
+            if( theAttacker.getItem() == ti.item && theMove.getMoveType() == ti.type ) {
+                modifier = modifier * 1.2f;
+                break;
+            }
+        }
+    }
+
     // Water Bubble (attacker): 2× Water-type moves
     if( theAttacker.getAbility() == Ability::Water_Bubble && theMove.getMoveType() == Type::Water ) modifier = modifier * 2.0f;
 
