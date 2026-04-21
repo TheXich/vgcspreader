@@ -525,6 +525,9 @@ QString ResultWindow::getResults(const Turn& theTurn, const Pokemon& thePokemon,
 
     if( grassy_terrain_recover ) restore_result = restore_result + " after Grassy Terrain recover ";
 
+    if( thePokemon.getItem().isLeftovers() && theTurn.getHits() > 1 )
+        restore_result = restore_result + " (Leftovers recovery factored in)";
+
     return roll_result + damage_result + restore_result;
 }
 

@@ -24,6 +24,7 @@ class Item {
         bool isRestoringBerry() const { return is_restoring_berry; }
         float getRestoringActivation() const { return restoring_activation; }
         float getRestoringPercentage() const { return restoring_percentage; }
+        bool isLeftovers() const { return index == Items::Leftovers; }
 
         unsigned int getIndex() { return index; }
 

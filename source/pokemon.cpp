@@ -843,16 +843,25 @@ void Pokemon::recursiveDamageCalculation(Pokemon theDefendingPokemon, std::vecto
     }
 
 
-    //END OF TURN MODIFIERS (these effects apply at the end of the turn
-    //if the pokemon is not dead and some effects are in place we modify the damages
-    if( std::distance(theVector.begin(), it) % theHitNumber == 0 ) {
-        for( auto it_last = theIntVector.begin(); it_last < theIntVector.end(); it_last++ ) {
-            if( *it_last < theDefendingPokemon.getBoostedStat(Stats::HP) ) {
+    //END OF TURN MODIFIERS (these effects apply at the end of each full turn, not after each individual hit)
+    //fires after every complete turn except the last (the killing blow turn needs no end-of-turn effects)
+    if( theHitNumber > 0 ) {
+        unsigned int entries_per_turn = theVector.size() / theHitNumber;
+        unsigned int dist_plus1 = (unsigned int)std::distance(theVector.begin(), it) + 1;
+        if( entries_per_turn > 0 && dist_plus1 % entries_per_turn == 0 && dist_plus1 != theVector.size() ) {
+            for( auto it_last = theIntVector.begin(); it_last < theIntVector.end(); it_last++ ) {
+                if( *it_last < theDefendingPokemon.getBoostedStat(Stats::HP) ) {
 
-                //RESTORING FOR GRASSY TERRAIN
-                //Note: recovery is shown as a text note only; not subtracted from displayed damage (matching Showdown format)
+                    //RESTORING FOR GRASSY TERRAIN
+                    //Note: recovery is shown as a text note only; not subtracted from displayed damage (matching Showdown format)
 
-                //SOON SOME MORE
+                    //LEFTOVERS: heals 1/16 of max HP at end of each turn
+                    if( theDefendingPokemon.getItem().isLeftovers() ) {
+                        int leftovers_heal = theDefendingPokemon.getBoostedStat(Stats::HP) / 16;
+                        *it_last -= leftovers_heal;
+                        if( *it_last < 0 ) *it_last = 0;
+                    }
+                }
             }
         }
     }

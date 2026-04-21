@@ -102,14 +102,19 @@ El orden de stats en el binario es `HP, ATK, DEF, SpATK, SpDEF, SPE`, pero el en
 static constexpr int remap[] = {0, 1, 2, 5, 3, 4};
 ```
 
-### `personal_items.bin` — 6 bytes por entrada
+### `personal_items.bin` — 6 bytes por entrada, indexado por `Items` enum
 
 ```
-[0-1]  uint16  base power bonus
-[2]    uint8   type
-[3]    uint8   category flag
-[4-5]  reserved
+[0]    uint8   is_removable (1 si se puede quitar con Knock Off, etc.)
+[1]    uint8   is_reducing_berry (1 si reduce daño de un tipo)
+[2]    uint8   reducing_berry_type (índice del enum Type)
+[3]    uint8   is_restoring_berry (1 si restaura HP)
+[4]    uint8   restoring_activation (% de HP por debajo del cual se activa)
+[5]    uint8   restoring_percentage (% de HP que restaura)
 ```
+
+> **Nota**: la función `isItemRemovable` en `pokemondb.hpp` lee por error de `readMovesData` en lugar de `readItemsData` — bug preexistente que afecta a Knock Off.  
+> La mecánica de Leftovers **no** usa el binario: se detecta directamente comparando el índice del enum con `Items::Leftovers` mediante `Item::isLeftovers()`.
 
 ### Archivos de texto en `db/`
 
@@ -117,7 +122,7 @@ Uno por línea, en el mismo orden que el enum correspondiente:
 - `moves.txt` — 421 nombres (sincronizado con `Moves` enum)
 - `species.txt` — 1026 nombres (Pokédex)
 - `abilities.txt` — 272 nombres
-- `items.txt` — 35 nombres
+- `items.txt` — 55 nombres (sincronizado con `Items` enum; índice 0 = None, índice 54 = Leftovers)
 - `types.txt` — 18 nombres
 - `natures.txt` — 25 nombres (Hardy…Quirky, sin "Auto")
 
@@ -403,6 +408,36 @@ struct.pack_into('<H', data, off, 187)  # 187 = Fairy_Aura
 with open('db/personal_species.bin', 'wb') as f: f.write(data)
 ```
 **Caso real corregido**: Mega Floette (#670-2) tenía `Flower_Veil` (166) en lugar de `Fairy_Aura` (187) — parcheado en el binario.
+
+---
+
+## Recuperación al final de turno (EOT) en cálculo multi-turno
+
+### Arquitectura
+
+La función `recursiveDamageCalculation` en `source/pokemon.cpp` aplica efectos de fin de turno entre hits consecutivos. La condición correcta para detectar el final de cada turno (excepto el turno final, donde el Pokémon cae) es:
+
+```cpp
+unsigned int entries_per_turn = theVector.size() / theHitNumber;
+unsigned int dist_plus1 = (unsigned int)std::distance(theVector.begin(), it) + 1;
+if( entries_per_turn > 0 && dist_plus1 % entries_per_turn == 0 && dist_plus1 != theVector.size() )
+```
+
+donde `theHitNumber = turn.getHits()` = número de repeticiones de turno (valor del spinbox HKO − 1).
+
+> **Bug histórico corregido**: la condición original `distance % theHitNumber == 0` solo era correcta para 3HKO; para 4HKO y 5HKO no disparaba el EOT en los turnos intermedios.
+
+### Leftovers
+
+- Cura **1/16 del HP máximo** al final de cada turno en que el Pokémon sobrevive.
+- Se detecta con `Item::isLeftovers()` (comparación directa con `Items::Leftovers`, sin leer el binario).
+- Es removible (Knock Off), lo que se refleja en `is_removable = 1` en `personal_items.bin`.
+- El result window muestra `(Leftovers recovery factored in)` cuando el HKO es > 1 turno.
+- **No** se aplica en el turno en que el Pokémon cae (la condición `*it_last < maxHP` lo evita).
+
+### Grassy Terrain
+
+La recuperación de Grassy Terrain **no** se resta del daño calculado (se muestra solo como nota de texto en el resultado, igual que Showdown).
 
 ---
 

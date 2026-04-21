@@ -57,7 +57,9 @@ enum Items {
 	Silver_Powder,
 	Soft_Sand,
 	Spell_Tag,
-	Twisted_Spoon
+	Twisted_Spoon,
+	// Recovery items
+	Leftovers
 };
 
 #endif
