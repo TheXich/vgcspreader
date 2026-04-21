@@ -19,6 +19,7 @@ SOURCES += \
     source/gui/attackmovewindow.cpp \
     source/gui/presetwindow.cpp \
     source/gui/addpresetwindow.cpp \
+    source/gui/savedcalcwindow.cpp \
     source/tinyxml2.cpp
 
 HEADERS += \
@@ -42,6 +43,7 @@ HEADERS += \
     include/gui/attackmovewindow.hpp \
     include/gui/presetwindow.hpp \
     include/gui/addpresetwindow.hpp \
+    include/gui/savedcalcwindow.hpp \
     include/tinyxml2.h
 
 RESOURCES += \

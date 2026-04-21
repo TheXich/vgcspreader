@@ -14,6 +14,8 @@
 #include <QThread>
 #include <QProgressBar>
 #include <QTabWidget>
+#include <QInputDialog>
+#include <QLineEdit>
 #include <qtconcurrentrun.h>
 
 #include "pokemon.hpp"
@@ -24,6 +26,7 @@ MainWindow::MainWindow() {
     selected_pokemon = nullptr;
 
     LoadPresetsFromFile();
+    LoadSavedCalcsFromFile();
 
     createDefendingPokemonGroupBox();
     createMovesGroupBox();
@@ -63,6 +66,10 @@ MainWindow::MainWindow() {
     preset_window->setObjectName("PresetWindow");
     preset_window->setWindowTitle("VGCSpreader");
 
+    saved_calc_window = new SavedCalcWindow(this);
+    saved_calc_window->setObjectName("SavedCalcWindow");
+    saved_calc_window->setWindowTitle("VGCSpreader");
+
     //bottom buttons
     bottom_buttons = new QDialogButtonBox;
     QPushButton* calculate_button = new QPushButton(tr("Calculate"));
@@ -71,10 +78,16 @@ MainWindow::MainWindow() {
     clear_button->setObjectName("clear_button");
     QPushButton* stop_button = new QPushButton(tr("Stop"));
     stop_button->setObjectName("stop_button");
+    QPushButton* save_calc_button = new QPushButton(tr("Save Calc"));
+    save_calc_button->setObjectName("save_calc_button");
+    QPushButton* load_calc_button = new QPushButton(tr("Saved Calcs"));
+    load_calc_button->setObjectName("load_calc_button");
 
     bottom_buttons->addButton(clear_button, QDialogButtonBox::ButtonRole::ResetRole);
     bottom_buttons->addButton(calculate_button, QDialogButtonBox::ButtonRole::AcceptRole);
     bottom_buttons->addButton(stop_button, QDialogButtonBox::ButtonRole::ApplyRole);
+    bottom_buttons->addButton(save_calc_button, QDialogButtonBox::ButtonRole::ActionRole);
+    bottom_buttons->addButton(load_calc_button, QDialogButtonBox::ButtonRole::ActionRole);
     stop_button->setVisible(false);
 
     main_layout->addWidget(bottom_buttons, Qt::AlignRight);
@@ -86,6 +99,8 @@ MainWindow::MainWindow() {
     connect(bottom_buttons, SIGNAL(clicked(QAbstractButton*)), this, SLOT(clear(QAbstractButton*)));
     connect(bottom_buttons, SIGNAL(accepted()), this, SLOT(calculateStart()));
     connect(&this->future_watcher, SIGNAL (finished()), this, SLOT (calculateFinished()));
+    connect(save_calc_button, SIGNAL(clicked(bool)), this, SLOT(openSaveCalcDialog(bool)));
+    connect(load_calc_button, SIGNAL(clicked(bool)), this, SLOT(openLoadCalcWindow(bool)));
 
     layout()->setSizeConstraint( QLayout::SetFixedSize );
 }
@@ -747,39 +762,40 @@ void MainWindow::addDefenseTurn(const Turn& theTurn, const defense_modifier& the
     }
 }
 
+void MainWindow::clearAll() {
+    defending_groupbox->findChild<QComboBox*>("defending_species_combobox")->setCurrentIndex(0);
+    defending_groupbox->findChild<QComboBox*>("defending_forms_combobox")->setCurrentIndex(0);
+    setComboByOriginalIdx(defending_groupbox->findChild<QComboBox*>("defending_nature_combobox"), 0);
+    setComboByOriginalIdx(defending_groupbox->findChild<QComboBox*>("defending_items_combobox"), 0);
+
+    defending_groupbox->findChild<QSpinBox*>("defending_hpiv_spinbox")->setValue(31);
+    defending_groupbox->findChild<QSpinBox*>("defending_atkiv_spinbox")->setValue(31);
+    defending_groupbox->findChild<QSpinBox*>("defending_defiv_spinbox")->setValue(31);
+    defending_groupbox->findChild<QSpinBox*>("defending_spatkiv_spinbox")->setValue(31);
+    defending_groupbox->findChild<QSpinBox*>("defending_spdefiv_spinbox")->setValue(31);
+    defending_groupbox->findChild<QSpinBox*>("defending_speiv_spinbox")->setValue(31);
+
+    defending_groupbox->findChild<QSpinBox*>("defending_hpev_spinbox")->setValue(0);
+    defending_groupbox->findChild<QSpinBox*>("defending_atkev_spinbox")->setValue(0);
+    defending_groupbox->findChild<QSpinBox*>("defending_defev_spinbox")->setValue(0);
+    defending_groupbox->findChild<QSpinBox*>("defending_spatkev_spinbox")->setValue(0);
+    defending_groupbox->findChild<QSpinBox*>("defending_spdefev_spinbox")->setValue(0);
+    defending_groupbox->findChild<QSpinBox*>("defending_speev_spinbox")->setValue(0);
+
+    moves_groupbox->findChild<QPushButton*>("moves_edit_button")->setEnabled(false);
+    moves_groupbox->findChild<QPushButton*>("moves_delete_button")->setEnabled(false);
+
+    moves_groupbox->findChild<QTableWidget*>("moves_defense_view")->setRowCount(0);
+    moves_groupbox->findChild<QTableWidget*>("moves_attack_view")->setRowCount(0);
+    turns_def.clear();
+    modifiers_def.clear();
+    turns_atk.clear();
+    modifiers_atk.clear();
+    defending_pokemons_in_attack.clear();
+}
+
 void MainWindow::clear(QAbstractButton* theButton) {
-    if( theButton->objectName() == "clear_button" ) {
-        defending_groupbox->findChild<QComboBox*>("defending_species_combobox")->setCurrentIndex(0);
-        defending_groupbox->findChild<QComboBox*>("defending_forms_combobox")->setCurrentIndex(0);
-        setComboByOriginalIdx(defending_groupbox->findChild<QComboBox*>("defending_nature_combobox"), 0); // Hardy
-        setComboByOriginalIdx(defending_groupbox->findChild<QComboBox*>("defending_items_combobox"), 0); // None
-
-        defending_groupbox->findChild<QSpinBox*>("defending_hpiv_spinbox")->setValue(31);
-        defending_groupbox->findChild<QSpinBox*>("defending_atkiv_spinbox")->setValue(31);
-        defending_groupbox->findChild<QSpinBox*>("defending_defiv_spinbox")->setValue(31);
-        defending_groupbox->findChild<QSpinBox*>("defending_spatkiv_spinbox")->setValue(31);
-        defending_groupbox->findChild<QSpinBox*>("defending_spdefiv_spinbox")->setValue(31);
-        defending_groupbox->findChild<QSpinBox*>("defending_speiv_spinbox")->setValue(31);
-
-        defending_groupbox->findChild<QSpinBox*>("defending_hpev_spinbox")->setValue(0);
-        defending_groupbox->findChild<QSpinBox*>("defending_atkev_spinbox")->setValue(0);
-        defending_groupbox->findChild<QSpinBox*>("defending_defev_spinbox")->setValue(0);
-        defending_groupbox->findChild<QSpinBox*>("defending_spatkev_spinbox")->setValue(0);
-        defending_groupbox->findChild<QSpinBox*>("defending_spdefev_spinbox")->setValue(0);
-        defending_groupbox->findChild<QSpinBox*>("defending_speev_spinbox")->setValue(0);
-
-        moves_groupbox->findChild<QPushButton*>("moves_edit_button")->setEnabled(false);
-        moves_groupbox->findChild<QPushButton*>("moves_delete_button")->setEnabled(false);
-
-        moves_groupbox->findChild<QTableWidget*>("moves_defense_view")->clear();
-        moves_groupbox->findChild<QTableWidget*>("moves_attack_view")->clear();
-        turns_def.clear();
-        modifiers_def.clear();
-        turns_atk.clear();
-        modifiers_atk.clear();
-        defending_pokemons_in_attack.clear();
-    }
-
+    if( theButton->objectName() == "clear_button" ) clearAll();
     else if( theButton->objectName() == "stop_button" ) calculateStop();
 }
 
@@ -1485,5 +1501,496 @@ void MainWindow::LoadPresetsFromFile() {
             presets.push_back(buffer);
             element = element->NextSiblingElement();
         }
+    }
+}
+
+void MainWindow::openSaveCalcDialog(bool checked) {
+    bool ok;
+    QString name = QInputDialog::getText(this, tr("Save Calculation"), tr("Name:"), QLineEdit::Normal, QString(), &ok);
+    if (ok && !name.isEmpty()) addAsSavedCalc(name);
+}
+
+void MainWindow::openLoadCalcWindow(bool checked) {
+    std::vector<QString> names;
+    for (const auto& calc : saved_calculations) names.push_back(calc.name);
+    saved_calc_window->loadComboBox(names);
+    saved_calc_window->setModal(true);
+    saved_calc_window->setVisible(true);
+}
+
+void MainWindow::addAsSavedCalc(const QString& theName) {
+    SavedCalculation calc;
+    calc.name = theName;
+
+    auto* gb = defending_groupbox;
+    calc.species = gb->findChild<QComboBox*>("defending_species_combobox")->currentData(Qt::UserRole).toInt();
+    calc.form    = gb->findChild<QComboBox*>("defending_forms_combobox")->currentData(Qt::UserRole).toInt();
+    calc.type1   = gb->findChild<QComboBox*>("defending_type1_combobox")->currentData(Qt::UserRole).toInt();
+    calc.type2   = gb->findChild<QComboBox*>("defending_type2_combobox")->currentData(Qt::UserRole).toInt();
+    calc.nature  = gb->findChild<QComboBox*>("defending_nature_combobox")->currentData(Qt::UserRole).toInt();
+    calc.ability = gb->findChild<QComboBox*>("defending_abilities_combobox")->currentData(Qt::UserRole).toInt();
+    calc.item    = gb->findChild<QComboBox*>("defending_items_combobox")->currentData(Qt::UserRole).toInt();
+
+    calc.ivs = { gb->findChild<QSpinBox*>("defending_hpiv_spinbox")->value(),
+                 gb->findChild<QSpinBox*>("defending_atkiv_spinbox")->value(),
+                 gb->findChild<QSpinBox*>("defending_defiv_spinbox")->value(),
+                 gb->findChild<QSpinBox*>("defending_spatkiv_spinbox")->value(),
+                 gb->findChild<QSpinBox*>("defending_spdefiv_spinbox")->value(),
+                 gb->findChild<QSpinBox*>("defending_speiv_spinbox")->value() };
+
+    calc.evs = { gb->findChild<QSpinBox*>("defending_hpev_spinbox")->value(),
+                 gb->findChild<QSpinBox*>("defending_atkev_spinbox")->value(),
+                 gb->findChild<QSpinBox*>("defending_defev_spinbox")->value(),
+                 gb->findChild<QSpinBox*>("defending_spatkev_spinbox")->value(),
+                 gb->findChild<QSpinBox*>("defending_spdefev_spinbox")->value(),
+                 gb->findChild<QSpinBox*>("defending_speev_spinbox")->value() };
+
+    calc.turns_def = turns_def;
+    calc.modifiers_def = modifiers_def;
+    calc.turns_atk = turns_atk;
+    calc.modifiers_atk = modifiers_atk;
+    calc.defending_pokemons_in_attack = defending_pokemons_in_attack;
+
+    saved_calculations.push_back(calc);
+
+    if (xml_saves.RootElement() == nullptr)
+        xml_saves.InsertFirstChild(xml_saves.NewElement("SavedCalculations"));
+
+    const auto& sc = saved_calculations.back();
+
+    auto add_int = [this](tinyxml2::XMLElement* parent, const char* tag, int val) {
+        auto* n = xml_saves.NewElement(tag);
+        n->SetText(val);
+        parent->InsertEndChild(n);
+    };
+
+    tinyxml2::XMLElement* calc_node = xml_saves.NewElement("Calculation");
+
+    tinyxml2::XMLElement* name_node = xml_saves.NewElement("Name");
+    name_node->SetText(sc.name.toStdString().c_str());
+    calc_node->InsertEndChild(name_node);
+
+    // My pokemon panel
+    tinyxml2::XMLElement* my_pkmn = xml_saves.NewElement("MyPokemon");
+    add_int(my_pkmn, "Species", sc.species);
+    add_int(my_pkmn, "Form", sc.form);
+    add_int(my_pkmn, "Type1", sc.type1);
+    add_int(my_pkmn, "Type2", sc.type2);
+    add_int(my_pkmn, "Nature", sc.nature);
+    add_int(my_pkmn, "Ability", sc.ability);
+    add_int(my_pkmn, "Item", sc.item);
+    add_int(my_pkmn, "HPIV",    sc.ivs[0]);
+    add_int(my_pkmn, "AtkIV",   sc.ivs[1]);
+    add_int(my_pkmn, "DefIV",   sc.ivs[2]);
+    add_int(my_pkmn, "SpAtkIV", sc.ivs[3]);
+    add_int(my_pkmn, "SpDefIV", sc.ivs[4]);
+    add_int(my_pkmn, "SpeIV",   sc.ivs[5]);
+    add_int(my_pkmn, "HPEV",    sc.evs[0]);
+    add_int(my_pkmn, "AtkEV",   sc.evs[1]);
+    add_int(my_pkmn, "DefEV",   sc.evs[2]);
+    add_int(my_pkmn, "SpAtkEV", sc.evs[3]);
+    add_int(my_pkmn, "SpDefEV", sc.evs[4]);
+    add_int(my_pkmn, "SpeEV",   sc.evs[5]);
+    calc_node->InsertEndChild(my_pkmn);
+
+    // Defense turns
+    tinyxml2::XMLElement* def_turns_node = xml_saves.NewElement("DefenseTurns");
+    for (size_t i = 0; i < sc.turns_def.size(); i++) {
+        const auto& turn = sc.turns_def[i];
+        const auto& defmod = sc.modifiers_def[i];
+        tinyxml2::XMLElement* turn_node = xml_saves.NewElement("Turn");
+
+        for (int m = 0; m < (int)turn.getMoveNum(); m++) {
+            auto mv_cat = turn.getMoves()[m].second.getMoveCategory();
+            const char* pname = (m == 0) ? "Pokemon1" : "Pokemon2";
+            tinyxml2::XMLElement* pnode = xml_saves.NewElement(pname);
+            const auto& pkmn = turn.getMoves()[m].first;
+            const auto& mv = turn.getMoves()[m].second;
+
+            add_int(pnode, "Species",  pkmn.getPokedexNumber());
+            add_int(pnode, "Form",     pkmn.getForm());
+            add_int(pnode, "Type1",    pkmn.getTypes()[pkmn.getForm()][0]);
+            add_int(pnode, "Type2",    pkmn.getTypes()[pkmn.getForm()][1]);
+            add_int(pnode, "Nature",   pkmn.getNature());
+            add_int(pnode, "Ability",  pkmn.getAbility());
+            add_int(pnode, "Item",     pkmn.getItem().getIndex());
+            if (mv_cat == Move::Category::PHYSICAL) {
+                add_int(pnode, "IV",       pkmn.getIV(Stats::ATK));
+                add_int(pnode, "EV",       pkmn.getEV(Stats::ATK));
+                add_int(pnode, "Modifier", pkmn.getModifier(Stats::ATK));
+            } else {
+                add_int(pnode, "IV",       pkmn.getIV(Stats::SPATK));
+                add_int(pnode, "EV",       pkmn.getEV(Stats::SPATK));
+                add_int(pnode, "Modifier", pkmn.getModifier(Stats::SPATK));
+            }
+            add_int(pnode, "Move",         mv.getMoveIndex());
+            add_int(pnode, "Movetype",     mv.getMoveType());
+            add_int(pnode, "Movetarget",   mv.getTarget());
+            add_int(pnode, "Movecategory", mv_cat);
+            add_int(pnode, "Movebp",       mv.getBasePower());
+            add_int(pnode, "Movecrit",     mv.isCrit());
+            add_int(pnode, "Movez",        mv.isZ());
+            add_int(pnode, "Terrain",      mv.getTerrain());
+            add_int(pnode, "Weather",      mv.getWeather());
+            add_int(pnode, "MultiHit",     mv.getMultiHitCount());
+            turn_node->InsertEndChild(pnode);
+        }
+
+        add_int(turn_node, "Defmodifier",   std::get<1>(defmod));
+        add_int(turn_node, "Spdefmodifier", std::get<2>(defmod));
+        auto* hpmod = xml_saves.NewElement("HPmodifier");
+        hpmod->SetText(std::get<0>(defmod));
+        turn_node->InsertEndChild(hpmod);
+        add_int(turn_node, "Hits",          turn.getHits());
+        add_int(turn_node, "TeraType",      std::get<3>(defmod));
+        add_int(turn_node, "Terastallized", std::get<4>(defmod));
+        add_int(turn_node, "SwordOfRuin",   std::get<5>(defmod));
+        add_int(turn_node, "BeadsOfRuin",   std::get<6>(defmod));
+        add_int(turn_node, "TabletsOfRuin", std::get<7>(defmod));
+        add_int(turn_node, "VesselOfRuin",  std::get<8>(defmod));
+        add_int(turn_node, "HelpingHand",   std::get<9>(defmod));
+        add_int(turn_node, "FriendGuard",   std::get<10>(defmod));
+        def_turns_node->InsertEndChild(turn_node);
+    }
+    calc_node->InsertEndChild(def_turns_node);
+
+    // Attack turns
+    tinyxml2::XMLElement* atk_turns_node = xml_saves.NewElement("AttackTurns");
+    for (size_t i = 0; i < sc.turns_atk.size(); i++) {
+        const auto& turn = sc.turns_atk[i];
+        const auto& def_pkmn = sc.defending_pokemons_in_attack[i];
+        const auto& atkmod = sc.modifiers_atk[i];
+        tinyxml2::XMLElement* turn_node = xml_saves.NewElement("Turn");
+
+        const auto& mv = turn.getMoves()[0].second;
+        auto mv_cat = mv.getMoveCategory();
+
+        add_int(turn_node, "Move",         mv.getMoveIndex());
+        add_int(turn_node, "Movetype",     mv.getMoveType());
+        add_int(turn_node, "Movetarget",   mv.getTarget());
+        add_int(turn_node, "Movecategory", mv_cat);
+        add_int(turn_node, "Movebp",       mv.getBasePower());
+        add_int(turn_node, "Movecrit",     mv.isCrit());
+        add_int(turn_node, "Movez",        mv.isZ());
+        add_int(turn_node, "Terrain",      mv.getTerrain());
+        add_int(turn_node, "Weather",      mv.getWeather());
+        add_int(turn_node, "MultiHit",     mv.getMultiHitCount());
+        add_int(turn_node, "Hits",         turn.getHits());
+
+        tinyxml2::XMLElement* def_node = xml_saves.NewElement("Defender");
+        add_int(def_node, "Species",      def_pkmn.getPokedexNumber());
+        add_int(def_node, "Form",         def_pkmn.getForm());
+        add_int(def_node, "Type1",        def_pkmn.getTypes()[def_pkmn.getForm()][0]);
+        add_int(def_node, "Type2",        def_pkmn.getTypes()[def_pkmn.getForm()][1]);
+        add_int(def_node, "Nature",       def_pkmn.getNature());
+        add_int(def_node, "Ability",      def_pkmn.getAbility());
+        add_int(def_node, "Item",         def_pkmn.getItem().getIndex());
+        add_int(def_node, "TeraType",     def_pkmn.getTeraType());
+        add_int(def_node, "Terastallized",def_pkmn.isTerastallized());
+        if (mv_cat == Move::Category::PHYSICAL) {
+            add_int(def_node, "DefIV",      def_pkmn.getIV(Stats::DEF));
+            add_int(def_node, "DefEV",      def_pkmn.getEV(Stats::DEF));
+            add_int(def_node, "DefModifier",def_pkmn.getModifier(Stats::DEF));
+        } else {
+            add_int(def_node, "DefIV",      def_pkmn.getIV(Stats::SPDEF));
+            add_int(def_node, "DefEV",      def_pkmn.getEV(Stats::SPDEF));
+            add_int(def_node, "DefModifier",def_pkmn.getModifier(Stats::SPDEF));
+        }
+        add_int(def_node, "HPIV",  def_pkmn.getIV(Stats::HP));
+        add_int(def_node, "HPEV",  def_pkmn.getEV(Stats::HP));
+        auto* hp_perc = xml_saves.NewElement("HPPerc");
+        hp_perc->SetText(def_pkmn.getCurrentHPPercentage());
+        def_node->InsertEndChild(hp_perc);
+        turn_node->InsertEndChild(def_node);
+
+        add_int(turn_node, "AtkMod",           std::get<0>(atkmod));
+        add_int(turn_node, "SpAtkMod",         std::get<1>(atkmod));
+        add_int(turn_node, "AtkTeraType",      std::get<2>(atkmod));
+        add_int(turn_node, "AtkTerastallized", std::get<3>(atkmod));
+        add_int(turn_node, "Tablets",          std::get<4>(atkmod));
+        add_int(turn_node, "Vessel",           std::get<5>(atkmod));
+        add_int(turn_node, "Sword",            std::get<6>(atkmod));
+        add_int(turn_node, "Beads",            std::get<7>(atkmod));
+        add_int(turn_node, "HelpingHand",      std::get<8>(atkmod));
+        add_int(turn_node, "FriendGuard",      std::get<9>(atkmod));
+        atk_turns_node->InsertEndChild(turn_node);
+    }
+    calc_node->InsertEndChild(atk_turns_node);
+
+    xml_saves.LastChild()->InsertEndChild(calc_node);
+    xml_saves.SaveFile("saves.xml");
+}
+
+void MainWindow::LoadSavedCalcsFromFile() {
+    xml_saves.LoadFile("saves.xml");
+
+    tinyxml2::XMLElement* root = xml_saves.RootElement();
+    if (root == nullptr) {
+        xml_saves.InsertFirstChild(xml_saves.NewElement("SavedCalculations"));
+        return;
+    }
+
+    for (auto* calc_elem = root->FirstChildElement("Calculation"); calc_elem; calc_elem = calc_elem->NextSiblingElement("Calculation")) {
+        SavedCalculation sc;
+
+        auto* name_elem = calc_elem->FirstChildElement("Name");
+        if (!name_elem) continue;
+        sc.name = name_elem->GetText();
+
+        auto* mp = calc_elem->FirstChildElement("MyPokemon");
+        if (!mp) continue;
+        sc.species = std::atoi(mp->FirstChildElement("Species")->GetText());
+        sc.form    = std::atoi(mp->FirstChildElement("Form")->GetText());
+        sc.type1   = std::atoi(mp->FirstChildElement("Type1")->GetText());
+        sc.type2   = std::atoi(mp->FirstChildElement("Type2")->GetText());
+        sc.nature  = std::atoi(mp->FirstChildElement("Nature")->GetText());
+        sc.ability = std::atoi(mp->FirstChildElement("Ability")->GetText());
+        sc.item    = std::atoi(mp->FirstChildElement("Item")->GetText());
+        sc.ivs = { std::atoi(mp->FirstChildElement("HPIV")->GetText()),
+                   std::atoi(mp->FirstChildElement("AtkIV")->GetText()),
+                   std::atoi(mp->FirstChildElement("DefIV")->GetText()),
+                   std::atoi(mp->FirstChildElement("SpAtkIV")->GetText()),
+                   std::atoi(mp->FirstChildElement("SpDefIV")->GetText()),
+                   std::atoi(mp->FirstChildElement("SpeIV")->GetText()) };
+        sc.evs = { std::atoi(mp->FirstChildElement("HPEV")->GetText()),
+                   std::atoi(mp->FirstChildElement("AtkEV")->GetText()),
+                   std::atoi(mp->FirstChildElement("DefEV")->GetText()),
+                   std::atoi(mp->FirstChildElement("SpAtkEV")->GetText()),
+                   std::atoi(mp->FirstChildElement("SpDefEV")->GetText()),
+                   std::atoi(mp->FirstChildElement("SpeEV")->GetText()) };
+
+        // Defense turns
+        auto* def_turns = calc_elem->FirstChildElement("DefenseTurns");
+        if (def_turns) {
+            for (auto* turn_elem = def_turns->FirstChildElement("Turn"); turn_elem; turn_elem = turn_elem->NextSiblingElement("Turn")) {
+                Turn turn;
+                defense_modifier defmod;
+
+                auto* p1 = turn_elem->FirstChildElement("Pokemon1");
+                if (p1) {
+                    Pokemon pkmn(std::atoi(p1->FirstChildElement("Species")->GetText()));
+                    Move mv(Moves(std::atoi(p1->FirstChildElement("Move")->GetText())));
+                    auto cat = Move::Category(std::atoi(p1->FirstChildElement("Movecategory")->GetText()));
+                    mv.setMoveCategory(cat);
+                    pkmn.setForm(std::atoi(p1->FirstChildElement("Form")->GetText()));
+                    pkmn.setType(0, Type(std::atoi(p1->FirstChildElement("Type1")->GetText())));
+                    pkmn.setType(1, Type(std::atoi(p1->FirstChildElement("Type2")->GetText())));
+                    pkmn.setNature(Stats::Nature(std::atoi(p1->FirstChildElement("Nature")->GetText())));
+                    pkmn.setAbility(Ability(std::atoi(p1->FirstChildElement("Ability")->GetText())));
+                    pkmn.setItem(Item(std::atoi(p1->FirstChildElement("Item")->GetText())));
+                    if (cat == Move::Category::PHYSICAL) {
+                        pkmn.setIV(Stats::ATK, std::atoi(p1->FirstChildElement("IV")->GetText()));
+                        pkmn.setEV(Stats::ATK, std::atoi(p1->FirstChildElement("EV")->GetText()));
+                        pkmn.setModifier(Stats::ATK, std::atoi(p1->FirstChildElement("Modifier")->GetText()));
+                    } else {
+                        pkmn.setIV(Stats::SPATK, std::atoi(p1->FirstChildElement("IV")->GetText()));
+                        pkmn.setEV(Stats::SPATK, std::atoi(p1->FirstChildElement("EV")->GetText()));
+                        pkmn.setModifier(Stats::SPATK, std::atoi(p1->FirstChildElement("Modifier")->GetText()));
+                    }
+                    mv.setMoveType(Type(std::atoi(p1->FirstChildElement("Movetype")->GetText())));
+                    mv.setTarget(Move::Target(std::atoi(p1->FirstChildElement("Movetarget")->GetText())));
+                    mv.setBasePower(std::atoi(p1->FirstChildElement("Movebp")->GetText()));
+                    mv.setCrit(p1->FirstChildElement("Movecrit")->BoolText());
+                    mv.setZ(p1->FirstChildElement("Movez")->BoolText());
+                    mv.setTerrain(Move::Terrain(std::atoi(p1->FirstChildElement("Terrain")->GetText())));
+                    mv.setWeather(Move::Weather(std::atoi(p1->FirstChildElement("Weather")->GetText())));
+                    auto* mh = p1->FirstChildElement("MultiHit");
+                    if (mh) mv.setMultiHitCount(std::atoi(mh->GetText()));
+                    turn.addMove(pkmn, mv);
+                }
+                auto* p2 = turn_elem->FirstChildElement("Pokemon2");
+                if (p2) {
+                    Pokemon pkmn(std::atoi(p2->FirstChildElement("Species")->GetText()));
+                    Move mv(Moves(std::atoi(p2->FirstChildElement("Move")->GetText())));
+                    auto cat = Move::Category(std::atoi(p2->FirstChildElement("Movecategory")->GetText()));
+                    mv.setMoveCategory(cat);
+                    pkmn.setForm(std::atoi(p2->FirstChildElement("Form")->GetText()));
+                    pkmn.setType(0, Type(std::atoi(p2->FirstChildElement("Type1")->GetText())));
+                    pkmn.setType(1, Type(std::atoi(p2->FirstChildElement("Type2")->GetText())));
+                    pkmn.setNature(Stats::Nature(std::atoi(p2->FirstChildElement("Nature")->GetText())));
+                    pkmn.setAbility(Ability(std::atoi(p2->FirstChildElement("Ability")->GetText())));
+                    pkmn.setItem(Item(std::atoi(p2->FirstChildElement("Item")->GetText())));
+                    if (cat == Move::Category::PHYSICAL) {
+                        pkmn.setIV(Stats::ATK, std::atoi(p2->FirstChildElement("IV")->GetText()));
+                        pkmn.setEV(Stats::ATK, std::atoi(p2->FirstChildElement("EV")->GetText()));
+                        pkmn.setModifier(Stats::ATK, std::atoi(p2->FirstChildElement("Modifier")->GetText()));
+                    } else {
+                        pkmn.setIV(Stats::SPATK, std::atoi(p2->FirstChildElement("IV")->GetText()));
+                        pkmn.setEV(Stats::SPATK, std::atoi(p2->FirstChildElement("EV")->GetText()));
+                        pkmn.setModifier(Stats::SPATK, std::atoi(p2->FirstChildElement("Modifier")->GetText()));
+                    }
+                    mv.setMoveType(Type(std::atoi(p2->FirstChildElement("Movetype")->GetText())));
+                    mv.setTarget(Move::Target(std::atoi(p2->FirstChildElement("Movetarget")->GetText())));
+                    mv.setBasePower(std::atoi(p2->FirstChildElement("Movebp")->GetText()));
+                    mv.setCrit(p2->FirstChildElement("Movecrit")->BoolText());
+                    mv.setZ(p2->FirstChildElement("Movez")->BoolText());
+                    mv.setTerrain(Move::Terrain(std::atoi(p2->FirstChildElement("Terrain")->GetText())));
+                    mv.setWeather(Move::Weather(std::atoi(p2->FirstChildElement("Weather")->GetText())));
+                    auto* mh = p2->FirstChildElement("MultiHit");
+                    if (mh) mv.setMultiHitCount(std::atoi(mh->GetText()));
+                    turn.addMove(pkmn, mv);
+                }
+
+                turn.setHits(std::atoi(turn_elem->FirstChildElement("Hits")->GetText()));
+                std::get<0>(defmod) = (float)std::atof(turn_elem->FirstChildElement("HPmodifier")->GetText());
+                std::get<1>(defmod) = std::atoi(turn_elem->FirstChildElement("Defmodifier")->GetText());
+                std::get<2>(defmod) = std::atoi(turn_elem->FirstChildElement("Spdefmodifier")->GetText());
+                auto* tt = turn_elem->FirstChildElement("TeraType");
+                std::get<3>(defmod) = tt ? Type(std::atoi(tt->GetText())) : Type::Typeless;
+                auto* tb = turn_elem->FirstChildElement("Terastallized");
+                std::get<4>(defmod) = tb ? (bool)std::atoi(tb->GetText()) : false;
+                auto* sw = turn_elem->FirstChildElement("SwordOfRuin");
+                std::get<5>(defmod) = sw ? (bool)std::atoi(sw->GetText()) : false;
+                auto* bd = turn_elem->FirstChildElement("BeadsOfRuin");
+                std::get<6>(defmod) = bd ? (bool)std::atoi(bd->GetText()) : false;
+                auto* ta = turn_elem->FirstChildElement("TabletsOfRuin");
+                std::get<7>(defmod) = ta ? (bool)std::atoi(ta->GetText()) : false;
+                auto* ve = turn_elem->FirstChildElement("VesselOfRuin");
+                std::get<8>(defmod) = ve ? (bool)std::atoi(ve->GetText()) : false;
+                auto* hh = turn_elem->FirstChildElement("HelpingHand");
+                std::get<9>(defmod) = hh ? (bool)std::atoi(hh->GetText()) : false;
+                auto* fg = turn_elem->FirstChildElement("FriendGuard");
+                std::get<10>(defmod) = fg ? (bool)std::atoi(fg->GetText()) : false;
+
+                sc.turns_def.push_back(turn);
+                sc.modifiers_def.push_back(defmod);
+            }
+        }
+
+        // Attack turns
+        auto* atk_turns = calc_elem->FirstChildElement("AttackTurns");
+        if (atk_turns) {
+            for (auto* turn_elem = atk_turns->FirstChildElement("Turn"); turn_elem; turn_elem = turn_elem->NextSiblingElement("Turn")) {
+                Move mv(Moves(std::atoi(turn_elem->FirstChildElement("Move")->GetText())));
+                auto mv_cat = Move::Category(std::atoi(turn_elem->FirstChildElement("Movecategory")->GetText()));
+                mv.setMoveCategory(mv_cat);
+                mv.setMoveType(Type(std::atoi(turn_elem->FirstChildElement("Movetype")->GetText())));
+                mv.setTarget(Move::Target(std::atoi(turn_elem->FirstChildElement("Movetarget")->GetText())));
+                mv.setBasePower(std::atoi(turn_elem->FirstChildElement("Movebp")->GetText()));
+                mv.setCrit(turn_elem->FirstChildElement("Movecrit")->BoolText());
+                mv.setZ(turn_elem->FirstChildElement("Movez")->BoolText());
+                mv.setTerrain(Move::Terrain(std::atoi(turn_elem->FirstChildElement("Terrain")->GetText())));
+                mv.setWeather(Move::Weather(std::atoi(turn_elem->FirstChildElement("Weather")->GetText())));
+                auto* mh = turn_elem->FirstChildElement("MultiHit");
+                if (mh) mv.setMultiHitCount(std::atoi(mh->GetText()));
+
+                Turn turn;
+                turn.addMove(Pokemon(1), mv);
+                turn.setHits(std::atoi(turn_elem->FirstChildElement("Hits")->GetText()));
+
+                auto* dn = turn_elem->FirstChildElement("Defender");
+                Pokemon def_pkmn(std::atoi(dn->FirstChildElement("Species")->GetText()));
+                def_pkmn.setForm(std::atoi(dn->FirstChildElement("Form")->GetText()));
+                def_pkmn.setType(0, Type(std::atoi(dn->FirstChildElement("Type1")->GetText())));
+                def_pkmn.setType(1, Type(std::atoi(dn->FirstChildElement("Type2")->GetText())));
+                def_pkmn.setNature(Stats::Nature(std::atoi(dn->FirstChildElement("Nature")->GetText())));
+                def_pkmn.setAbility(Ability(std::atoi(dn->FirstChildElement("Ability")->GetText())));
+                def_pkmn.setItem(Item(std::atoi(dn->FirstChildElement("Item")->GetText())));
+                auto* tt2 = dn->FirstChildElement("TeraType");
+                if (tt2) def_pkmn.setTeraType(Type(std::atoi(tt2->GetText())));
+                auto* tb2 = dn->FirstChildElement("Terastallized");
+                if (tb2) def_pkmn.setTerastallized((bool)std::atoi(tb2->GetText()));
+                Stats::Stat def_stat = (mv_cat == Move::Category::PHYSICAL) ? Stats::DEF : Stats::SPDEF;
+                def_pkmn.setIV(def_stat, std::atoi(dn->FirstChildElement("DefIV")->GetText()));
+                def_pkmn.setEV(def_stat, std::atoi(dn->FirstChildElement("DefEV")->GetText()));
+                def_pkmn.setModifier(def_stat, std::atoi(dn->FirstChildElement("DefModifier")->GetText()));
+                def_pkmn.setIV(Stats::HP, std::atoi(dn->FirstChildElement("HPIV")->GetText()));
+                def_pkmn.setEV(Stats::HP, std::atoi(dn->FirstChildElement("HPEV")->GetText()));
+                def_pkmn.setCurrentHPPercentage((float)std::atof(dn->FirstChildElement("HPPerc")->GetText()));
+
+                attack_modifier atkmod;
+                std::get<0>(atkmod) = std::atoi(turn_elem->FirstChildElement("AtkMod")->GetText());
+                std::get<1>(atkmod) = std::atoi(turn_elem->FirstChildElement("SpAtkMod")->GetText());
+                std::get<2>(atkmod) = Type(std::atoi(turn_elem->FirstChildElement("AtkTeraType")->GetText()));
+                std::get<3>(atkmod) = (bool)std::atoi(turn_elem->FirstChildElement("AtkTerastallized")->GetText());
+                std::get<4>(atkmod) = (bool)std::atoi(turn_elem->FirstChildElement("Tablets")->GetText());
+                std::get<5>(atkmod) = (bool)std::atoi(turn_elem->FirstChildElement("Vessel")->GetText());
+                std::get<6>(atkmod) = (bool)std::atoi(turn_elem->FirstChildElement("Sword")->GetText());
+                std::get<7>(atkmod) = (bool)std::atoi(turn_elem->FirstChildElement("Beads")->GetText());
+                auto* hh2 = turn_elem->FirstChildElement("HelpingHand");
+                std::get<8>(atkmod) = hh2 ? (bool)std::atoi(hh2->GetText()) : false;
+                auto* fg2 = turn_elem->FirstChildElement("FriendGuard");
+                std::get<9>(atkmod) = fg2 ? (bool)std::atoi(fg2->GetText()) : false;
+
+                sc.turns_atk.push_back(turn);
+                sc.modifiers_atk.push_back(atkmod);
+                sc.defending_pokemons_in_attack.push_back(def_pkmn);
+            }
+        }
+
+        saved_calculations.push_back(sc);
+    }
+}
+
+void MainWindow::restoreFromSavedCalc(int index) {
+    const auto& sc = saved_calculations[index];
+
+    clearAll();
+
+    // Restore my pokemon panel
+    auto* gb = defending_groupbox;
+    setComboByOriginalIdx(gb->findChild<QComboBox*>("defending_species_combobox"), sc.species);
+    setFormComboByFormIdx(gb->findChild<QComboBox*>("defending_forms_combobox"), sc.form);
+    setComboByOriginalIdx(gb->findChild<QComboBox*>("defending_type1_combobox"), sc.type1);
+    setComboByOriginalIdx(gb->findChild<QComboBox*>("defending_type2_combobox"), sc.type2);
+    // Update type2 visibility based on saved types
+    gb->findChild<QComboBox*>("defending_type2_combobox")->setVisible(sc.type1 != sc.type2);
+    setComboByOriginalIdx(gb->findChild<QComboBox*>("defending_nature_combobox"), sc.nature);
+    setComboByOriginalIdx(gb->findChild<QComboBox*>("defending_abilities_combobox"), sc.ability);
+    setComboByOriginalIdx(gb->findChild<QComboBox*>("defending_items_combobox"), sc.item);
+
+    gb->findChild<QSpinBox*>("defending_hpiv_spinbox")->setValue(sc.ivs[0]);
+    gb->findChild<QSpinBox*>("defending_atkiv_spinbox")->setValue(sc.ivs[1]);
+    gb->findChild<QSpinBox*>("defending_defiv_spinbox")->setValue(sc.ivs[2]);
+    gb->findChild<QSpinBox*>("defending_spatkiv_spinbox")->setValue(sc.ivs[3]);
+    gb->findChild<QSpinBox*>("defending_spdefiv_spinbox")->setValue(sc.ivs[4]);
+    gb->findChild<QSpinBox*>("defending_speiv_spinbox")->setValue(sc.ivs[5]);
+
+    gb->findChild<QSpinBox*>("defending_hpev_spinbox")->setValue(sc.evs[0]);
+    gb->findChild<QSpinBox*>("defending_atkev_spinbox")->setValue(sc.evs[1]);
+    gb->findChild<QSpinBox*>("defending_defev_spinbox")->setValue(sc.evs[2]);
+    gb->findChild<QSpinBox*>("defending_spatkev_spinbox")->setValue(sc.evs[3]);
+    gb->findChild<QSpinBox*>("defending_spdefev_spinbox")->setValue(sc.evs[4]);
+    gb->findChild<QSpinBox*>("defending_speev_spinbox")->setValue(sc.evs[5]);
+
+    // Restore defense turns
+    auto* def_view = moves_groupbox->findChild<QTableWidget*>("moves_defense_view");
+    for (size_t i = 0; i < sc.turns_def.size(); i++) {
+        turns_def.push_back(sc.turns_def[i]);
+        modifiers_def.push_back(sc.modifiers_def[i]);
+
+        def_view->setRowCount(def_view->rowCount() + 1);
+        int row = (int)turns_def.size() - 1;
+        auto buffer = turns_def[row].getMoves();
+
+        QString mn1 = buffer[0].second.isZ() ? tr("Z-") + moves_names[buffer[0].second.getMoveIndex()] : moves_names[buffer[0].second.getMoveIndex()];
+        def_view->setItem(row, 0, new QTableWidgetItem(QString(species_names[buffer[0].first.getPokedexNumber()-1] + " " + mn1)));
+        def_view->resizeColumnToContents(0);
+
+        if (turns_def[row].getMoveNum() > 1) {
+            QString mn2 = buffer[1].second.isZ() ? tr("Z-") + moves_names[buffer[1].second.getMoveIndex()] : moves_names[buffer[1].second.getMoveIndex()];
+            QTableWidgetItem* plus = new QTableWidgetItem("+");
+            plus->setTextAlignment(Qt::AlignCenter);
+            def_view->setItem(row, 1, plus);
+            def_view->setItem(row, 2, new QTableWidgetItem(QString(species_names[buffer[1].first.getPokedexNumber()-1] + " " + mn2)));
+            def_view->resizeColumnToContents(2);
+        }
+    }
+
+    // Restore attack turns
+    auto* atk_view = moves_groupbox->findChild<QTableWidget*>("moves_attack_view");
+    for (size_t i = 0; i < sc.turns_atk.size(); i++) {
+        turns_atk.push_back(sc.turns_atk[i]);
+        modifiers_atk.push_back(sc.modifiers_atk[i]);
+        defending_pokemons_in_attack.push_back(sc.defending_pokemons_in_attack[i]);
+
+        atk_view->setRowCount(atk_view->rowCount() + 1);
+        int row = (int)turns_atk.size() - 1;
+        auto buffer = turns_atk[row].getMoves();
+        const auto& def_pkmn = defending_pokemons_in_attack[row];
+
+        QString mn1 = buffer[0].second.isZ() ? tr("Z-") + moves_names[buffer[0].second.getMoveIndex()] : moves_names[buffer[0].second.getMoveIndex()];
+        atk_view->setItem(row, 0, new QTableWidgetItem(QString(mn1 + " vs " + species_names[def_pkmn.getPokedexNumber()-1])));
+        atk_view->resizeColumnToContents(0);
     }
 }

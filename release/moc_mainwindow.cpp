@@ -22,8 +22,8 @@ QT_BEGIN_MOC_NAMESPACE
 QT_WARNING_PUSH
 QT_WARNING_DISABLE_DEPRECATED
 struct qt_meta_stringdata_MainWindow_t {
-    QByteArrayData data[23];
-    char stringdata0[299];
+    QByteArrayData data[25];
+    char stringdata0[337];
 };
 #define QT_MOC_LITERAL(idx, ofs, len) \
     Q_STATIC_BYTE_ARRAY_DATA_HEADER_INITIALIZER_WITH_OFFSET(len, \
@@ -54,7 +54,9 @@ QT_MOC_LITERAL(18, 232, 9), // "theButton"
 QT_MOC_LITERAL(19, 242, 9), // "calculate"
 QT_MOC_LITERAL(20, 252, 14), // "calculateStart"
 QT_MOC_LITERAL(21, 267, 13), // "calculateStop"
-QT_MOC_LITERAL(22, 281, 17) // "calculateFinished"
+QT_MOC_LITERAL(22, 281, 17), // "calculateFinished"
+QT_MOC_LITERAL(23, 299, 18), // "openSaveCalcDialog"
+QT_MOC_LITERAL(24, 318, 18) // "openLoadCalcWindow"
 
     },
     "MainWindow\0setDefendingPokemonSpecies\0"
@@ -65,7 +67,8 @@ QT_MOC_LITERAL(22, 281, 17) // "calculateFinished"
     "openMoveWindowEdit\0moveTabChanged\0"
     "clear\0QAbstractButton*\0theButton\0"
     "calculate\0calculateStart\0calculateStop\0"
-    "calculateFinished"
+    "calculateFinished\0openSaveCalcDialog\0"
+    "openLoadCalcWindow"
 };
 #undef QT_MOC_LITERAL
 
@@ -75,7 +78,7 @@ static const uint qt_meta_data_MainWindow[] = {
        8,       // revision
        0,       // classname
        0,    0, // classinfo
-      15,   14, // methods
+      17,   14, // methods
        0,    0, // properties
        0,    0, // enums/sets
        0,    0, // constructors
@@ -83,21 +86,23 @@ static const uint qt_meta_data_MainWindow[] = {
        0,       // signalCount
 
  // slots: name, argc, parameters, tag, flags
-       1,    1,   89,    2, 0x08 /* Private */,
-       4,    1,   92,    2, 0x08 /* Private */,
-       5,    2,   95,    2, 0x08 /* Private */,
-       8,    1,  100,    2, 0x08 /* Private */,
-      10,    1,  103,    2, 0x08 /* Private */,
-      11,    0,  106,    2, 0x08 /* Private */,
-      12,    0,  107,    2, 0x08 /* Private */,
-      13,    1,  108,    2, 0x08 /* Private */,
-      14,    1,  111,    2, 0x08 /* Private */,
-      15,    1,  114,    2, 0x08 /* Private */,
-      16,    1,  117,    2, 0x08 /* Private */,
-      19,    0,  120,    2, 0x08 /* Private */,
-      20,    0,  121,    2, 0x08 /* Private */,
-      21,    0,  122,    2, 0x08 /* Private */,
-      22,    0,  123,    2, 0x08 /* Private */,
+       1,    1,   99,    2, 0x08 /* Private */,
+       4,    1,  102,    2, 0x08 /* Private */,
+       5,    2,  105,    2, 0x08 /* Private */,
+       8,    1,  110,    2, 0x08 /* Private */,
+      10,    1,  113,    2, 0x08 /* Private */,
+      11,    0,  116,    2, 0x08 /* Private */,
+      12,    0,  117,    2, 0x08 /* Private */,
+      13,    1,  118,    2, 0x08 /* Private */,
+      14,    1,  121,    2, 0x08 /* Private */,
+      15,    1,  124,    2, 0x08 /* Private */,
+      16,    1,  127,    2, 0x08 /* Private */,
+      19,    0,  130,    2, 0x08 /* Private */,
+      20,    0,  131,    2, 0x08 /* Private */,
+      21,    0,  132,    2, 0x08 /* Private */,
+      22,    0,  133,    2, 0x08 /* Private */,
+      23,    1,  134,    2, 0x08 /* Private */,
+      24,    1,  137,    2, 0x08 /* Private */,
 
  // slots: parameters
     QMetaType::Void, QMetaType::Int,    3,
@@ -115,6 +120,8 @@ static const uint qt_meta_data_MainWindow[] = {
     QMetaType::Void,
     QMetaType::Void,
     QMetaType::Void,
+    QMetaType::Void, QMetaType::Bool,    9,
+    QMetaType::Void, QMetaType::Bool,    9,
 
        0        // eod
 };
@@ -140,6 +147,8 @@ void MainWindow::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, 
         case 12: _t->calculateStart(); break;
         case 13: _t->calculateStop(); break;
         case 14: _t->calculateFinished(); break;
+        case 15: _t->openSaveCalcDialog((*reinterpret_cast< bool(*)>(_a[1]))); break;
+        case 16: _t->openLoadCalcWindow((*reinterpret_cast< bool(*)>(_a[1]))); break;
         default: ;
         }
     } else if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
@@ -185,13 +194,13 @@ int MainWindow::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 15)
+        if (_id < 17)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 15;
+        _id -= 17;
     } else if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
-        if (_id < 15)
+        if (_id < 17)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 15;
+        _id -= 17;
     }
     return _id;
 }

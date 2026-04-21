@@ -15,6 +15,7 @@ debug/defensemovewindow.o
 debug/attackmovewindow.o
 debug/presetwindow.o
 debug/addpresetwindow.o
+debug/savedcalcwindow.o
 debug/tinyxml2.o
 debug/qrc_resources.o
 debug/moc_mainwindow.o
@@ -24,3 +25,4 @@ debug/moc_defensemovewindow.o
 debug/moc_attackmovewindow.o
 debug/moc_presetwindow.o
 debug/moc_addpresetwindow.o
+debug/moc_savedcalcwindow.o

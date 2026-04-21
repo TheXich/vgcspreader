@@ -18,11 +18,29 @@
 #include "resultwindow.hpp"
 #include "alertwindow.hpp"
 #include "presetwindow.hpp"
+#include "savedcalcwindow.hpp"
 #include "turn.hpp"
 #include "pokemon.hpp"
 #include "tinyxml2.h"
 
 typedef std::tuple<QString, Turn, defense_modifier> Preset;
+
+struct SavedCalculation {
+    QString name;
+    int species;
+    int form;
+    int type1, type2;
+    int nature;
+    int ability;
+    int item;
+    std::array<int, 6> ivs;  // HP, ATK, DEF, SPATK, SPDEF, SPE
+    std::array<int, 6> evs;
+    std::vector<Turn> turns_def;
+    std::vector<defense_modifier> modifiers_def;
+    std::vector<Turn> turns_atk;
+    std::vector<attack_modifier> modifiers_atk;
+    std::vector<Pokemon> defending_pokemons_in_attack;
+};
 
 class MainWindow : public QDialog {
     Q_OBJECT
@@ -43,6 +61,8 @@ class MainWindow : public QDialog {
         void calculateStart();
         void calculateStop();
         void calculateFinished();
+        void openSaveCalcDialog(bool checked);
+        void openLoadCalcWindow(bool checked);
 
     private:
         DefenseMoveWindow* defense_move_window;
@@ -50,6 +70,7 @@ class MainWindow : public QDialog {
         ResultWindow* result_window;
         AlertWindow* alert_window;
         PresetWindow* preset_window;
+        SavedCalcWindow* saved_calc_window;
 
         QFutureWatcher<void> future_watcher;
         QFuture<FinalResult> future;
@@ -80,6 +101,8 @@ class MainWindow : public QDialog {
         void openMoveWindowEditDefense();
         void openMoveWindowEditAttack();
         void LoadPresetsFromFile();
+        void LoadSavedCalcsFromFile();
+        void clearAll();
 
     protected:
         void reject();
@@ -87,6 +110,8 @@ class MainWindow : public QDialog {
     public:
         std::vector<Preset> presets; //HERE BECAUSE THIS PROGRAM IS A MESS
         tinyxml2::XMLDocument xml_preset; //THIS TOO
+        std::vector<SavedCalculation> saved_calculations;
+        tinyxml2::XMLDocument xml_saves;
 
         MainWindow();
 
@@ -101,6 +126,8 @@ class MainWindow : public QDialog {
         void addAttackTurn(const Turn& theTurn, const Pokemon& theDefendingPokemon, const attack_modifier& theModifier);
         void addAsPreset(const QString& theName, const Turn& theTurn, const defense_modifier& theDefModifier);
         void solveMovePreset(const int index);
+        void addAsSavedCalc(const QString& theName);
+        void restoreFromSavedCalc(int index);
 
         //MISC
         static QString retrieveFormName(const int species, const int form);
