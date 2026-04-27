@@ -273,7 +273,8 @@ enum Ability {
     Supersweet_Syrup,
     Tera_Shell,
     Teraform_Zero,
-    Poison_Puppeteer
+    Poison_Puppeteer,
+    Spicy_Spray = 272
 };
 
 #endif

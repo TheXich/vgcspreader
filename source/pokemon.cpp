@@ -800,12 +800,17 @@ void Pokemon::recursiveDamageCalculation(Pokemon theDefendingPokemon, std::vecto
     else {
         std::vector<int> buffer;
         std::vector<bool> new_berries;
+        // SPICY SPRAY: all hits after the first are from a burned attacker (burn persists after first physical contact)
+        Pokemon spicy_spray_attacker = it->first;
+        if( theDefendingPokemon.getAbility() == Ability::Spicy_Spray && it->second.getMoveCategory() == Move::PHYSICAL ) {
+            spicy_spray_attacker.setStatus(Status::BURNED);
+        }
         for(unsigned int j = 0; j < theIntVector.size(); j++) {
             int new_hp = theDefendingPokemon.getCurrentHP() - theIntVector[j];
             if( new_hp < 0 ) new_hp = 0;
             if( new_hp > theDefendingPokemon.getBoostedStat(Stats::HP) ) new_hp = theDefendingPokemon.getStat(Stats::HP);
             theDefendingPokemon.setCurrentHPPercentage((new_hp/theDefendingPokemon.getBoostedStat(Stats::HP))*100);
-            auto new_damages = theDefendingPokemon.getDamage(it->first, it->second);
+            auto new_damages = theDefendingPokemon.getDamage(spicy_spray_attacker, it->second);
 
             for( auto it2 = new_damages.begin(); it2 < new_damages.end(); it2++ ) {
                 buffer.push_back(*it2 + theIntVector[j]);
@@ -828,6 +833,7 @@ void Pokemon::recursiveDamageCalculation(Pokemon theDefendingPokemon, std::vecto
     }
     if( buffer_it->second.getMoveIndex() == Moves::Knock_Off && theDefendingPokemon.getItem().isRemovable() && !buffer_it->second.isZ() && !buffer_it->second.isParentalBondMove() ) theDefendingPokemon.setItem(Item(Items::None)); //setting the item as none after a knock off
     if( theDefendingPokemon.getItem().isReducingBerry() && theDefendingPokemon.getItem().getReducingBerryType() == buffer_it->second.getMoveType() && calculateTypeModifier(buffer_it->first, buffer_it->second) >= 2 ) theDefendingPokemon.setItem(Item(Items::None)); //setting the item as none if a reducing berry is consumed
+
 
     //taking the restoring berries into account
     if( theDefendingPokemon.getItem().isRestoringBerry() ) {

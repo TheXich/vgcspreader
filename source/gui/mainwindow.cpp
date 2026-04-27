@@ -1077,7 +1077,7 @@ void MainWindow::calculate() {
         {{916,1},"Female"},
         {{925,1},"Three"},
         {{931,1},"Blue"},       {{931,2},"Yellow"},     {{931,3},"White"},
-        {{952,1},"Female"},
+        {{952,1},"Mega"},
         {{964,1},"Hero"},
         {{970,1},"Female"},
         {{978,1},"Droopy"},     {{978,2},"Stretchy"},
