@@ -1511,9 +1511,10 @@ void MainWindow::openSaveCalcDialog(bool checked) {
 }
 
 void MainWindow::openLoadCalcWindow(bool checked) {
-    std::vector<QString> names;
-    for (const auto& calc : saved_calculations) names.push_back(calc.name);
-    saved_calc_window->loadComboBox(names);
+    std::vector<SavedCalcWindow::CalcEntry> entries;
+    for (const auto& calc : saved_calculations)
+        entries.push_back({calc.name, calc.species, calc.form});
+    saved_calc_window->loadList(entries);
     saved_calc_window->setModal(true);
     saved_calc_window->setVisible(true);
 }
