@@ -1468,12 +1468,13 @@ std::pair<DefenseResult, AttackResult> Pokemon::calculateEVSDistrisbution(const 
         static const Stats::Nature CANDIDATE_NATURES[] = {
             Stats::ADAMANT, Stats::BRAVE, Stats::LONELY, Stats::NAUGHTY,  // +Atk
             Stats::MODEST,  Stats::QUIET, Stats::MILD,   Stats::RASH,     // +SpAtk
-            Stats::BOLD,    Stats::RELAXED, Stats::IMPISH, Stats::LAX,    // +Def
-            Stats::CALM,    Stats::SASSY, Stats::GENTLE, Stats::CAREFUL   // +SpDef
+            Stats::BOLD,    Stats::RELAXED, Stats::IMPISH,                 // +Def (Lax excluida: baja SpDef)
+            Stats::CALM,    Stats::SASSY,  Stats::CAREFUL                 // +SpDef (Gentle excluida: baja Def)
         };
 
         std::pair<DefenseResult, AttackResult> best_result;
         int best_total = INT_MAX;
+        float best_max_ko = 101.0f;
         Stats::Nature best_nature = Stats::ADAMANT;
         bool found_any = false;
 
@@ -1492,11 +1493,27 @@ std::pair<DefenseResult, AttackResult> Pokemon::calculateEVSDistrisbution(const 
             if( !result.first.isEmptyInput() )  total += result.first.hp_ev[0]  + result.first.def_ev[0]  + result.first.spdef_ev[0];
             if( !result.second.isEmptyInput() ) total += result.second.atk_ev[0] + result.second.spatk_ev[0];
 
-            if( !found_any || total < best_total ) {
-                best_total   = total;
-                best_result  = result;
-                best_nature  = nat;
-                found_any    = true;
+            // Find worst-case KO probability across all defensive turns for this nature.
+            // def_ko_prob stores KO probability on a 0-100 scale (0 = 0% KO = 100% survival).
+            // A nature that penalizes a needed defensive stat may hit the SP cap without
+            // reaching the threshold, yielding a higher KO probability than a better nature.
+            float max_ko_prob = 0.0f;
+            if( !result.first.isEmptyInput() && !result.first.def_ko_prob.empty() && !result.first.def_ko_prob[0].empty() ) {
+                for( float prob : result.first.def_ko_prob[0] )
+                    max_ko_prob = std::max(max_ko_prob, prob);
+            }
+
+            // Primary: minimise worst-case KO probability; secondary: minimise total SPs.
+            bool better = !found_any
+                || max_ko_prob < best_max_ko
+                || (max_ko_prob == best_max_ko && total < best_total);
+
+            if( better ) {
+                best_total    = total;
+                best_max_ko   = max_ko_prob;
+                best_result   = result;
+                best_nature   = nat;
+                found_any     = true;
             }
         }
 

@@ -163,9 +163,20 @@ typedef std::tuple<int16_t, int16_t, Type, bool, bool, bool, bool, bool, bool> a
 
 ### Naturaleza automática
 
-Si el Pokémon tiene naturaleza neutra (Hardy, Docile, Serious, Bashful, Quirky) o `AUTO_NATURE`, `calculateEVSDistrisbution` prueba las **16 naturalezas beneficiosas** (las que suben ATK, SpATK, DEF o SpDEF — excluye las que suben SPE y las neutras) y elige la que usa menos EVs totales. La naturaleza elegida se actualiza en `*this` antes de retornar y se muestra en el resultado.
+Si el Pokémon tiene naturaleza neutra (Hardy, Docile, Serious, Bashful, Quirky) o `AUTO_NATURE`, `calculateEVSDistrisbution` prueba las **16 naturalezas beneficiosas** (las que suben ATK, SpATK, DEF o SpDEF — excluye las que suben SPE y las neutras) y elige la mejor. La naturaleza elegida se actualiza en `*this` antes de retornar y se muestra en el resultado.
 
 Las naturalezas que **suben SPE** (Timid, Jolly, Hasty, Naive) nunca se prueban automáticamente.
+
+**Lax** (+Def/−SpDef) y **Gentle** (+SpDef/−Def) también están excluidas: al penalizar uno de los dos stats defensivos pueden agotar el cap de 32 SPs sin cubrir los umbrales, dando resultados peores que sus equivalentes sin penalización defensiva (Bold e Impish, Calm y Careful).
+
+#### Criterio de selección de naturaleza (implementado en `source/pokemon.cpp`)
+
+El criterio es **dos niveles**:
+
+1. **Primario — maximizar cobertura mínima**: se calcula el mínimo de `def_ko_prob[0][j]` sobre todos los movimientos defensivos `j`. Una naturaleza que penaliza un stat defensivo (p.ej. Lax baja SpDef) puede agotar los 32 SPs máximos sin alcanzar el umbral requerido, dando cobertura real inferior aunque use menos SPs en total.
+2. **Secundario — minimizar SPs totales**: entre naturalezas con igual cobertura mínima, se elige la que requiere menos SPs.
+
+> **Bug histórico corregido**: el criterio original era solo "menos SPs totales", lo que causaba que el algoritmo eligiera p.ej. Lax (+Def/−SpDef) sobre Bold (+Def/−Atk) cuando había ataques físicos Y especiales, porque Lax ahorraba SPs en Def pero dejaba SpDef sin cubrir al cap de 32 SPs. El resultado mostraba 56% de resistencia a movimientos especiales en vez del 100% que daría Bold.
 
 ---
 
