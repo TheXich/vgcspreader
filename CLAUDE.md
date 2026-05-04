@@ -452,6 +452,30 @@ La recuperación de Grassy Terrain **no** se resta del daño calculado (se muest
 
 ---
 
+## Verificación de datos de movimientos
+
+Ante la sospecha de que un movimiento tenga BP, tipo o categoría incorrectos en `personal_moves.bin`, contrastar siempre con estas tres fuentes antes de editar:
+
+1. **Serebii** — https://www.serebii.net/ → buscar el movimiento en la sección de ataques de la generación correspondiente
+2. **NCP VGC Damage Calculator (nerd-of-now)** — https://github.com/nerd-of-now/NCP-VGC-Damage-Calculator → ver los datos de movimientos que usa la calculadora de referencia
+3. **WikiDex** — https://www.wikidex.net/wiki/WikiDex → buscar el movimiento para confirmar BP, tipo y categoría en español
+
+Si las tres fuentes coinciden con un valor distinto al del binario, corregir con el script Python:
+```python
+import struct
+path = 'db/personal_moves.bin'
+with open(path, 'rb') as f:
+    data = bytearray(f.read())
+off = INDEX * 8  # INDEX = índice en moves.txt (0-based)
+struct.pack_into('<H', data, off, NEW_BP)
+with open(path, 'wb') as f:
+    f.write(data)
+```
+
+> **Correcciones históricas**: Dire Claw (idx 380) tenía BP=60, corregido a 80. Last Respects (idx 395) tenía BP=65, corregido a 50.
+
+---
+
 ## Pendientes / mejoras conocidas
 
 - El typo `Psichic` en el enum (`moves.hpp`) debería ser `Psychic`, pero corregirlo rompería los índices binarios ya guardados en presets XML de usuarios
