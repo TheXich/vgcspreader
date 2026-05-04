@@ -1633,7 +1633,8 @@ void MainWindow::addAsSavedCalc(const QString& theName) {
             add_int(pnode, "Movez",        mv.isZ());
             add_int(pnode, "Terrain",      mv.getTerrain());
             add_int(pnode, "Weather",      mv.getWeather());
-            add_int(pnode, "MultiHit",     mv.getMultiHitCount());
+            add_int(pnode, "MultiHit",          mv.getMultiHitCount());
+            add_int(pnode, "LastRespectsBoosts", mv.getLastRespectsBoosts());
             turn_node->InsertEndChild(pnode);
         }
 
@@ -1675,7 +1676,8 @@ void MainWindow::addAsSavedCalc(const QString& theName) {
         add_int(turn_node, "Movez",        mv.isZ());
         add_int(turn_node, "Terrain",      mv.getTerrain());
         add_int(turn_node, "Weather",      mv.getWeather());
-        add_int(turn_node, "MultiHit",     mv.getMultiHitCount());
+        add_int(turn_node, "MultiHit",          mv.getMultiHitCount());
+        add_int(turn_node, "LastRespectsBoosts", mv.getLastRespectsBoosts());
         add_int(turn_node, "Hits",         turn.getHits());
 
         tinyxml2::XMLElement* def_node = xml_saves.NewElement("Defender");
@@ -1797,6 +1799,8 @@ void MainWindow::LoadSavedCalcsFromFile() {
                     mv.setWeather(Move::Weather(std::atoi(p1->FirstChildElement("Weather")->GetText())));
                     auto* mh = p1->FirstChildElement("MultiHit");
                     if (mh) mv.setMultiHitCount(std::atoi(mh->GetText()));
+                    auto* lr = p1->FirstChildElement("LastRespectsBoosts");
+                    if (lr) mv.setLastRespectsBoosts((uint8_t)std::atoi(lr->GetText()));
                     turn.addMove(pkmn, mv);
                 }
                 auto* p2 = turn_elem->FirstChildElement("Pokemon2");
@@ -1829,6 +1833,8 @@ void MainWindow::LoadSavedCalcsFromFile() {
                     mv.setWeather(Move::Weather(std::atoi(p2->FirstChildElement("Weather")->GetText())));
                     auto* mh = p2->FirstChildElement("MultiHit");
                     if (mh) mv.setMultiHitCount(std::atoi(mh->GetText()));
+                    auto* lr = p2->FirstChildElement("LastRespectsBoosts");
+                    if (lr) mv.setLastRespectsBoosts((uint8_t)std::atoi(lr->GetText()));
                     turn.addMove(pkmn, mv);
                 }
 
@@ -1874,6 +1880,8 @@ void MainWindow::LoadSavedCalcsFromFile() {
                 mv.setWeather(Move::Weather(std::atoi(turn_elem->FirstChildElement("Weather")->GetText())));
                 auto* mh = turn_elem->FirstChildElement("MultiHit");
                 if (mh) mv.setMultiHitCount(std::atoi(mh->GetText()));
+                auto* lr = turn_elem->FirstChildElement("LastRespectsBoosts");
+                if (lr) mv.setLastRespectsBoosts((uint8_t)std::atoi(lr->GetText()));
 
                 Turn turn;
                 turn.addMove(Pokemon(1), mv);

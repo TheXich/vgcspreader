@@ -54,6 +54,7 @@ class Move {
         bool fairy_aura;
         bool parental_bond_move;
         unsigned int multi_hit_count;
+        uint8_t last_respects_boosts; // number of fainted allies (0-5)
 
         Modifier modifier;
 
@@ -77,6 +78,7 @@ class Move {
         bool isDarkAura() const { return dark_aura; }
         bool isParentalBondMove() const { return parental_bond_move; }
         unsigned int getMultiHitCount() const { return multi_hit_count; }
+        uint8_t getLastRespectsBoosts() const { return last_respects_boosts; }
         Moves getMoveIndex() const { return index; }
 
         void setBasePower(const unsigned int theBasePower) { base_power = theBasePower; }
@@ -93,6 +95,7 @@ class Move {
         void setFairyAura(const bool isFairyAura) { fairy_aura = isFairyAura; }
         void setParentalBondMove(const bool isParentalBondMove) { parental_bond_move = isParentalBondMove; }
         void setMultiHitCount(unsigned int count) { multi_hit_count = count; }
+        void setLastRespectsBoosts(uint8_t boosts) { last_respects_boosts = boosts > 5 ? 5 : boosts; }
 };
 
 #endif

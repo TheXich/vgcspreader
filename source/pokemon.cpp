@@ -685,6 +685,10 @@ unsigned int Pokemon::calculateMoveBasePowerInAttack(const Pokemon& theAttacker,
         else return bp;
     }
 
+    // Last Respects (Gen 9): BP = 50 + 50 * fainted_allies (stored in last_respects_boosts)
+    if( !theMove.isZ() && theMove.getMoveIndex() == Moves::Last_Respects )
+        bp = 50 * (1 + theMove.getLastRespectsBoosts());
+
     // Hard Press (Gen 9): BP = floor(100 * defender_current_HP / max_HP), minimum 1
     if( !theMove.isZ() && theMove.getMoveIndex() == Moves::Hard_Press ) {
         bp = static_cast<unsigned int>((getCurrentHP() * 100.0f) / getBoostedStat(Stats::HP));

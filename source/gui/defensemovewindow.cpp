@@ -369,6 +369,19 @@ void DefenseMoveWindow::createAtk1GroupBox() {
     multihit_spinbox->setVisible(false);
     move_info_layout->addWidget(multihit_spinbox);
 
+    // Last Respects fallen allies (shown only for Last Respects)
+    QLabel* lr_label = new QLabel(tr("Fallen allies:"));
+    lr_label->setObjectName("atk1_last_respects_label");
+    lr_label->setVisible(false);
+    move_info_layout->addWidget(lr_label);
+
+    QSpinBox* lr_spinbox = new QSpinBox;
+    lr_spinbox->setObjectName("atk1_last_respects_spinbox");
+    lr_spinbox->setRange(0, 5);
+    lr_spinbox->setValue(0);
+    lr_spinbox->setVisible(false);
+    move_info_layout->addWidget(lr_spinbox);
+
     //adding everything to the layout
     atk1_layout->addLayout(main_form_layout);
 
@@ -683,6 +696,19 @@ void DefenseMoveWindow::createAtk2GroupBox() {
     multihit_spinbox2->setVisible(false);
     move_info_layout->addWidget(multihit_spinbox2);
 
+    // Last Respects fallen allies (shown only for Last Respects)
+    QLabel* lr_label2 = new QLabel(tr("Fallen allies:"));
+    lr_label2->setObjectName("atk2_last_respects_label");
+    lr_label2->setVisible(false);
+    move_info_layout->addWidget(lr_label2);
+
+    QSpinBox* lr_spinbox2 = new QSpinBox;
+    lr_spinbox2->setObjectName("atk2_last_respects_spinbox");
+    lr_spinbox2->setRange(0, 5);
+    lr_spinbox2->setValue(0);
+    lr_spinbox2->setVisible(false);
+    move_info_layout->addWidget(lr_spinbox2);
+
     //adding everything to the layout
     atk2_layout->addLayout(main_form_layout);
 
@@ -911,6 +937,15 @@ void DefenseMoveWindow::setMove1(int index) {
             mh_spinbox->setVisible(false);
         }
     }
+
+    // Last Respects support
+    {
+        bool is_lr = ((Moves)origIdx == Moves::Last_Respects);
+        QLabel* lr_label = atk1_groupbox->findChild<QLabel*>("atk1_last_respects_label");
+        QSpinBox* lr_spinbox = atk1_groupbox->findChild<QSpinBox*>("atk1_last_respects_spinbox");
+        if(lr_label) lr_label->setVisible(is_lr);
+        if(lr_spinbox) { lr_spinbox->setVisible(is_lr); if(!is_lr) lr_spinbox->setValue(0); }
+    }
 }
 
 void DefenseMoveWindow::setSpecies1(int index) {
@@ -1070,6 +1105,15 @@ void DefenseMoveWindow::setMove2(int index) {
             mh_spinbox->setVisible(false);
         }
     }
+
+    // Last Respects support
+    {
+        bool is_lr = ((Moves)origIdx == Moves::Last_Respects);
+        QLabel* lr_label = atk2_groupbox->findChild<QLabel*>("atk2_last_respects_label");
+        QSpinBox* lr_spinbox = atk2_groupbox->findChild<QSpinBox*>("atk2_last_respects_spinbox");
+        if(lr_label) lr_label->setVisible(is_lr);
+        if(lr_spinbox) { lr_spinbox->setVisible(is_lr); if(!is_lr) lr_spinbox->setValue(0); }
+    }
 }
 
 void DefenseMoveWindow::setSpecies2(int index) {
@@ -1185,6 +1229,12 @@ void DefenseMoveWindow::solveMove(const bool preset, const QString& preset_name)
         }
     }
 
+    // Apply Last Respects boosts if applicable
+    if(attacking1_move.getMoveIndex() == Moves::Last_Respects) {
+        QSpinBox* lr_sb = atk1_groupbox->findChild<QSpinBox*>("atk1_last_respects_spinbox");
+        if(lr_sb) attacking1_move.setLastRespectsBoosts((uint8_t)lr_sb->value());
+    }
+
     //now setting pokemon 1 iv/ev/modifier
     Stats::Stat stat;
     if( attacking1_move.getMoveCategory() == Move::Category::PHYSICAL ) stat = Stats::ATK;
@@ -1229,6 +1279,12 @@ void DefenseMoveWindow::solveMove(const bool preset, const QString& preset_name)
             int count = (min_h != max_h && mh_sb) ? mh_sb->value() : max_h;
             attacking2_move.setMultiHitCount(count);
         }
+    }
+
+    // Apply Last Respects boosts if applicable
+    if(attacking2_move.getMoveIndex() == Moves::Last_Respects) {
+        QSpinBox* lr_sb = atk2_groupbox->findChild<QSpinBox*>("atk2_last_respects_spinbox");
+        if(lr_sb) attacking2_move.setLastRespectsBoosts((uint8_t)lr_sb->value());
     }
 
     //now setting pokemon 2 iv/ev/modifier
@@ -1285,6 +1341,9 @@ void DefenseMoveWindow::setAsBlank() {
     atk1_groupbox->findChild<QLabel*>("atk1_multihit_label")->setVisible(false);
     atk1_groupbox->findChild<QSpinBox*>("atk1_multihit_spinbox")->setVisible(false);
     atk1_groupbox->findChild<QSpinBox*>("atk1_multihit_spinbox")->setValue(1);
+    atk1_groupbox->findChild<QLabel*>("atk1_last_respects_label")->setVisible(false);
+    atk1_groupbox->findChild<QSpinBox*>("atk1_last_respects_spinbox")->setVisible(false);
+    atk1_groupbox->findChild<QSpinBox*>("atk1_last_respects_spinbox")->setValue(0);
 
     //atk2
     atk2_groupbox->findChild<QCheckBox*>("atk2_activated")->setChecked(true);
@@ -1308,6 +1367,9 @@ void DefenseMoveWindow::setAsBlank() {
     atk2_groupbox->findChild<QLabel*>("atk2_multihit_label")->setVisible(false);
     atk2_groupbox->findChild<QSpinBox*>("atk2_multihit_spinbox")->setVisible(false);
     atk2_groupbox->findChild<QSpinBox*>("atk2_multihit_spinbox")->setValue(1);
+    atk2_groupbox->findChild<QLabel*>("atk2_last_respects_label")->setVisible(false);
+    atk2_groupbox->findChild<QSpinBox*>("atk2_last_respects_spinbox")->setVisible(false);
+    atk2_groupbox->findChild<QSpinBox*>("atk2_last_respects_spinbox")->setValue(0);
 
     modifier_groupbox->findChild<QComboBox*>("weather_combobox")->setCurrentIndex(0);
     modifier_groupbox->findChild<QComboBox*>("terrain_combobox")->setCurrentIndex(0);
@@ -1345,6 +1407,12 @@ void DefenseMoveWindow::setAsTurn(const Turn &theTurn, const defense_modifier &t
         if(mh_spinbox && mh_spinbox->isVisible())
             mh_spinbox->setValue((int)theTurn.getMoves()[0].second.getMultiHitCount());
     }
+    // Restore Last Respects boosts for atk1
+    {
+        QSpinBox* lr_spinbox = atk1_groupbox->findChild<QSpinBox*>("atk1_last_respects_spinbox");
+        if(lr_spinbox && lr_spinbox->isVisible())
+            lr_spinbox->setValue((int)theTurn.getMoves()[0].second.getLastRespectsBoosts());
+    }
     atk1_groupbox->findChild<QComboBox*>("atk1_target_combobox")->setCurrentIndex(theTurn.getMoves()[0].second.getTarget());
     MainWindow::setComboByOriginalIdx(atk1_groupbox->findChild<QComboBox*>("atk1_movetypes_combobox"), theTurn.getMoves()[0].second.getMoveType());
     atk1_groupbox->findChild<QComboBox*>("atk1_movecategories_combobox")->setCurrentIndex(theTurn.getMoves()[0].second.getMoveCategory());
@@ -1379,6 +1447,12 @@ void DefenseMoveWindow::setAsTurn(const Turn &theTurn, const defense_modifier &t
             QSpinBox* mh_spinbox = atk2_groupbox->findChild<QSpinBox*>("atk2_multihit_spinbox");
             if(mh_spinbox && mh_spinbox->isVisible())
                 mh_spinbox->setValue((int)theTurn.getMoves()[1].second.getMultiHitCount());
+        }
+        // Restore Last Respects boosts for atk2
+        {
+            QSpinBox* lr_spinbox = atk2_groupbox->findChild<QSpinBox*>("atk2_last_respects_spinbox");
+            if(lr_spinbox && lr_spinbox->isVisible())
+                lr_spinbox->setValue((int)theTurn.getMoves()[1].second.getLastRespectsBoosts());
         }
         atk2_groupbox->findChild<QComboBox*>("atk2_target_combobox")->setCurrentIndex(theTurn.getMoves()[1].second.getTarget());
         MainWindow::setComboByOriginalIdx(atk2_groupbox->findChild<QComboBox*>("atk2_movetypes_combobox"), theTurn.getMoves()[1].second.getMoveType());

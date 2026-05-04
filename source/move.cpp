@@ -21,4 +21,5 @@ Move::Move(const Moves theMoveIndex) {
     fairy_aura = false;
     parental_bond_move = false;
     multi_hit_count = 1;
+    last_respects_boosts = 0;
 }

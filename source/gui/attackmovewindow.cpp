@@ -401,6 +401,19 @@ void AttackMoveWindow::createMoveGroupbox() {
     multihit_spinbox->setVisible(false);
     move_info_layout->addWidget(multihit_spinbox);
 
+    // Last Respects fallen allies (shown only for Last Respects)
+    QLabel* lr_label = new QLabel(tr("Fallen allies:"));
+    lr_label->setObjectName("move_last_respects_label");
+    lr_label->setVisible(false);
+    move_info_layout->addWidget(lr_label);
+
+    QSpinBox* lr_spinbox = new QSpinBox;
+    lr_spinbox->setObjectName("move_last_respects_spinbox");
+    lr_spinbox->setRange(0, 5);
+    lr_spinbox->setValue(0);
+    lr_spinbox->setVisible(false);
+    move_info_layout->addWidget(lr_spinbox);
+
     //setting signals
     connect(moves, SIGNAL(currentIndexChanged(int)), this, SLOT(setMove(int)));
     connect(move_category, SIGNAL(currentIndexChanged(int)), this, SLOT(setMoveCategory(int)));
@@ -597,6 +610,15 @@ void AttackMoveWindow::setMove(int index) {
             mh_spinbox->setVisible(false);
         }
     }
+
+    // Last Respects support
+    {
+        bool is_lr = ((Moves)origIdx == Moves::Last_Respects);
+        QLabel* lr_label = move_groupbox->findChild<QLabel*>("move_last_respects_label");
+        QSpinBox* lr_spinbox = move_groupbox->findChild<QSpinBox*>("move_last_respects_spinbox");
+        if(lr_label) lr_label->setVisible(is_lr);
+        if(lr_spinbox) { lr_spinbox->setVisible(is_lr); if(!is_lr) lr_spinbox->setValue(0); }
+    }
 }
 void AttackMoveWindow::setSpecies(int index) {
     int orig = defending_pokemon_groupbox->findChild<QComboBox*>("def_species_combobox")->currentData(Qt::UserRole).toInt();
@@ -722,6 +744,12 @@ void AttackMoveWindow::solveMove(void) {
         }
     }
 
+    // Apply Last Respects boosts if applicable
+    if(attacking1_move.getMoveIndex() == Moves::Last_Respects) {
+        QSpinBox* lr_sb = move_groupbox->findChild<QSpinBox*>("move_last_respects_spinbox");
+        if(lr_sb) attacking1_move.setLastRespectsBoosts((uint8_t)lr_sb->value());
+    }
+
     Turn turn;
     turn.addMove(Pokemon(1), attacking1_move); //adding a random pokemon in the turn since when using the turn class in an offensive manner Pokemon is ignored
     turn.setHits(atk_modifier_groupbox->findChild<QSpinBox*>("attacking_hits_modifier")->value());
@@ -766,6 +794,9 @@ void AttackMoveWindow::setAsBlank() {
     move_groupbox->findChild<QLabel*>("move_multihit_label")->setVisible(false);
     move_groupbox->findChild<QSpinBox*>("move_multihit_spinbox")->setVisible(false);
     move_groupbox->findChild<QSpinBox*>("move_multihit_spinbox")->setValue(1);
+    move_groupbox->findChild<QLabel*>("move_last_respects_label")->setVisible(false);
+    move_groupbox->findChild<QSpinBox*>("move_last_respects_spinbox")->setVisible(false);
+    move_groupbox->findChild<QSpinBox*>("move_last_respects_spinbox")->setValue(0);
 
     move_modifier_groupbox->findChild<QComboBox*>("weather_combobox")->setCurrentIndex(0);
     move_modifier_groupbox->findChild<QComboBox*>("terrain_combobox")->setCurrentIndex(0);
@@ -810,6 +841,12 @@ void AttackMoveWindow::setAsTurn(const Turn& theTurn, const Pokemon& theDefendin
         QSpinBox* mh_spinbox = move_groupbox->findChild<QSpinBox*>("move_multihit_spinbox");
         if(mh_spinbox && mh_spinbox->isVisible())
             mh_spinbox->setValue((int)theTurn.getMoves()[0].second.getMultiHitCount());
+    }
+    // Restore Last Respects boosts
+    {
+        QSpinBox* lr_spinbox = move_groupbox->findChild<QSpinBox*>("move_last_respects_spinbox");
+        if(lr_spinbox && lr_spinbox->isVisible())
+            lr_spinbox->setValue((int)theTurn.getMoves()[0].second.getLastRespectsBoosts());
     }
     move_groupbox->findChild<QComboBox*>("target_combobox")->setCurrentIndex(theTurn.getMoves()[0].second.getTarget());
     MainWindow::setComboByOriginalIdx(move_groupbox->findChild<QComboBox*>("movetypes_combobox"), theTurn.getMoves()[0].second.getMoveType());
