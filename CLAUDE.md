@@ -6,6 +6,8 @@ Calculadora de daño VGC (Video Game Championship) con optimización de EV sprea
 
 ## Compilar
 
+### Windows (desarrollo local)
+
 ```bash
 export PATH="/c/Qt/Tools/mingw810_64/bin:/c/Qt/5.15.2/mingw81_64/bin:$PATH"
 cd "c:/Users/ximob/OneDrive/Documentos/GitHub/vgcspreader"
@@ -26,6 +28,32 @@ Si los cambios son solo en `resources.qrc` (sprites, etc.) y make no los detecta
 rm -f release/qrc_resources.cpp release/qrc_resources.o
 mingw32-make -f Makefile.Release.Release
 ```
+
+### macOS (compilación automática en CI)
+
+La versión macOS se compila automáticamente mediante GitHub Actions en cada push a `master`. No requiere intervención manual. El workflow `.github/workflows/build.yml` se encarga de:
+
+1. Instalar Qt 5 vía Homebrew en un runner Apple Silicon (`macos-latest`)
+2. Generar el icono `.icns` desde `logo.png`
+3. Compilar con `qmake` + `make`
+4. Empaquetar con `macdeployqt` y firmar ad-hoc
+5. Crear `VGCSpreader-macOS.dmg` como artefacto descargable desde la pestaña Actions de GitHub
+
+Para generar una **release pública** con el `.dmg` adjunto como descarga permanente:
+```bash
+git tag v1.X
+git push --tags
+```
+
+### Regla de paridad de plataformas
+
+**Toda modificación al proyecto debe funcionar en ambas plataformas.** Antes de hacer commit, verificar:
+
+- Código nuevo: no usar APIs ni includes exclusivos de Windows (`<windows.h>`, `WinAPI`, etc.). Qt y la STL de C++17 son portables.
+- `vgcspreader.pro`: cambios en `SOURCES`, `HEADERS` o `RESOURCES` aplican a ambas plataformas automáticamente. Cambios de icono, firma o deployment deben ir dentro de `win32 {}` o `macx {}` según corresponda.
+- Base de datos binaria (`db/`): los archivos `.bin` y `.txt` son cross-platform, no requieren cambios.
+- Scripts Python (`tools/`): ya son portables.
+- Si se añade una dependencia externa nueva (librería), debe estar disponible también en macOS vía Homebrew o estar incluida en el propio repositorio.
 
 ---
 

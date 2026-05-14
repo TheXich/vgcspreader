@@ -49,4 +49,12 @@ HEADERS += \
 RESOURCES += \
     resources.qrc
 
-RC_ICONS = vgcspreader.ico
+win32 {
+    RC_ICONS = vgcspreader.ico
+}
+
+macx {
+    QMAKE_MACOSX_DEPLOYMENT_TARGET = 12.0
+    ICON = macos/vgcspreader.icns
+    QMAKE_INFO_PLIST = macos/Info.plist
+}

@@ -1,0 +1,139 @@
+name: Build
+
+on:
+  push:
+    branches: [ master ]
+    tags: [ 'v*' ]
+  workflow_dispatch:
+
+jobs:
+  # ─────────────────────────────────────────────
+  #  macOS (Apple Silicon, arm64)
+  # ─────────────────────────────────────────────
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Qt 5
+        run: |
+          brew install qt@5
+          echo "QT_PATH=$(brew --prefix qt@5)" >> $GITHUB_ENV
+
+      - name: Generate .icns icon from logo.png
+        run: |
+          mkdir -p macos/vgcspreader.iconset
+          sips --resampleHeightWidth 16   16   logo.png --out macos/vgcspreader.iconset/icon_16x16.png
+          sips --resampleHeightWidth 32   32   logo.png --out macos/vgcspreader.iconset/icon_16x16@2x.png
+          sips --resampleHeightWidth 32   32   logo.png --out macos/vgcspreader.iconset/icon_32x32.png
+          sips --resampleHeightWidth 64   64   logo.png --out macos/vgcspreader.iconset/icon_32x32@2x.png
+          sips --resampleHeightWidth 128  128  logo.png --out macos/vgcspreader.iconset/icon_128x128.png
+          sips --resampleHeightWidth 256  256  logo.png --out macos/vgcspreader.iconset/icon_128x128@2x.png
+          sips --resampleHeightWidth 256  256  logo.png --out macos/vgcspreader.iconset/icon_256x256.png
+          sips --resampleHeightWidth 512  512  logo.png --out macos/vgcspreader.iconset/icon_256x256@2x.png
+          sips --resampleHeightWidth 512  512  logo.png --out macos/vgcspreader.iconset/icon_512x512.png
+          sips --resampleHeightWidth 1024 1024 logo.png --out macos/vgcspreader.iconset/icon_512x512@2x.png
+          iconutil -c icns macos/vgcspreader.iconset -o macos/vgcspreader.icns
+
+      - name: Build
+        run: |
+          export PATH="$QT_PATH/bin:$PATH"
+          qmake vgcspreader.pro CONFIG+=release
+          make -j$(sysctl -n hw.logicalcpu)
+
+      - name: Bundle Qt frameworks into .app
+        run: |
+          export PATH="$QT_PATH/bin:$PATH"
+          macdeployqt vgcspreader.app
+
+      - name: Ad-hoc code sign
+        run: |
+          codesign --force --deep --sign - vgcspreader.app
+
+      - name: Create .dmg
+        run: |
+          hdiutil create \
+            -volname "VGC Spreader" \
+            -srcfolder vgcspreader.app \
+            -ov -format UDZO \
+            VGCSpreader-macOS.dmg
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: VGCSpreader-macOS
+          path: VGCSpreader-macOS.dmg
+          retention-days: 30
+
+  # ─────────────────────────────────────────────
+  #  Windows (MinGW 64-bit)
+  # ─────────────────────────────────────────────
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Qt 5.15.2 + MinGW 8.1
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: '5.15.2'
+          host: 'windows'
+          target: 'desktop'
+          arch: 'win64_mingw81'
+          tools: 'tools_mingw,qt.tools.win64_mingw810'
+          add-tools-to-path: true
+
+      - name: Build
+        shell: bash
+        run: |
+          qmake vgcspreader.pro CONFIG+=release
+          mingw32-make -j4
+
+      - name: Deploy Qt DLLs
+        shell: bash
+        run: |
+          mkdir -p deploy
+          cp release/vgcspreader.exe deploy/
+          windeployqt deploy/vgcspreader.exe
+
+      - name: Package as zip
+        shell: pwsh
+        run: |
+          Compress-Archive -Path deploy/* -DestinationPath VGCSpreader-Windows.zip
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: VGCSpreader-Windows
+          path: VGCSpreader-Windows.zip
+          retention-days: 30
+
+  # ─────────────────────────────────────────────
+  #  GitHub Release (solo cuando se hace push de un tag v*)
+  # ─────────────────────────────────────────────
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [ build-macos, build-windows ]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download macOS artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: VGCSpreader-macOS
+
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: VGCSpreader-Windows
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            VGCSpreader-macOS.dmg
+            VGCSpreader-Windows.zip
+          generate_release_notes: true
