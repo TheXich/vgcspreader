@@ -69,6 +69,30 @@ DefenseMoveWindow::DefenseMoveWindow(QWidget* parent, Qt::WindowFlags f) : QDial
     main_layout->insertSpacing(2, 35);
     main_layout->addWidget(defending_groupbox);
 
+    //ROLL THRESHOLD
+    QHBoxLayout* roll_layout = new QHBoxLayout;
+    roll_layout->setSpacing(6);
+    QLabel* roll_label = new QLabel(tr("Survive:"));
+    QComboBox* roll_combo = new QComboBox;
+    roll_combo->setObjectName("def_roll_threshold_combo");
+    struct RollEntry { const char* label; float value; };
+    static const RollEntry ROLLS[] = {
+        {"100% (all rolls)",   0.0f},
+        {"93.75% (15/16)",     6.25f},
+        {"87.5% (14/16)",      12.5f},
+        {"81.25% (13/16)",     18.75f},
+        {"75% (12/16)",        25.0f},
+        {"68.75% (11/16)",     31.25f},
+        {"62.5% (10/16)",      37.5f},
+        {"56.25% (9/16)",      43.75f},
+        {"50% (8/16)",         50.0f},
+    };
+    for(const auto& e : ROLLS) roll_combo->addItem(tr(e.label), e.value);
+    roll_layout->addWidget(roll_label);
+    roll_layout->addWidget(roll_combo);
+    roll_layout->addStretch();
+    main_layout->addLayout(roll_layout);
+
     bottom_button_box = new QDialogButtonBox(QDialogButtonBox::Cancel | QDialogButtonBox::Ok);
 
     QPushButton* preset_button = new QPushButton(tr("Save as Preset"));
@@ -1390,7 +1414,22 @@ void DefenseMoveWindow::setAsBlank() {
     tabs->setCurrentIndex(0);
 }
 
-void DefenseMoveWindow::setAsTurn(const Turn &theTurn, const defense_modifier &theDefenseModifier) {
+float DefenseMoveWindow::getRollThreshold() const {
+    QComboBox* c = findChild<QComboBox*>("def_roll_threshold_combo");
+    return c ? c->currentData().toFloat() : 0.0f;
+}
+
+void DefenseMoveWindow::setAsTurn(const Turn &theTurn, const defense_modifier &theDefenseModifier, float rollThreshold) {
+    // Restore roll threshold combo
+    QComboBox* roll_c = findChild<QComboBox*>("def_roll_threshold_combo");
+    if(roll_c) {
+        for(int i = 0; i < roll_c->count(); ++i) {
+            if(qFuzzyCompare(roll_c->itemData(i).toFloat(), rollThreshold)) {
+                roll_c->setCurrentIndex(i);
+                break;
+            }
+        }
+    }
     //atk1
     MainWindow::setComboByOriginalIdx(atk1_groupbox->findChild<QComboBox*>("atk1_species_combobox"), theTurn.getMoves()[0].first.getPokedexNumber()-1);
     MainWindow::setComboByOriginalIdx(atk1_groupbox->findChild<QComboBox*>("atk1_type1_combobox"), theTurn.getMoves()[0].first.getTypes()[theTurn.getMoves()[0].first.getForm()][0]);

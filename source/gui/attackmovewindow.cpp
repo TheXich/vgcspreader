@@ -58,6 +58,30 @@ AttackMoveWindow::AttackMoveWindow(QWidget* parent, Qt::WindowFlags f) : QDialog
     main_layout->addWidget(move_modifier_groupbox);
     main_layout->addWidget(atk_modifier_groupbox);
 
+    //ROLL THRESHOLD
+    QHBoxLayout* roll_layout = new QHBoxLayout;
+    roll_layout->setSpacing(6);
+    QLabel* roll_label = new QLabel(tr("KO:"));
+    QComboBox* roll_combo = new QComboBox;
+    roll_combo->setObjectName("atk_roll_threshold_combo");
+    struct RollEntry { const char* label; float value; };
+    static const RollEntry ROLLS[] = {
+        {"100% (all rolls)",   100.0f},
+        {"93.75% (15/16)",     93.75f},
+        {"87.5% (14/16)",      87.5f},
+        {"81.25% (13/16)",     81.25f},
+        {"75% (12/16)",        75.0f},
+        {"68.75% (11/16)",     68.75f},
+        {"62.5% (10/16)",      62.5f},
+        {"56.25% (9/16)",      56.25f},
+        {"50% (8/16)",         50.0f},
+    };
+    for(const auto& e : ROLLS) roll_combo->addItem(tr(e.label), e.value);
+    roll_layout->addWidget(roll_label);
+    roll_layout->addWidget(roll_combo);
+    roll_layout->addStretch();
+    main_layout->addLayout(roll_layout);
+
     bottom_button_box = new QDialogButtonBox(QDialogButtonBox::Cancel | QDialogButtonBox::Ok);
     main_layout->addWidget(bottom_button_box, Qt::AlignRight);
 
@@ -813,7 +837,22 @@ void AttackMoveWindow::setAsBlank() {
     move_modifier_groupbox->findChild<QCheckBox*>("friend_guard_checkbox")->setChecked(false);
 }
 
-void AttackMoveWindow::setAsTurn(const Turn& theTurn, const Pokemon& theDefendingPokemon, const attack_modifier& theAttackModifier) {
+float AttackMoveWindow::getRollThreshold() const {
+    QComboBox* c = findChild<QComboBox*>("atk_roll_threshold_combo");
+    return c ? c->currentData().toFloat() : 100.0f;
+}
+
+void AttackMoveWindow::setAsTurn(const Turn& theTurn, const Pokemon& theDefendingPokemon, const attack_modifier& theAttackModifier, float rollThreshold) {
+    // Restore roll threshold combo
+    QComboBox* roll_c = findChild<QComboBox*>("atk_roll_threshold_combo");
+    if(roll_c) {
+        for(int i = 0; i < roll_c->count(); ++i) {
+            if(qFuzzyCompare(roll_c->itemData(i).toFloat(), rollThreshold)) {
+                roll_c->setCurrentIndex(i);
+                break;
+            }
+        }
+    }
     MainWindow::setComboByOriginalIdx(defending_pokemon_groupbox->findChild<QComboBox*>("def_species_combobox"), theDefendingPokemon.getPokedexNumber()-1);
     MainWindow::setComboByOriginalIdx(defending_pokemon_groupbox->findChild<QComboBox*>("def_type1_combobox"), theDefendingPokemon.getTypes()[theTurn.getMoves()[0].first.getForm()][0]);
     MainWindow::setComboByOriginalIdx(defending_pokemon_groupbox->findChild<QComboBox*>("def_type2_combobox"), theDefendingPokemon.getTypes()[theTurn.getMoves()[0].first.getForm()][1]);

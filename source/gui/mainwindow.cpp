@@ -213,8 +213,10 @@ void MainWindow::setDefendingPokemonForm(int index) {
 
 void MainWindow::eraseMove(bool checked) {
     if( moves_groupbox->findChild<QTabWidget*>("moves_tabs")->currentIndex() == 0 ) {
-        turns_def.erase(turns_def.begin() +  moves_groupbox->findChild<QTableWidget*>("moves_defense_view")->currentRow());
-        modifiers_def.erase(modifiers_def.begin() + moves_groupbox->findChild<QTableWidget*>("moves_defense_view")->currentRow());
+        int def_row = moves_groupbox->findChild<QTableWidget*>("moves_defense_view")->currentRow();
+        turns_def.erase(turns_def.begin() + def_row);
+        modifiers_def.erase(modifiers_def.begin() + def_row);
+        if( def_row < (int)thresholds_def.size() ) thresholds_def.erase(thresholds_def.begin() + def_row);
 
         moves_groupbox->findChild<QTableWidget*>("moves_defense_view")->removeRow(moves_groupbox->findChild<QTableWidget*>("moves_defense_view")->currentRow());
 
@@ -225,11 +227,13 @@ void MainWindow::eraseMove(bool checked) {
     }
 
     else {
-        turns_atk.erase(turns_atk.begin() +  moves_groupbox->findChild<QTableWidget*>("moves_attack_view")->currentRow());
-        modifiers_atk.erase(modifiers_atk.begin() + moves_groupbox->findChild<QTableWidget*>("moves_attack_view")->currentRow());
-        defending_pokemons_in_attack.erase(defending_pokemons_in_attack.begin() + moves_groupbox->findChild<QTableWidget*>("moves_attack_view")->currentRow());
+        int atk_row = moves_groupbox->findChild<QTableWidget*>("moves_attack_view")->currentRow();
+        turns_atk.erase(turns_atk.begin() + atk_row);
+        modifiers_atk.erase(modifiers_atk.begin() + atk_row);
+        defending_pokemons_in_attack.erase(defending_pokemons_in_attack.begin() + atk_row);
+        if( atk_row < (int)thresholds_atk.size() ) thresholds_atk.erase(thresholds_atk.begin() + atk_row);
 
-        moves_groupbox->findChild<QTableWidget*>("moves_attack_view")->removeRow(moves_groupbox->findChild<QTableWidget*>("moves_attack_view")->currentRow());
+        moves_groupbox->findChild<QTableWidget*>("moves_attack_view")->removeRow(atk_row);
 
         if( turns_atk.empty() ) {
             moves_groupbox->findChild<QPushButton*>("moves_edit_button")->setEnabled(false);
@@ -736,7 +740,9 @@ void MainWindow::openMoveWindowAttack() {
 
 void MainWindow::openMoveWindowEditDefense() {
     defense_move_window->setAsBlank();
-    defense_move_window->setAsTurn(turns_def[moves_groupbox->findChild<QTableWidget*>("moves_defense_view")->currentRow()], modifiers_def[moves_groupbox->findChild<QTableWidget*>("moves_defense_view")->currentRow()]);
+    int def_row = moves_groupbox->findChild<QTableWidget*>("moves_defense_view")->currentRow();
+    float thr = (def_row < (int)thresholds_def.size()) ? thresholds_def[def_row] : 0.0f;
+    defense_move_window->setAsTurn(turns_def[def_row], modifiers_def[def_row], thr);
     defense_move_window->setEditMode(true);
     defense_move_window->setModal(true);
     defense_move_window->setVisible(true);
@@ -744,7 +750,9 @@ void MainWindow::openMoveWindowEditDefense() {
 
 void MainWindow::openMoveWindowEditAttack() {
     attack_move_window->setAsBlank();
-    attack_move_window->setAsTurn(turns_atk[moves_groupbox->findChild<QTableWidget*>("moves_attack_view")->currentRow()], defending_pokemons_in_attack[moves_groupbox->findChild<QTableWidget*>("moves_attack_view")->currentRow()], modifiers_atk[moves_groupbox->findChild<QTableWidget*>("moves_attack_view")->currentRow()]);
+    int atk_row = moves_groupbox->findChild<QTableWidget*>("moves_attack_view")->currentRow();
+    float thr = (atk_row < (int)thresholds_atk.size()) ? thresholds_atk[atk_row] : 100.0f;
+    attack_move_window->setAsTurn(turns_atk[atk_row], defending_pokemons_in_attack[atk_row], modifiers_atk[atk_row], thr);
     attack_move_window->setEditMode(true);
     attack_move_window->setModal(true);
     attack_move_window->setVisible(true);
@@ -754,11 +762,14 @@ void MainWindow::addDefenseTurn(const Turn& theTurn, const defense_modifier& the
     if( !defense_move_window->isEditMode() ) {
         turns_def.push_back(theTurn);
         modifiers_def.push_back(theModifier);
+        thresholds_def.push_back(defense_move_window->getRollThreshold());
     }
 
     else {
-        turns_def[ moves_groupbox->findChild<QTableWidget*>("moves_defense_view")->currentRow()] = theTurn;
-        modifiers_def[ moves_groupbox->findChild<QTableWidget*>("moves_defense_view")->currentRow()] = theModifier;
+        int row = moves_groupbox->findChild<QTableWidget*>("moves_defense_view")->currentRow();
+        turns_def[row] = theTurn;
+        modifiers_def[row] = theModifier;
+        if( row < (int)thresholds_def.size() ) thresholds_def[row] = defense_move_window->getRollThreshold();
     }
 }
 
@@ -789,8 +800,10 @@ void MainWindow::clearAll() {
     moves_groupbox->findChild<QTableWidget*>("moves_attack_view")->setRowCount(0);
     turns_def.clear();
     modifiers_def.clear();
+    thresholds_def.clear();
     turns_atk.clear();
     modifiers_atk.clear();
+    thresholds_atk.clear();
     defending_pokemons_in_attack.clear();
 }
 
@@ -839,6 +852,8 @@ void MainWindow::calculate() {
     input.atk_modifier = modifiers_atk;
     input.defending_pokemon = defending_pokemons_in_attack;
     input.priority = (Priority)moves_groupbox->findChild<QComboBox*>("prioritize_combobox")->currentIndex();
+    input.def_roll_thresholds = thresholds_def;
+    input.atk_roll_thresholds = thresholds_atk;
     future = QtConcurrent::run(selected_pokemon, &Pokemon::calculateEVSDistrisbution, input);
     future_watcher.setFuture(future);
 }
@@ -1145,12 +1160,15 @@ void MainWindow::addAttackTurn(const Turn& theTurn, const Pokemon& theDefendingP
         turns_atk.push_back(theTurn);
         modifiers_atk.push_back(theModifier);
         defending_pokemons_in_attack.push_back(theDefendingPokemon);
+        thresholds_atk.push_back(attack_move_window->getRollThreshold());
     }
 
     else {
-        turns_atk[ moves_groupbox->findChild<QTableWidget*>("moves_attack_view")->currentRow()] = theTurn;
-        modifiers_atk[ moves_groupbox->findChild<QTableWidget*>("moves_attack_view")->currentRow()] = theModifier;
-        defending_pokemons_in_attack[moves_groupbox->findChild<QTableWidget*>("moves_attack_view")->currentRow()] = theDefendingPokemon;
+        int row = moves_groupbox->findChild<QTableWidget*>("moves_attack_view")->currentRow();
+        turns_atk[row] = theTurn;
+        modifiers_atk[row] = theModifier;
+        defending_pokemons_in_attack[row] = theDefendingPokemon;
+        if( row < (int)thresholds_atk.size() ) thresholds_atk[row] = attack_move_window->getRollThreshold();
     }
 }
 

@@ -1173,7 +1173,7 @@ std::pair<std::vector<std::tuple<uint8_t, uint8_t, uint8_t>>, std::vector<std::t
                             defender.setRuinSword(std::get<5>(theDefModifiers[it]));
                             defender.setRuinBeads(std::get<6>(theDefModifiers[it]));
                             if( hp_assigned + def_assigned + spdef_assigned > assignable_evs ) to_add = false;
-                            else if( results_buffer[it][hp_assigned +  def_assigned * ARRAY_SIZE + spdef_assigned * ARRAY_SIZE * ARRAY_SIZE] > (0 + tolerances[it]) ) to_add = false;
+                            else if( results_buffer[it][hp_assigned +  def_assigned * ARRAY_SIZE + spdef_assigned * ARRAY_SIZE * ARRAY_SIZE] > ((it < def_roll_thresholds.size() ? def_roll_thresholds[it] : 0.0f) + tolerances[it]) ) to_add = false;
                         }
 
                         if( to_add ) {
@@ -1224,7 +1224,7 @@ void Pokemon::resistMoveLoopThread(Pokemon theDefender, const std::vector<Turn>&
 
         float ko_prob;
         if( theDefender.getEV(Stats::HP) + theDefender.getEV(Stats::DEF) + theDefender.getEV(Stats::SPDEF) > theAssignableEVS ) to_add = false;
-        else if( (ko_prob = theDefender.getKOProbability(modified_turn)) > 0 ) {
+        else if( (ko_prob = theDefender.getKOProbability(modified_turn)) > (it < def_roll_thresholds.size() ? def_roll_thresholds[it] : 0.0f) ) {
             buffer_mutex.lock();
             theResultBuffer[it][theDefender.getEV(Stats::HP) + theDefender.getEV(Stats::DEF) * ARRAY_SIZE + theDefender.getEV(Stats::SPDEF) * ARRAY_SIZE * ARRAY_SIZE] = ko_prob;
             buffer_mutex.unlock();
@@ -1336,7 +1336,7 @@ AttackResult Pokemon::koMove(const std::vector<Turn>& theTurn, const std::vector
 
                 float ko_prob;
                 if( attacker.getEV(Stats::ATK) + attacker.getEV(Stats::SPATK) > assignable_evs ) to_add = false;
-                else if( (ko_prob = def_copy.getKOProbability(temp_turn)) < 100 ) { results_buffer[it][attacker.getEV(Stats::ATK) + attacker.getEV(Stats::SPATK) * ARRAY_SIZE] = ko_prob; to_add = false; }
+                else if( (ko_prob = def_copy.getKOProbability(temp_turn)) < (it < atk_roll_thresholds.size() ? atk_roll_thresholds[it] : 100.0f) ) { results_buffer[it][attacker.getEV(Stats::ATK) + attacker.getEV(Stats::SPATK) * ARRAY_SIZE] = ko_prob; to_add = false; }
 
                 else results_buffer[it][attacker.getEV(Stats::ATK) + attacker.getEV(Stats::SPATK) * ARRAY_SIZE] = ko_prob;
             }
@@ -1387,7 +1387,7 @@ AttackResult Pokemon::koMove(const std::vector<Turn>& theTurn, const std::vector
                 bool to_add = true;
                 for(unsigned int it = 0; it < theTurn.size() && to_add; it++ ) {
                     if( spatk_assigned + atk_assigned > assignable_evs ) to_add = false;
-                    else if( results_buffer[it][atk_assigned + spatk_assigned * ARRAY_SIZE] < (100 - tolerances[it]) ) to_add = false;
+                    else if( results_buffer[it][atk_assigned + spatk_assigned * ARRAY_SIZE] < ((it < atk_roll_thresholds.size() ? atk_roll_thresholds[it] : 100.0f) - tolerances[it]) ) to_add = false;
                 }
 
                 if( to_add ) results.push_back(std::make_pair(atk_assigned, spatk_assigned));
@@ -1462,6 +1462,8 @@ AttackResult Pokemon::koMove(const std::vector<Turn>& theTurn, const std::vector
 }
 
 std::pair<DefenseResult, AttackResult> Pokemon::calculateEVSDistrisbution(const EVCalculationInput& theInput) {
+    def_roll_thresholds = theInput.def_roll_thresholds;
+    atk_roll_thresholds = theInput.atk_roll_thresholds;
 
     // Auto nature: trigger if explicitly set to Auto, or if nature is neutral (doesn't affect any stat)
     auto isNeutralNature = [](Stats::Nature n) {

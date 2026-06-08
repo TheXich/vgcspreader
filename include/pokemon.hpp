@@ -65,6 +65,8 @@ class Pokemon {
         static std::mutex buffer_mutex;
         static std::mutex result_mutex;
         bool abort_calculation; //this variable is needed to request a stop for the resistMove function
+        std::vector<float> def_roll_thresholds; // per-turn max allowed KO prob (0=survive all, 6.25=survive 93.75%, ...)
+        std::vector<float> atk_roll_thresholds; // per-turn min required KO prob (100=KO all, 93.75=KO 93.75%, ...)
 
         // Per-turn field ability flags (set before each damage call)
         bool ruin_sword;    // Sword of Ruin active: ×0.75 to this Pokémon's DEF
@@ -175,6 +177,8 @@ class EVCalculationInput { //this class is here to encapsulate the input for the
         std::vector<attack_modifier> atk_modifier;
         std::vector<defense_modifier> def_modifier;
         Priority priority;
+        std::vector<float> def_roll_thresholds; // per-turn max KO prob allowed (empty = all 0.0)
+        std::vector<float> atk_roll_thresholds; // per-turn min KO prob required (empty = all 100.0)
 };
 
 #endif

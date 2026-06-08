@@ -35,9 +35,10 @@ class AttackMoveWindow : public QDialog {
         AttackMoveWindow(QWidget* parent = nullptr, Qt::WindowFlags f = nullptr);
 
         void setAsBlank();
-        void setAsTurn(const Turn& theTurn, const Pokemon& theDefendingPokemon, const attack_modifier& theAttackModifier);
+        void setAsTurn(const Turn& theTurn, const Pokemon& theDefendingPokemon, const attack_modifier& theAttackModifier, float rollThreshold = 100.0f);
         void setEditMode(const bool isEditMode) { edit_mode = isEditMode; }
         bool isEditMode() const { return edit_mode; }
+        float getRollThreshold() const;
 
 };
 

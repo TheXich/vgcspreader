@@ -93,6 +93,8 @@ class MainWindow : public QDialog {
         std::vector<defense_modifier> modifiers_def;
         std::vector<attack_modifier> modifiers_atk;
         std::vector<Pokemon> defending_pokemons_in_attack;
+        std::vector<float> thresholds_def;
+        std::vector<float> thresholds_atk;
 
         void createDefendingPokemonGroupBox();
         void createMovesGroupBox();

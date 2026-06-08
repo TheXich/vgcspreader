@@ -183,8 +183,8 @@ typedef std::tuple<int16_t, int16_t, Type, bool, bool, bool, bool, bool, bool> a
 ## Flujo de cálculo principal
 
 1. El usuario configura su Pokémon en el panel principal (`mainwindow`)
-2. Añade ataques defensivos en `DefenseMoveWindow` → se guardan en `turns_def` / `modifiers_def`
-3. Añade ataques ofensivos en `AttackMoveWindow` → se guardan en `turns_atk` / `modifiers_atk`
+2. Añade ataques defensivos en `DefenseMoveWindow` → se guardan en `turns_def` / `modifiers_def` / `thresholds_def`
+3. Añade ataques ofensivos en `AttackMoveWindow` → se guardan en `turns_atk` / `modifiers_atk` / `thresholds_atk`
 4. `calculate()` llama a `Pokemon::calculateEVSDistrisbution(EVCalculationInput)` en un thread separado (`QtConcurrent::run`)
 5. Internamente: `resistMove` (mínimos EVs defensivos) + `koMove` (mínimos EVs ofensivos), con threads internos en `resistMoveLoopThread`
 6. El resultado se muestra en `ResultWindow`
@@ -450,6 +450,52 @@ with open('db/personal_species.bin', 'wb') as f: f.write(data)
 
 ---
 
+## Roll de daño y umbral por movimiento
+
+### Mecánica del roll
+
+Cada ataque genera 16 valores de daño posibles (multiplicadores del 85/100 al 100/100 en pasos de 1/100). `getDamage()` los calcula todos; `getKOProbability()` devuelve qué porcentaje de esos 16 rolls resultan en KO (escala 0–100, donde 0 = ningún roll mata = sobrevive el 100%).
+
+### Umbral configurable por movimiento
+
+El usuario puede especificar, para cada movimiento añadido, qué porcentaje de rolls quiere cubrir:
+
+- **Defensivo** (`DefenseMoveWindow`): combo **"Survive:"** — desde "100% (all rolls)" (default, busca spread que sobreviva el peor roll) hasta "50% (8/16)" (acepta que la mitad de los rolls maten).
+- **Ofensivo** (`AttackMoveWindow`): combo **"KO:"** — desde "100% (all rolls)" (default, busca spread que mate con el mejor roll) hasta "50% (8/16)".
+
+Los valores disponibles son los 9 umbrales significativos en pasos de 1/16: 100%, 93.75%, 87.5%, 81.25%, 75%, 68.75%, 62.5%, 56.25%, 50%.
+
+### Flujo de datos
+
+```
+DefenseMoveWindow::getRollThreshold()  → MainWindow::thresholds_def[i]
+AttackMoveWindow::getRollThreshold()   → MainWindow::thresholds_atk[i]
+                                             ↓
+                              EVCalculationInput::def_roll_thresholds
+                              EVCalculationInput::atk_roll_thresholds
+                                             ↓
+                              Pokemon::def_roll_thresholds  (vector<float>)
+                              Pokemon::atk_roll_thresholds  (vector<float>)
+```
+
+### Uso en el cálculo
+
+- `resistMoveLoopThread`: rechaza un spread si `ko_prob > def_roll_thresholds[i]` (antes fijo `> 0`).
+- `resistMoveLoop` (fallback): umbral base es `def_roll_thresholds[i]`, sobre el que se aplica la tolerancia incremental.
+- `koMove`: rechaza si `ko_prob < atk_roll_thresholds[i]` (antes fijo `< 100`).
+- `koMove` (fallback): umbral base es `atk_roll_thresholds[i]`, restando la tolerancia incremental.
+- Si el vector está vacío o el índice supera su tamaño, se usa el default seguro (0.0 defensivo, 100.0 ofensivo).
+
+### Comportamiento en edición y borrado
+
+- Al editar un movimiento ya añadido (`openMoveWindowEditDefense/Attack`), el combo se restaura al valor guardado.
+- Al borrar una fila de la tabla, el threshold se elimina del vector en el índice correspondiente.
+- `clearAll()` limpia ambos vectores junto con el resto.
+
+> **Nota**: los presets XML y las partidas guardadas (`SavedCalculation`) no almacenan el roll threshold — al cargarlos se usa el default (100%).
+
+---
+
 ## Recuperación al final de turno (EOT) en cálculo multi-turno
 
 ### Arquitectura
@@ -508,6 +554,7 @@ with open(path, 'wb') as f:
 
 - El typo `Psichic` en el enum (`moves.hpp`) debería ser `Psychic`, pero corregirlo rompería los índices binarios ya guardados en presets XML de usuarios
 - Los presets XML no guardan el `attack_modifier` completo (Tera del atacante por turno); si se añade en el futuro habría que versionar el formato XML
+- Los presets XML y `SavedCalculation` no guardan el roll threshold por movimiento (`thresholds_def` / `thresholds_atk`); al cargar, todos los movimientos usan el default (100% defensivo / 100% ofensivo)
 - Los presets XML guardan los 5 checkboxes de Ruin + Helping Hand del `defense_modifier` (get<5..9>); los campos son opcionales en la carga (fallback a false) para compatibilidad con presets antiguos
 - `NATURE_NUM` y `AUTO_NATURE` tienen el mismo valor numérico (25); el combobox de naturaleza tiene 26 ítems (índices 0–24 = naturales reales, índice 25 = Auto)
 - El enum `Status` usa `NO_STATUS` (no `HEALTHY`) como valor neutro — importante al implementar habilidades que dependen del estado

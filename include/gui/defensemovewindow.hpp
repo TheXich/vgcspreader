@@ -55,10 +55,10 @@ class DefenseMoveWindow : public QDialog {
         QDialogButtonBox* bottom_button_box; //HERE BECAUSE IT HAS TO BE ACCESSED BY MAINWINDOW
 
         void setAsBlank();
-        void setAsTurn(const Turn& theTurn, const defense_modifier& theDefenseModifier);
+        void setAsTurn(const Turn& theTurn, const defense_modifier& theDefenseModifier, float rollThreshold = 0.0f);
         bool isEditMode() { return edit_mode; }
-
         void setEditMode(const bool theValue) { edit_mode = theValue; }
+        float getRollThreshold() const;
 };
 
 #endif // MOVEWINDOW_HPP
