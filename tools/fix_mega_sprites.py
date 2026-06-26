@@ -22,8 +22,8 @@ PS_URL     = "https://play.pokemonshowdown.com/sprites/gen5/{name}.png"
 
 # (dex-form) -> list of PS/Smogon names to try in order
 SPRITE_NAMES = {
-    "26-2":  [],              # not on Smogon/PS yet — resize from existing
-    "26-3":  [],              # not on Smogon/PS yet — resize from existing
+    "26-2":  ["raichu-mega-x"],
+    "26-3":  ["raichu-mega-y"],
     "36-1":  ["clefable-mega"],
     "71-1":  ["victreebel-mega"],
     "121-1": ["starmie-mega"],
@@ -48,6 +48,7 @@ SPRITE_NAMES = {
     "623-1": ["golurk-mega"],
     "652-1": ["chesnaught-mega"],
     "655-1": ["delphox-mega"],
+    "668-1": ["pyroar-mega"],
     "670-2": ["floette-mega"],
     "678-2": ["meowstic-f-mega"],
     "687-1": ["malamar-mega"],
