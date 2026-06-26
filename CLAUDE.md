@@ -280,7 +280,7 @@ El criterio es **dos niveles**:
 | `Prism_Armor` | ×0.75 a movimientos super-efectivos |
 | `Filter` / `Solid_Rock` | ×0.75 a movimientos super-efectivos |
 | `Wonder_Guard` | ×0 a todo excepto super-efectivo |
-| `Levitate` | Inmunidad a Tierra |
+| `Levitate` / `Eelevate` | Inmunidad a Tierra |
 | `Heatproof` | ×0.5 al tipo Fuego |
 | `Thick_Fat` | ×0.5 a Fuego e Hielo |
 | `Flash_Fire` | Inmunidad al tipo Fuego |
@@ -314,6 +314,7 @@ El criterio es **dos niveles**:
 | `Adaptability` | STAB sube de ×1.5 a ×2 |
 | `Scrappy` | Normal y Lucha golpean a Fantasma |
 | `Collision_Course` / `Electro_Drift` | ×1.333 si el movimiento es super-efectivo |
+| `Fire_Mane` | ×1.5 a movimientos de tipo Fuego (Mega Pyroar, Gen 10) |
 
 ### Habilidades de campo (Ruin abilities) + Helping Hand
 
@@ -449,10 +450,31 @@ Los tres ficheros deben tener siempre el **mismo número de entradas**.
 Dragon Claw, Shadow Claw, Dire Claw (añadidos a `isSlicingMove()` en `pokemon.cpp`)
 
 ### Nuevas Mega Evoluciones (Champions/Legends ZA)
-La base de datos (`personal_species.bin`) incluye las nuevas Megas de Champions. Fueron añadidas mediante el script `build_db.py` más dos adiciones manuales:
-- **Mega Eelektross** (#604-1): Electric, HP/Atk/Def/SpA/SpD/Spe = 85/145/80/135/90/80.
-- **Mega Falinks** (#870-1): Fighting, 65/135/135/70/65/100.
+La base de datos (`personal_species.bin`) incluye las nuevas Megas de Champions. Fueron añadidas mediante el script `build_db.py` más adiciones manuales:
+- **Mega Eelektross** (#604-1): Electric, HP/Atk/Def/SpA/SpD/Spe = 85/145/80/135/90/80. Habilidad: **Eelevate** (índice 274 — nueva habilidad Gen 10).
+- **Mega Falinks** (#870-1): Fighting, 65/135/135/70/65/100. Habilidad: **Defiant** (índice 128).
 - **Mega Floette** (#670-2): Fairy, HP/Atk/Def/SpA/SpD/Spe = 74/85/87/155/148/102 (BST=651). Forma 2 de Floette (form index 2 en binario, entry 1243). La forma 1 (#670-1) es Floette-E (AZ's Floette, BST=551). Habilidad: Fairy_Aura (índice 187 en `abilities.hpp`).
+
+#### Habilidades añadidas en Champions 1.1.0 (11 Megas nuevas)
+Las siguientes megas ya existían en el binario pero sin habilidad correcta asignada. Actualizadas en junio 2026:
+
+| Mega | # Pokédex | Forma | Habilidad | Índice |
+|------|-----------|-------|-----------|--------|
+| Mega Raichu X | #26-2 | form 2 | Electric_Surge | 226 |
+| Mega Raichu Y | #26-3 | form 3 | No_Guard | 99 |
+| Mega Staraptor | #398-1 | form 1 | Contrary | 126 |
+| Mega Scolipede | #545-1 | form 1 | Shell_Armor | 75 |
+| Mega Scrafty | #560-1 | form 1 | Intimidate | 22 |
+| Mega Eelektross | #604-1 | form 1 | Eelevate | 274 |
+| Mega Pyroar | #668-1 | form 1 | Fire_Mane | 273 |
+| Mega Malamar | #687-1 | form 1 | Contrary | 126 |
+| Mega Barbaracle | #689-1 | form 1 | Tough_Claws | 181 (ya correcto) |
+| Mega Dragalge | #691-1 | form 1 | Regenerator | 144 |
+| Mega Falinks | #870-1 | form 1 | Defiant | 128 |
+
+#### Nuevas habilidades Gen 10 (añadidas al enum y abilities.txt)
+- **Fire_Mane** (índice 273): habilidad de Mega Pyroar. Boost ×1.5 a todos los movimientos de tipo Fuego del atacante. Implementada en `calculateOtherModifier` en `source/pokemon.cpp`.
+- **Eelevate** (índice 274): habilidad de Mega Eelektross. Combina Levitate (inmunidad a Tierra, excluye de grounded checks) + Beast Boost (KO → +1 al stat más alto; este efecto no aplica al cálculo de spreads). Implementada como alias de Levitate en los tres puntos donde se verifica inmunidad a Tierra en `source/pokemon.cpp`.
 
 Los sprites de todas las Megas Champions están en `db/sprites/` + `resources.qrc` en formato **40×30 px** (igual que todos los demás). Fuente primaria: **Smogon minisprites** (`smogon.com/forums/media/minisprites/{name}.png`). Para los que Smogon aún no tiene (26-2, 26-3, 448-2), se redimensionan desde los 120×120 de Serebii. El script `tools/fix_mega_sprites.py` automatiza esto: detecta sprites con tamaño incorrecto, descarga el minisprite correcto de Smogon/PS, y redimensiona como fallback.
 

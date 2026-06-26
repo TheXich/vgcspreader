@@ -96,7 +96,7 @@ Pokemon::Pokemon(const unsigned int thePokedexNumber, const Stats& theStats) {
     calculateTotal();
 
     //evaluate if it is grounded
-    if( types[form][0] == Type::Flying || types[form][1] == Type::Flying || getAbility() == Ability::Levitate ) grounded = false;
+    if( types[form][0] == Type::Flying || types[form][1] == Type::Flying || getAbility() == Ability::Levitate || getAbility() == Ability::Eelevate ) grounded = false;
     else grounded = true;
 }
 
@@ -192,7 +192,7 @@ void Pokemon::calculateTotal() {
     boosted[Stats::SPE] = total[Stats::SPE] * spe_modifier_multiplier;
 
     //evaluate if it is grounded
-    if( types[form][0] == Type::Flying || types[form][1] == Type::Flying || getAbility() == Ability::Levitate ) grounded = false;
+    if( types[form][0] == Type::Flying || types[form][1] == Type::Flying || getAbility() == Ability::Levitate || getAbility() == Ability::Eelevate ) grounded = false;
     else grounded = true;
 }
 
@@ -355,7 +355,7 @@ float Pokemon::calculateOtherModifier(const Pokemon& theAttacker, const Move& th
         if( getAbility() == Ability::Wonder_Guard && calculateTypeModifier(theAttacker, theMove) < 2 ) modifier = modifier * 0;
         else if( getAbility() == Ability::Multiscale && getCurrentHPPercentage() == 100 ) modifier = modifier * 0.5;
         else if( (getAbility() == Ability::Filter || getAbility() == Ability::Solid_Rock) && calculateTypeModifier(theAttacker, theMove) > 2  ) modifier = modifier * 0.75;
-        else if( getAbility() == Ability::Levitate && theMove.getMoveType() == Type::Ground ) modifier = modifier * 0;
+        else if( (getAbility() == Ability::Levitate || getAbility() == Ability::Eelevate) && theMove.getMoveType() == Type::Ground ) modifier = modifier * 0;
         else if( getAbility() == Ability::Heatproof && theMove.getMoveType() == Type::Fire ) modifier = modifier * 0.5;
         else if( getAbility() == Ability::Thick_Fat && (theMove.getMoveType() == Type::Fire || theMove.getMoveType() == Type::Ice) ) modifier = modifier * 0.5;
         else if( getAbility() == Ability::Flash_Fire && theMove.getMoveType() == Type::Fire ) modifier = modifier * 0;
@@ -401,6 +401,9 @@ float Pokemon::calculateOtherModifier(const Pokemon& theAttacker, const Move& th
 
     // Water Bubble (attacker): 2× Water-type moves
     if( theAttacker.getAbility() == Ability::Water_Bubble && theMove.getMoveType() == Type::Water ) modifier = modifier * 2.0f;
+
+    // Fire Mane (Mega Pyroar, Gen 10): 1.5× Fire-type moves
+    if( theAttacker.getAbility() == Ability::Fire_Mane && theMove.getMoveType() == Type::Fire ) modifier = modifier * 1.5f;
 
     // Orichalcum Pulse (Gen 9): +ATK boost under sun.
     // Koraidon sets sun on entry automatically, so the boost is active by default.

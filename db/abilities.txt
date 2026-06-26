@@ -271,3 +271,5 @@ Tera Shell
 Teraform Zero
 Poison Puppeteer
 Spicy Spray
+Fire Mane
+Eelevate
