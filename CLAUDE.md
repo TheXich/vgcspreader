@@ -29,6 +29,23 @@ rm -f release/qrc_resources.cpp release/qrc_resources.o
 mingw32-make -f Makefile.Release.Release
 ```
 
+### macOS (compilación local)
+
+Para compilar y ejecutar localmente desde Finder, son **tres pasos obligatorios**:
+
+```bash
+export PATH="/opt/homebrew/opt/qt@5/bin:$PATH"
+make -j$(sysctl -n hw.logicalcpu)
+macdeployqt vgcspreader.app
+codesign --force --deep --sign - vgcspreader.app
+```
+
+- `macdeployqt` copia las frameworks de Qt dentro del `.app` — sin este paso el app crashea al abrirlo desde Finder porque macOS no encuentra las librerías.
+- `codesign --sign -` aplica firma ad-hoc local — necesaria para que macOS permita ejecutar el binario.
+- Hay que repetir `macdeployqt` + `codesign` después de **cada** `make`, ya que el linking sobreescribe el bundle.
+
+Si solo se modifican archivos que no requieren recompilar (solo `resources.qrc`, etc.), igualmente hay que re-firmar.
+
 ### macOS (compilación automática en CI)
 
 La versión macOS se compila automáticamente mediante GitHub Actions en cada push a `master`. No requiere intervención manual. El workflow `.github/workflows/build.yml` se encarga de:
