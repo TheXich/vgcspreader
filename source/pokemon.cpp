@@ -812,11 +812,12 @@ void Pokemon::recursiveDamageCalculation(Pokemon theDefendingPokemon, std::vecto
         if( theDefendingPokemon.getAbility() == Ability::Spicy_Spray && it->second.getMoveCategory() == Move::PHYSICAL ) {
             spicy_spray_attacker.setStatus(Status::BURNED);
         }
+        int initial_hp = theDefendingPokemon.getCurrentHP();
         for(unsigned int j = 0; j < theIntVector.size(); j++) {
-            int new_hp = theDefendingPokemon.getCurrentHP() - theIntVector[j];
+            int new_hp = initial_hp - theIntVector[j];
             if( new_hp < 0 ) new_hp = 0;
             if( new_hp > theDefendingPokemon.getBoostedStat(Stats::HP) ) new_hp = theDefendingPokemon.getStat(Stats::HP);
-            theDefendingPokemon.setCurrentHPPercentage((new_hp/theDefendingPokemon.getBoostedStat(Stats::HP))*100);
+            theDefendingPokemon.setCurrentHPPercentage((float(new_hp)/float(theDefendingPokemon.getBoostedStat(Stats::HP)))*100.0f);
             auto new_damages = theDefendingPokemon.getDamage(spicy_spray_attacker, it->second);
 
             for( auto it2 = new_damages.begin(); it2 < new_damages.end(); it2++ ) {
@@ -849,7 +850,7 @@ void Pokemon::recursiveDamageCalculation(Pokemon theDefendingPokemon, std::vecto
             float hp_percentage_remaining = ((float(hp_remaining) / float(theDefendingPokemon.getBoostedStat(Stats::HP))) * 100);
             if( hp_percentage_remaining <= theDefendingPokemon.getItem().getRestoringActivation() && hp_percentage_remaining > 0 && theBerryVector[i] == false ) { //if this is true we restore some hps using berries
                 theBerryVector[i] = true;
-                int damage_restoring = (theDefendingPokemon.getBoostedStat(Stats::HP) / 100) * theDefendingPokemon.getItem().getRestoringPercentage();
+                int damage_restoring = theDefendingPokemon.getBoostedStat(Stats::HP) * theDefendingPokemon.getItem().getRestoringPercentage() / 100;
                 theIntVector[i] = theIntVector[i] - damage_restoring;
             }
         }
