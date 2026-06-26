@@ -45,6 +45,31 @@ git tag v1.X
 git push --tags
 ```
 
+### Actualizar el icono de la app
+
+`ico_preview.png` es el archivo fuente del icono (diseño actual). `logo.png` es la copia que usa el CI para generar el `.icns`.
+
+Para actualizar el icono:
+1. Colocar el nuevo diseño en `ico_preview.png`
+2. Copiar sobre `logo.png`: `cp ico_preview.png logo.png`
+3. Regenerar el iconset localmente:
+```bash
+mkdir -p macos/vgcspreader.iconset
+sips --resampleHeightWidth 16   16   logo.png --out macos/vgcspreader.iconset/icon_16x16.png
+sips --resampleHeightWidth 32   32   logo.png --out macos/vgcspreader.iconset/icon_16x16@2x.png
+sips --resampleHeightWidth 32   32   logo.png --out macos/vgcspreader.iconset/icon_32x32.png
+sips --resampleHeightWidth 64   64   logo.png --out macos/vgcspreader.iconset/icon_32x32@2x.png
+sips --resampleHeightWidth 128  128  logo.png --out macos/vgcspreader.iconset/icon_128x128.png
+sips --resampleHeightWidth 256  256  logo.png --out macos/vgcspreader.iconset/icon_128x128@2x.png
+sips --resampleHeightWidth 256  256  logo.png --out macos/vgcspreader.iconset/icon_256x256.png
+sips --resampleHeightWidth 512  512  logo.png --out macos/vgcspreader.iconset/icon_256x256@2x.png
+sips --resampleHeightWidth 512  512  logo.png --out macos/vgcspreader.iconset/icon_512x512.png
+sips --resampleHeightWidth 1024 1024 logo.png --out macos/vgcspreader.iconset/icon_512x512@2x.png
+iconutil -c icns macos/vgcspreader.iconset -o macos/vgcspreader.icns
+```
+4. Hacer commit de `ico_preview.png`, `logo.png`, `macos/vgcspreader.icns` y `macos/vgcspreader.iconset/`
+5. Push a `master` → GitHub Actions regenera el `.icns` y compila el `.dmg` automáticamente
+
 ### Regla de paridad de plataformas
 
 **Toda modificación al proyecto debe funcionar en ambas plataformas.** Antes de hacer commit, verificar:
