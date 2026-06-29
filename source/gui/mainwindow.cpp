@@ -1620,12 +1620,13 @@ void MainWindow::addAsSavedCalc(const QString& theName) {
         const auto& defmod = sc.modifiers_def[i];
         tinyxml2::XMLElement* turn_node = xml_saves.NewElement("Turn");
 
-        for (int m = 0; m < (int)turn.getMoveNum(); m++) {
-            auto mv_cat = turn.getMoves()[m].second.getMoveCategory();
+        const auto moves_for_turn = turn.getMoves();
+        for (int m = 0; m < (int)moves_for_turn.size(); m++) {
+            const auto& pkmn = moves_for_turn[m].first;
+            const auto& mv = moves_for_turn[m].second;
+            auto mv_cat = mv.getMoveCategory();
             const char* pname = (m == 0) ? "Pokemon1" : "Pokemon2";
             tinyxml2::XMLElement* pnode = xml_saves.NewElement(pname);
-            const auto& pkmn = turn.getMoves()[m].first;
-            const auto& mv = turn.getMoves()[m].second;
 
             add_int(pnode, "Species",  pkmn.getPokedexNumber());
             add_int(pnode, "Form",     pkmn.getForm());
@@ -1683,7 +1684,8 @@ void MainWindow::addAsSavedCalc(const QString& theName) {
         const auto& atkmod = sc.modifiers_atk[i];
         tinyxml2::XMLElement* turn_node = xml_saves.NewElement("Turn");
 
-        const auto& mv = turn.getMoves()[0].second;
+        const auto moves_for_atk_turn = turn.getMoves();
+        const auto& mv = moves_for_atk_turn[0].second;
         auto mv_cat = mv.getMoveCategory();
 
         add_int(turn_node, "Move",         mv.getMoveIndex());
