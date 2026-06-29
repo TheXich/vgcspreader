@@ -614,6 +614,20 @@ with open(path, 'wb') as f:
 
 ---
 
+## Panel de IV oculto (Champions)
+
+En Pokémon Champions los IVs están siempre fijados a 31 y no son modificables por el jugador. Por ello los controles de IV están **ocultos** (no eliminados) en la GUI con `->hide()`, de modo que toda la lógica de cálculo permanece intacta con los valores por defecto 31.
+
+### Widgets ocultados
+
+- **`mainwindow.cpp`** (~línea 490): `iv_groupbox->hide()` — oculta el group box completo "IV:" del panel del Pokémon propio.
+- **`attackmovewindow.cpp`** (cálculo ofensivo): `hp_iv_label->hide()`, `hp_iv->hide()`, `iv_label->hide()` (`def_iv_label`), `iv->hide()` (`def_iv_spinbox`) — oculta HP IV y Def/SpDef IV del defensor.
+- **`defensemovewindow.cpp`** (cálculo defensivo): para `atk1` y `atk2`, `iv_label->hide()` y `iv->hide()` — oculta Atk/SpAtk IV de los atacantes.
+
+Los objetos siguen existiendo con nombre (ObjectName) para los `findChild<>` que los leen/escriben internamente. Si en el futuro los IVs vuelven a ser configurables, basta con eliminar las líneas `->hide()`.
+
+---
+
 ## Pendientes / mejoras conocidas
 
 - El typo `Psichic` en el enum (`moves.hpp`) debería ser `Psychic`, pero corregirlo rompería los índices binarios ya guardados en presets XML de usuarios

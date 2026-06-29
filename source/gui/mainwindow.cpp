@@ -487,6 +487,7 @@ void MainWindow::createDefendingPokemonGroupBox() {
     speiv->setValue(31);
     modifiers_layout->addRow(tr("Spe IV:"), speiv);
 
+    iv_groupbox->hide(); // IVs fixed at 31 in Champions — panel hidden but logic preserved
     defending_layout->addWidget(iv_groupbox);
 
     //already assigned evs

@@ -272,12 +272,14 @@ void DefenseMoveWindow::createAtk1GroupBox() {
     QLabel* iv_label = new QLabel(tr("Atk IV:"));
     iv_label->setObjectName("atk1_iv_label");
     modifiers_layout->addWidget(iv_label);
+    iv_label->hide();
 
     QSpinBox* iv = new QSpinBox;
     iv->setObjectName("atk1_iv_spinbox");
     iv->setRange(0, 31);
     iv->setValue(31);
     modifiers_layout->addWidget(iv);
+    iv->hide();
 
     //ev
     QLabel* ev_label = new QLabel(tr("Atk EV:"));
@@ -599,12 +601,14 @@ void DefenseMoveWindow::createAtk2GroupBox() {
     QLabel* iv_label = new QLabel(tr("Atk IV:"));
     iv_label->setObjectName("atk2_iv_label");
     modifiers_layout->addWidget(iv_label);
+    iv_label->hide();
 
     QSpinBox* iv = new QSpinBox;
     iv->setObjectName("atk2_iv_spinbox");
     iv->setRange(0, 31);
     iv->setValue(31);
     modifiers_layout->addWidget(iv);
+    iv->hide();
 
     //ev
     QLabel* ev_label = new QLabel(tr("Atk EV:"));

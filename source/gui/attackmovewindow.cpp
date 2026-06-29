@@ -250,12 +250,14 @@ void AttackMoveWindow::createDefendingPokemonGroupbox() {
     QLabel* hp_iv_label = new QLabel(tr("HP IV:"));
     hp_iv_label->setObjectName("hp_iv_label");
     modifiers_hp_layout->addWidget(hp_iv_label);
+    hp_iv_label->hide();
 
     QSpinBox* hp_iv = new QSpinBox;
     hp_iv->setObjectName("hp_iv_spinbox");
     hp_iv->setRange(0, 31);
     hp_iv->setValue(31);
     modifiers_hp_layout->addWidget(hp_iv);
+    hp_iv->hide();
 
     //hp ev
     QLabel* hp_ev_label = new QLabel(tr("HP EV:"));
@@ -289,12 +291,14 @@ void AttackMoveWindow::createDefendingPokemonGroupbox() {
     QLabel* iv_label = new QLabel(tr("Def IV:"));
     iv_label->setObjectName("def_iv_label");
     modifiers_layout->addWidget(iv_label);
+    iv_label->hide();
 
     QSpinBox* iv = new QSpinBox;
     iv->setObjectName("def_iv_spinbox");
     iv->setRange(0, 31);
     iv->setValue(31);
     modifiers_layout->addWidget(iv);
+    iv->hide();
 
     //ev
     QLabel* ev_label = new QLabel(tr("Def EV:"));
