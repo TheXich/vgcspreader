@@ -1,0 +1,24 @@
+# Build artifacts
+*.o
+*.a
+
+# Qt generated files
+moc_*.cpp
+moc_predefs.h
+qrc_resources.cpp
+.qmake.stash
+
+# macOS app bundle
+*.app/
+
+# Windows build output
+release/
+debug/
+Makefile.Release.Release
+Makefile.Debug.Debug
+
+# Qt generated Makefile (regenerado por qmake)
+Makefile
+
+# Scratchpad / temp
+*.user
