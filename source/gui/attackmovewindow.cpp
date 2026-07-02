@@ -517,6 +517,8 @@ void AttackMoveWindow::createModifierGroupbox() {
     weather_combobox->addItem(tr("Harsh Sunshine"));
     weather_combobox->addItem(tr("Heavy Rain"));
     weather_combobox->addItem(tr("Strong Winds"));
+    weather_combobox->addItem(tr("Sand"));
+    weather_combobox->addItem(tr("Snow"));
 
     weather_layout->addWidget(weather_combobox);
 
@@ -839,6 +841,10 @@ void AttackMoveWindow::setAsBlank() {
     move_modifier_groupbox->findChild<QCheckBox*>("beads_of_ruin_checkbox")->setChecked(false);
     move_modifier_groupbox->findChild<QCheckBox*>("helping_hand_checkbox")->setChecked(false);
     move_modifier_groupbox->findChild<QCheckBox*>("friend_guard_checkbox")->setChecked(false);
+}
+
+void AttackMoveWindow::setDefaultWeather(Move::Weather weather) {
+    move_modifier_groupbox->findChild<QComboBox*>("weather_combobox")->setCurrentIndex((int)weather);
 }
 
 float AttackMoveWindow::getRollThreshold() const {

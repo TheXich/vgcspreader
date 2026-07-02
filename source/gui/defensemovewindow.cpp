@@ -846,6 +846,8 @@ void DefenseMoveWindow::createDefendingGroupBox() {
     weather_combobox->addItem(tr("Harsh Sunshine"));
     weather_combobox->addItem(tr("Heavy Rain"));
     weather_combobox->addItem(tr("Strong Winds"));
+    weather_combobox->addItem(tr("Sand"));
+    weather_combobox->addItem(tr("Snow"));
 
     weather_layout->addWidget(weather_combobox);
 
@@ -1011,6 +1013,12 @@ void DefenseMoveWindow::setSpecies1(int index) {
     //setting correct ability
     QComboBox* ability = atk1_groupbox->findChild<QComboBox*>("atk1_abilities_combobox");
     MainWindow::setComboByOriginalIdx(ability, selected_pokemon.getPossibleAbilities()[0][0]);
+
+    if( modifier_groupbox ) {
+        Move::Weather w = MainWindow::abilityToWeather((Ability)ability->currentData(Qt::UserRole).toInt());
+        if( w != Move::WEATHER_NONE )
+            modifier_groupbox->findChild<QComboBox*>("weather_combobox")->setCurrentIndex((int)w);
+    }
 }
 
 void DefenseMoveWindow::setForm1(int index) {
@@ -1047,6 +1055,12 @@ void DefenseMoveWindow::setForm1(int index) {
     //setting correct ability
     QComboBox* ability = atk1_groupbox->findChild<QComboBox*>("atk1_abilities_combobox");
     MainWindow::setComboByOriginalIdx(ability, selected_pokemon.getPossibleAbilities()[form_idx][0]);
+
+    if( modifier_groupbox ) {
+        Move::Weather w = MainWindow::abilityToWeather((Ability)ability->currentData(Qt::UserRole).toInt());
+        if( w != Move::WEATHER_NONE )
+            modifier_groupbox->findChild<QComboBox*>("weather_combobox")->setCurrentIndex((int)w);
+    }
 }
 
 void DefenseMoveWindow::setForm2(int index) {
@@ -1083,6 +1097,12 @@ void DefenseMoveWindow::setForm2(int index) {
     //setting correct ability
     QComboBox* ability = atk2_groupbox->findChild<QComboBox*>("atk2_abilities_combobox");
     MainWindow::setComboByOriginalIdx(ability, selected_pokemon.getPossibleAbilities()[form_idx][0]);
+
+    if( modifier_groupbox ) {
+        Move::Weather w = MainWindow::abilityToWeather((Ability)ability->currentData(Qt::UserRole).toInt());
+        if( w != Move::WEATHER_NONE )
+            modifier_groupbox->findChild<QComboBox*>("weather_combobox")->setCurrentIndex((int)w);
+    }
 }
 
 void DefenseMoveWindow::setMove2(int index) {
@@ -1179,6 +1199,12 @@ void DefenseMoveWindow::setSpecies2(int index) {
     //setting correct ability
     QComboBox* ability = atk2_groupbox->findChild<QComboBox*>("atk2_abilities_combobox");
     MainWindow::setComboByOriginalIdx(ability, selected_pokemon.getPossibleAbilities()[0][0]);
+
+    if( modifier_groupbox ) {
+        Move::Weather w = MainWindow::abilityToWeather((Ability)ability->currentData(Qt::UserRole).toInt());
+        if( w != Move::WEATHER_NONE )
+            modifier_groupbox->findChild<QComboBox*>("weather_combobox")->setCurrentIndex((int)w);
+    }
 }
 
 void DefenseMoveWindow::activateAtk2(int state) {
@@ -1416,6 +1442,10 @@ void DefenseMoveWindow::setAsBlank() {
     defending_groupbox->findChild<QCheckBox*>("defending_terastallized")->setChecked(false);
 
     tabs->setCurrentIndex(0);
+}
+
+void DefenseMoveWindow::setDefaultWeather(Move::Weather weather) {
+    modifier_groupbox->findChild<QComboBox*>("weather_combobox")->setCurrentIndex((int)weather);
 }
 
 float DefenseMoveWindow::getRollThreshold() const {

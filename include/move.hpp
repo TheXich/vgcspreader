@@ -26,7 +26,9 @@ class Move {
             RAIN,
             HARSH_SUNSHINE,
             HEAVY_RAIN,
-            STRONG_WINDS
+            STRONG_WINDS,
+            SAND,
+            SNOW
         };
 
         enum Terrain {

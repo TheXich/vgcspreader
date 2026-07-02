@@ -20,6 +20,20 @@
 
 #include "pokemon.hpp"
 
+Move::Weather MainWindow::abilityToWeather(Ability ability) {
+    switch(ability) {
+        case Ability::Drought:          return Move::SUN;
+        case Ability::Desolate_Land:    return Move::HARSH_SUNSHINE;
+        case Ability::Drizzle:          return Move::RAIN;
+        case Ability::Primordial_Sea:   return Move::HEAVY_RAIN;
+        case Ability::Delta_Stream:     return Move::STRONG_WINDS;
+        case Ability::Sand_Stream:      return Move::SAND;
+        case Ability::Snow_Warning:     return Move::SNOW;
+        case Ability::Orichalcum_Pulse: return Move::SUN;
+        default:                        return Move::WEATHER_NONE;
+    }
+}
+
 MainWindow::MainWindow() {
     setObjectName("MainWindow");
     setWindowTitle("VGCSpreader");
@@ -727,6 +741,8 @@ void MainWindow::openMoveWindowEdit(bool checked) {
 
 void MainWindow::openMoveWindowDefense() {
     defense_move_window->setAsBlank();
+    Ability ability = (Ability)defending_groupbox->findChild<QComboBox*>("defending_abilities_combobox")->currentData(Qt::UserRole).toInt();
+    defense_move_window->setDefaultWeather(MainWindow::abilityToWeather(ability));
     defense_move_window->setEditMode(false);
     defense_move_window->setModal(true);
     defense_move_window->setVisible(true);
@@ -734,6 +750,8 @@ void MainWindow::openMoveWindowDefense() {
 
 void MainWindow::openMoveWindowAttack() {
     attack_move_window->setAsBlank();
+    Ability ability = (Ability)defending_groupbox->findChild<QComboBox*>("defending_abilities_combobox")->currentData(Qt::UserRole).toInt();
+    attack_move_window->setDefaultWeather(MainWindow::abilityToWeather(ability));
     attack_move_window->setEditMode(false);
     attack_move_window->setModal(true);
     attack_move_window->setVisible(true);

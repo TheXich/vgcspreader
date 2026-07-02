@@ -139,6 +139,7 @@ class MainWindow : public QDialog {
 
         static void populateSortedComboBox(QComboBox* combo, const std::vector<QString>& names);
         static void setComboByOriginalIdx(QComboBox* combo, int originalIdx);
+        static Move::Weather abilityToWeather(Ability ability);
 };
 
 #endif // MAINWINDOW_HPP

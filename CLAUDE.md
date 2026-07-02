@@ -285,6 +285,60 @@ El criterio es **dos niveles**:
 ### Grassy Terrain
 - La recuperación de HP se muestra como nota de texto en el resultado, **no** se resta del daño calculado (igual que Showdown)
 
+### Weather Ball
+- Implementado en `getDamage()` (`source/pokemon.cpp`), antes de `calculateAttackInMove`.
+- Si hay clima activo (y el atacante no tiene Cloud Nine / Air Lock): BP → 100, tipo cambia según el clima:
+  - Sun / Harsh Sunshine → Fire
+  - Rain / Heavy Rain → Water
+  - Sand → Rock
+  - Snow → Ice
+  - Strong Winds → Normal (pero 100 BP)
+- Sin clima: Normal, 50 BP (valores del binario sin modificar).
+- Al ser Fire en Sol, el move recibe automáticamente el ×1.5 de `calculateWeatherModifier` (igual con Water en Lluvia).
+
+### Efectos de clima (Sand y Snow) sobre stats defensivos
+- **Sand** (Sandstorm): +50% SpDef a Pokémon de tipo Rock. Implementado en `calculateDefenseInMove` en los branches de SpDef.
+- **Snow**: +50% Def a Pokémon de tipo Ice. Implementado en `calculateDefenseInMove` en los branches de Def (incluyendo Darkest Lariat / Sacred Sword).
+- Ambos efectos se suprimen si el defensor tiene Cloud Nine o Air Lock.
+- Sand y Snow **no** boostean daño de tipo Rock ni Ice respectivamente (no hay boost en `calculateWeatherModifier`).
+
+### Enum `Move::Weather` — valores completos
+```
+WEATHER_NONE = 0, SUN = 1, RAIN = 2, HARSH_SUNSHINE = 3,
+HEAVY_RAIN = 4, STRONG_WINDS = 5, SAND = 6, SNOW = 7
+```
+El valor se serializa como entero en XML/saves → añadir siempre al final para no romper datos existentes.
+Los combo boxes de Weather en ambas ventanas listan los 8 valores en ese orden.
+
+### Default weather por habilidad del atacante
+
+El clima se actualiza automáticamente en dos momentos distintos:
+
+**1. Al abrir una ventana nueva** (`openMoveWindowDefense` / `openMoveWindowAttack` en `mainwindow.cpp`):
+- Lee la habilidad directamente del combo `defending_abilities_combobox` del panel principal (NO de `selected_pokemon`, que solo existe tras pulsar Calcular y sería null).
+- Llama a `setDefaultWeather(Move::Weather)` en la ventana correspondiente.
+- Solo aplica al abrir; al editar un movimiento ya guardado, el clima guardado se restaura sin cambios.
+
+**2. Al seleccionar / cambiar forma del atacante dentro de `DefenseMoveWindow`**:
+- `setSpecies1`, `setForm1`, `setSpecies2`, `setForm2` comprueban la habilidad del nuevo Pokémon tras asignarla y actualizan el combo de Weather si induce clima.
+- Guard obligatorio: `if( modifier_groupbox )` antes de acceder — las señales `currentIndexChanged` se disparan durante la construcción del diálogo, cuando `modifier_groupbox` aún es `nullptr` (se crea en `createDefendingGroupBox()`, llamada después de `createAtk1GroupBox()` y `createAtk2GroupBox()`). Sin el guard, crash al arrancar.
+- Si el Pokémon seleccionado NO tiene habilidad de clima, el combo de Weather **no se toca** (el usuario puede haberlo puesto manualmente).
+
+**Helper:** `MainWindow::abilityToWeather(Ability)` — método estático público en `mainwindow.hpp` / `mainwindow.cpp`, accesible desde cualquier ventana.
+
+| Habilidad | Clima |
+|-----------|-------|
+| `Drought` | Sun |
+| `Desolate_Land` | Harsh Sunshine |
+| `Drizzle` | Rain |
+| `Primordial_Sea` | Heavy Rain |
+| `Delta_Stream` | Strong Winds |
+| `Sand_Stream` | Sand |
+| `Snow_Warning` | Snow |
+| `Orichalcum_Pulse` | Sun |
+
+**Nota:** `setDefaultWeather(Move::Weather)` en `AttackMoveWindow` actúa sobre `move_modifier_groupbox`; en `DefenseMoveWindow` actúa sobre `modifier_groupbox`.
+
 ### Habilidades con boost climático/terreno
 - **Orichalcum Pulse** (Koraidon): ×1.3 en Atk en movimientos Físicos. Se activa **por defecto** (Koraidon siempre activa Sol al entrar). Solo se suprime si el clima está explícitamente en Rain, Heavy Rain o Strong Winds.
 - **Hadron Engine** (Miraidon): ×1.3 en SpAtk en movimientos Especiales. Se activa **por defecto** (Miraidon siempre activa Electric Terrain al entrar). Solo se suprime si el terreno está en Grassy, Psychic o Misty.

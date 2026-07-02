@@ -451,6 +451,12 @@ float Pokemon::calculateOtherModifier(const Pokemon& theAttacker, const Move& th
 uint16_t Pokemon::calculateDefenseInMove(const Move& theMove) const {
     uint16_t defense;
 
+    bool weather_active = getAbility() != Ability::Cloud_Nine && getAbility() != Ability::Air_Lock;
+    bool sand_spdef = weather_active && theMove.getWeather() == Move::SAND &&
+        (getTypes()[getForm()][0] == Type::Rock || getTypes()[getForm()][1] == Type::Rock);
+    bool snow_def = weather_active && theMove.getWeather() == Move::SNOW &&
+        (getTypes()[getForm()][0] == Type::Ice || getTypes()[getForm()][1] == Type::Ice);
+
     if( theMove.isCrit() || isAlwaysCrit(theMove) ) {
         if( theMove.getMoveCategory() == Move::PHYSICAL || (theMove.getMoveIndex() == Moves::Psyshock && !theMove.isZ()) ) {
             if( (getModifier(Stats::DEF) > 0) || (theMove.getMoveIndex() == Moves::Darkest_Lariat && !theMove.isZ()) || (theMove.getMoveIndex() == Moves::Sacred_Sword && !theMove.isZ()) ) defense = getStat(Stats::DEF);
@@ -460,7 +466,7 @@ uint16_t Pokemon::calculateDefenseInMove(const Move& theMove) const {
             if( getAbility() == Ability::Marvel_Scale && getStatus() != NO_STATUS ) defense = defense * 1.5;
             if( getItem() == Items::Eviolite ) defense = defense * 1.5;
             if( ruin_sword ) defense = defense * 0.75f;
-
+            if( snow_def ) defense = static_cast<uint16_t>(defense * 1.5f);
         }
 
         else {
@@ -470,6 +476,7 @@ uint16_t Pokemon::calculateDefenseInMove(const Move& theMove) const {
             if( getItem() == Items::Assault_Vest ) defense = defense * 1.5;
             if( getItem() == Items::Eviolite ) defense = defense * 1.5;
             if( ruin_beads ) defense = defense * 0.75f;
+            if( sand_spdef ) defense = static_cast<uint16_t>(defense * 1.5f);
         }
     }
 
@@ -481,6 +488,7 @@ uint16_t Pokemon::calculateDefenseInMove(const Move& theMove) const {
             if( getAbility() == Ability::Marvel_Scale && getStatus() != NO_STATUS ) defense = defense * 1.5;
             if( getItem() == Items::Eviolite ) defense = defense * 1.5;
             if( ruin_sword ) defense = defense * 0.75f;
+            if( snow_def ) defense = static_cast<uint16_t>(defense * 1.5f);
         }
 
         else if( (theMove.getMoveIndex() == Moves::Darkest_Lariat && !theMove.isZ()) || (theMove.getMoveIndex() == Moves::Sacred_Sword && !theMove.isZ()) ) {
@@ -489,6 +497,7 @@ uint16_t Pokemon::calculateDefenseInMove(const Move& theMove) const {
             if( getAbility() == Ability::Marvel_Scale && getStatus() != NO_STATUS ) defense = defense * 1.5;
             if( getItem() == Items::Eviolite ) defense = defense * 1.5;
             if( ruin_sword ) defense = defense * 0.75f;
+            if( snow_def ) defense = static_cast<uint16_t>(defense * 1.5f);
         }
 
         else {
@@ -497,6 +506,7 @@ uint16_t Pokemon::calculateDefenseInMove(const Move& theMove) const {
             if( getItem() == Items::Assault_Vest ) defense = defense * 1.5;
             if( getItem() == Items::Eviolite ) defense = defense * 1.5;
             if( ruin_beads ) defense = defense * 0.75f;
+            if( sand_spdef ) defense = static_cast<uint16_t>(defense * 1.5f);
         }
     }
 
@@ -737,6 +747,21 @@ std::vector<int> Pokemon::getDamage(const Pokemon& theAttacker, Move theMove) co
             theMove.setMoveCategory(Move::PHYSICAL);
         else
             theMove.setMoveCategory(Move::SPECIAL);
+    }
+
+    // Weather Ball: type and BP change based on current weather.
+    // Cloud Nine/Air Lock on the attacker suppresses the effect.
+    if( theMove.getMoveIndex() == Moves::Weather_Ball && !theMove.isZ() ) {
+        Move::Weather w = theMove.getWeather();
+        bool suppressed = (theAttacker.getAbility() == Ability::Cloud_Nine || theAttacker.getAbility() == Ability::Air_Lock);
+        if( w != Move::WEATHER_NONE && !suppressed ) {
+            theMove.setBasePower(100);
+            if( w == Move::SUN || w == Move::HARSH_SUNSHINE )       theMove.setMoveType(Type::Fire);
+            else if( w == Move::RAIN || w == Move::HEAVY_RAIN )     theMove.setMoveType(Type::Water);
+            else if( w == Move::SAND )                              theMove.setMoveType(Type::Rock);
+            else if( w == Move::SNOW )                              theMove.setMoveType(Type::Ice);
+            // STRONG_WINDS: stays Normal type, 100 BP
+        }
     }
 
     uint16_t defense;
