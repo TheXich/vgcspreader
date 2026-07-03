@@ -76,24 +76,25 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Qt 5.15.2 + MinGW 8.1
-        uses: jurplel/install-qt-action@v3
-        with:
-          version: '5.15.2'
-          host: 'windows'
-          target: 'desktop'
-          arch: 'win64_mingw81'
-          tools: 'tools_mingw,qt.tools.win64_mingw810'
-          add-tools-to-path: true
+        shell: pwsh
+        run: |
+          pip install "aqtinstall==3.1.9"
+          aqt install-qt windows desktop 5.15.2 win64_mingw81 -O C:\Qt
+          aqt install-tool windows desktop tools_mingw qt.tools.win64_mingw810 -O C:\Qt
+          echo "C:\Qt\5.15.2\mingw81_64\bin" >> $env:GITHUB_PATH
+          echo "C:\Qt\Tools\mingw810_64\bin" >> $env:GITHUB_PATH
 
       - name: Build
         shell: bash
         run: |
+          export PATH="/c/Qt/5.15.2/mingw81_64/bin:/c/Qt/Tools/mingw810_64/bin:$PATH"
           qmake vgcspreader.pro CONFIG+=release
           mingw32-make -j4
 
       - name: Deploy Qt DLLs
         shell: bash
         run: |
+          export PATH="/c/Qt/5.15.2/mingw81_64/bin:/c/Qt/Tools/mingw810_64/bin:$PATH"
           mkdir -p deploy
           cp release/vgcspreader.exe deploy/
           windeployqt deploy/vgcspreader.exe
