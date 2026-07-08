@@ -684,7 +684,7 @@ Los objetos siguen existiendo con nombre (ObjectName) para los `findChild<>` que
 
 ## Pendientes / mejoras conocidas
 
-- El typo `Psichic` en el enum (`moves.hpp`) debería ser `Psychic`, pero corregirlo rompería los índices binarios ya guardados en presets XML de usuarios
+- El identificador `Psichic` en el enum `Moves` (`moves.hpp`) no puede renombrarse a `Psychic`: ambos `enum Moves` y `enum Type` son unscoped y comparten el mismo scope global, y `Type` ya tiene un enumerador `Psychic` — renombrarlo produciría un choque de nombres en compilación. El nombre visible en la GUI (`db/moves.txt`) sí se corrigió a "Psychic"; solo el identificador C++ interno conserva el typo. Las propiedades del movimiento (BP=90, tipo Psychic, categoría Special) estaban a cero en `personal_moves.bin` (índice 220) y fueron corregidas en julio 2026.
 - Los presets XML no guardan el `attack_modifier` completo (Tera del atacante por turno); si se añade en el futuro habría que versionar el formato XML
 - Los presets XML y `SavedCalculation` no guardan el roll threshold por movimiento (`thresholds_def` / `thresholds_atk`); al cargar, todos los movimientos usan el default (100% defensivo / 100% ofensivo)
 - Los presets XML guardan los 5 checkboxes de Ruin + Helping Hand del `defense_modifier` (get<5..9>); los campos son opcionales en la carga (fallback a false) para compatibilidad con presets antiguos
