@@ -291,6 +291,7 @@ void ResultWindow::setResultAttack(const Pokemon& theAttackingPokemon, const std
             Pokemon pokemon_buffer = theAttackingPokemon;
             pokemon_buffer.setEV(Stats::ATK, theResult.atk_ev[index]);
             pokemon_buffer.setEV(Stats::SPATK, theResult.spatk_ev[index]);
+            if( index < (int)theResult.def_ev.size() ) pokemon_buffer.setEV(Stats::DEF, theResult.def_ev[index]);
             pokemon_buffer.setModifier(Stats::ATK, std::get<0>(theAtkModifier[it]));
             pokemon_buffer.setModifier(Stats::SPATK, std::get<1>(theAtkModifier[it]));
             pokemon_buffer.setTeraType(std::get<2>(theAtkModifier[it]));
@@ -322,6 +323,20 @@ QString ResultWindow::getAttackPokemon(const Pokemon& thePokemon, const Move& th
         if( thePokemon.getNature() == Stats::MODEST || thePokemon.getNature() == Stats::QUIET|| thePokemon.getNature() == Stats::MILD || thePokemon.getNature() == Stats::RASH ) atk_evs = atk_evs + "+ SpA ";
         else if( thePokemon.getNature() == Stats::ADAMANT || thePokemon.getNature() == Stats::IMPISH || thePokemon.getNature() == Stats::JOLLY || thePokemon.getNature() == Stats::CAREFUL ) atk_evs = atk_evs + "- SpA ";
         else atk_evs = atk_evs + " SpA ";
+    }
+
+    //Body Press uses the user's own Defense stat instead of Attack in the damage formula (see calculateAttackInMove);
+    //show the Def investment here instead of Atk so the label reflects what the move actually consumes.
+    else if( theMove.getMoveIndex() == Moves::Body_Press && !theMove.isZ() ) {
+        if( thePokemon.getModifier(Stats::DEF) != 0 ) {
+            if( thePokemon.getModifier(Stats::DEF) > 0 ) atk_evs = atk_evs + "+";
+            atk_evs = atk_evs + QString::number(thePokemon.getModifier(Stats::DEF)) + " ";
+        }
+
+        atk_evs = atk_evs + QString::number(thePokemon.getEV(Stats::DEF));
+        if( thePokemon.getNature() == Stats::BOLD || thePokemon.getNature() == Stats::RELAXED || thePokemon.getNature() == Stats::IMPISH || thePokemon.getNature() == Stats::LAX ) atk_evs = atk_evs + "+ Def ";
+        else if( thePokemon.getNature() == Stats::LONELY || thePokemon.getNature() == Stats::MILD || thePokemon.getNature() == Stats::GENTLE ) atk_evs = atk_evs + "- Def ";
+        else atk_evs = atk_evs + " Def ";
     }
 
     else {
@@ -583,42 +598,37 @@ void ResultWindow::setResultType(int index) {
         QLabel* sprite = result_groupbox->findChild<QLabel*>("sprite");
         sprite->setPixmap(sprite_pixmap);
 
-        int show_hp_evs;
-        if( result_def.hp_ev[0] < 0 ) show_hp_evs = result_pokemon->getEV(Stats::HP);
-        else show_hp_evs = result_def.hp_ev[index];
-        result_groupbox->findChild<QLabel*>("hp_evs")->setText(tr("HP EVS: ")+QString::number(show_hp_evs));
+        // Defense's EV can come from the defensive search OR, when there's no defensive turn to
+        // resist (or it found nothing), from the offensive search alone — Body Press invests SPs
+        // there even without any incoming move configured. Prefer whichever result is real,
+        // falling back to the Pokémon's untouched EV only if neither search produced one.
+        int safe_hp = result_def.hp_ev[index] >= 0 ? result_def.hp_ev[index] : result_pokemon->getEV(Stats::HP);
+        int safe_def = result_def.def_ev[index] >= 0 ? result_def.def_ev[index]
+            : ( index < (int)result_atk.def_ev.size() && result_atk.def_ev[index] >= 0 ? result_atk.def_ev[index] : result_pokemon->getEV(Stats::DEF) );
+        int safe_spdef = result_def.spdef_ev[index] >= 0 ? result_def.spdef_ev[index] : result_pokemon->getEV(Stats::SPDEF);
+
+        result_groupbox->findChild<QLabel*>("hp_evs")->setText(tr("HP EVS: ")+QString::number(safe_hp));
 
         int show_atk_evs;
         if( result_atk.atk_ev[0] < 0 ) show_atk_evs = result_pokemon->getEV(Stats::ATK);
         else show_atk_evs = result_atk.atk_ev[index];
         result_groupbox->findChild<QLabel*>("atk_evs")->setText(tr("Attack EVS: ")+QString::number(show_atk_evs));
 
-        int show_def_evs;
-        if( result_def.def_ev[0] < 0 ) show_def_evs = result_pokemon->getEV(Stats::DEF);
-        else show_def_evs = result_def.def_ev[index];
-        result_groupbox->findChild<QLabel*>("def_evs")->setText(tr("Defense EVS: ")+QString::number(show_def_evs));
+        result_groupbox->findChild<QLabel*>("def_evs")->setText(tr("Defense EVS: ")+QString::number(safe_def));
 
         int show_spatk_evs;
         if( result_atk.spatk_ev[0] < 0 ) show_spatk_evs = result_pokemon->getEV(Stats::SPATK);
         else show_spatk_evs = result_atk.spatk_ev[index];
         result_groupbox->findChild<QLabel*>("spatk_evs")->setText(tr("Sp. Attack EVS: ")+QString::number(show_spatk_evs));
 
-        int show_spdef_evs;
-        if( result_def.spdef_ev[0] < 0 ) show_spdef_evs = result_pokemon->getEV(Stats::SPDEF);
-        else show_spdef_evs = result_def.spdef_ev[index];
-        result_groupbox->findChild<QLabel*>("spdef_evs")->setText(tr("Sp. Defense EVS: ")+QString::number(show_spdef_evs));
+        result_groupbox->findChild<QLabel*>("spdef_evs")->setText(tr("Sp. Defense EVS: ")+QString::number(safe_spdef));
 
         result_groupbox->findChild<QLabel*>("spe_evs")->setText(tr("Speed EVS: ")+QString::number(result_pokemon->getEV(Stats::SPE)));
 
         //calculating how many evs do remain to use
-        int rem_hp = result_def.hp_ev[index];
-        if( rem_hp < 0 ) rem_hp = result_pokemon->getEV(Stats::HP); //all of there are necessaries because in some special cases the returned result is < 0
-
-        int rem_def = result_def.def_ev[index];
-        if( rem_def < 0 ) rem_def = result_pokemon->getEV(Stats::DEF);
-
-        int rem_spdef = result_def.spdef_ev[index];
-        if( rem_spdef < 0 ) rem_spdef = result_pokemon->getEV(Stats::SPDEF);
+        int rem_hp = safe_hp;
+        int rem_def = safe_def;
+        int rem_spdef = safe_spdef;
 
         int rem_atk = result_atk.atk_ev[index];
         if( rem_atk < 0 ) rem_atk = result_pokemon->getEV(Stats::ATK);
@@ -633,9 +643,9 @@ void ResultWindow::setResultType(int index) {
 
         //calculating the defense tier on a copy of the pokemon
         Pokemon tier_buffer = *result_pokemon;
-        tier_buffer.setEV(Stats::HP, result_def.hp_ev[index]);
-        tier_buffer.setEV(Stats::DEF, result_def.def_ev[index]);
-        tier_buffer.setEV(Stats::SPDEF, result_def.spdef_ev[index]);
+        tier_buffer.setEV(Stats::HP, safe_hp);
+        tier_buffer.setEV(Stats::DEF, safe_def);
+        tier_buffer.setEV(Stats::SPDEF, safe_spdef);
 
         result_groupbox->findChild<QLabel*>("def_score")->setText(tr("Def. Score: ")+QString::number(tier_buffer.getDEFTier(), 'f', 1));
         result_groupbox->findChild<QLabel*>("spdef_score")->setText(tr("Sp. Def. Score: ")+QString::number(tier_buffer.getSPDEFTier(), 'f', 1));

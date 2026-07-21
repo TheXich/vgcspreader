@@ -95,6 +95,8 @@ class Pokemon {
 
         DefenseResult resistMove(const std::vector<Turn>& theTurn, const std::vector<defense_modifier>& theDefModifiers);
         AttackResult koMove(const std::vector<Turn>& theTurn, const std::vector<Pokemon>& theDefendingPokemon, const std::vector<attack_modifier>& theAtkModifier);
+        void recomputeDefenseDisplay(DefenseResult& theResult, const unsigned int theIndex, const std::vector<Turn>& theTurn, const std::vector<defense_modifier>& theDefModifiers) const;
+        void recomputeAttackDisplay(AttackResult& theResult, const unsigned int theIndex, const std::vector<Turn>& theTurn, const std::vector<Pokemon>& theDefendingPokemon, const std::vector<attack_modifier>& theAtkModifier) const;
         void recursiveDamageCalculation(Pokemon theDefendingPokemon, std::vector<int>& theIntVector, std::vector<bool>& theBerryVector, std::vector<std::pair<Pokemon, Move>>& theVector, const unsigned int theHitNumber, std::vector<std::pair<Pokemon, Move>>::iterator& it) const;
         uint8_t calculateEVSNextStat(Pokemon thePokemon, const Stats::Stat& theStat, const unsigned int theStartingEVS) const;
         std::pair<std::vector<std::tuple<uint8_t, uint8_t, uint8_t>>, std::vector<std::tuple<uint8_t, uint8_t, uint8_t>>> resistMoveLoop(const std::vector<Turn>& theTurn, const std::vector<defense_modifier>& theDefModifiers, const bool isSimplified, const Move::Category simplifiedType); //returns a pair because the two vectors are used for two different euristhics

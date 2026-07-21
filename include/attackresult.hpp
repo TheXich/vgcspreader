@@ -9,6 +9,7 @@ class AttackResult {
     public:
         std::vector<int> atk_ev;
         std::vector<int> spatk_ev;
+        std::vector<int> def_ev; // Defense SPs invested by the attacker itself (only used to power Body Press)
         std::vector<std::vector<float>> atk_ko_prob;
         std::vector<std::vector<std::vector<float>>> atk_damage_perc;
         std::vector<std::vector<std::vector<int>>> atk_damage_int; //we should probably find a better container :D

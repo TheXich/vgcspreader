@@ -547,6 +547,17 @@ uint16_t Pokemon::calculateAttackInMove(const Pokemon& theAttacker, const Move& 
             }
         }
 
+        //body press (uses user's own Defense stat stage instead of Attack; Attack-side item/ability boosts still apply,
+        //but Defense-boosting items/abilities like Eviolite/Fur Coat/Marvel Scale do not, since getBoostedStat() excludes those)
+        else if( theMove.getMoveIndex() == Moves::Body_Press && !theMove.isZ() ) {
+            if( theAttacker.getModifier(Stats::DEF) < 0 ) attack = theAttacker.getStat(Stats::DEF);
+            else attack = theAttacker.getBoostedStat(Stats::DEF);
+
+            if( theAttacker.getItem() == Items::Choice_Band ) attack = attack * 1.5;
+            if( theAttacker.getAbility() == Ability::Huge_Power || theAttacker.getAbility() == Ability::Pure_Power ) attack = attack * 2;
+            if( theAttacker.ruin_tablets ) attack = attack * 0.75f;
+        }
+
         //usual phys
         else if( theMove.getMoveCategory() == Move::PHYSICAL ) {
             if( theAttacker.getModifier(Stats::ATK) < 0 ) attack = theAttacker.getStat(Stats::ATK);
@@ -591,6 +602,15 @@ uint16_t Pokemon::calculateAttackInMove(const Pokemon& theAttacker, const Move& 
                 if( theAttacker.getItem() == Items::Choice_Specs ) attack = attack * 1.5;
                 if( theAttacker.ruin_vessel ) attack = attack * 0.75f;
             }
+        }
+
+        //body press (uses user's own Defense stat stage instead of Attack; see crit branch above for details)
+        else if( theMove.getMoveIndex() == Moves::Body_Press && !theMove.isZ() ) {
+            attack = theAttacker.getBoostedStat(Stats::DEF);
+
+            if( theAttacker.getItem() == Items::Choice_Band ) attack = attack * 1.5;
+            if( theAttacker.getAbility() == Ability::Huge_Power || theAttacker.getAbility() == Ability::Pure_Power ) attack = attack * 2;
+            if( theAttacker.ruin_tablets ) attack = attack * 0.75f;
         }
 
         //usual phys
@@ -1050,42 +1070,49 @@ DefenseResult Pokemon::resistMove(const std::vector<Turn>& theTurn, const std::v
 
     //now calculating all the damages
     for( unsigned int i = 0; i < returnable.hp_ev.size(); i++ ) { //we use hp.ev.size but we could really use any of the 3
-        Pokemon buffer = *this;
-        buffer.setEV(Stats::HP, returnable.hp_ev[i]);
-        buffer.setEV(Stats::DEF, returnable.def_ev[i]);
-        buffer.setEV(Stats::SPDEF, returnable.spdef_ev[i]);
-
         returnable.def_ko_prob.push_back(std::vector<float>());
         returnable.def_damage_perc.push_back(std::vector<std::vector<float>>());
         returnable.def_damage_int.push_back(std::vector<std::vector<int>>());
-        for( auto it = 0; it < theTurn.size(); it++ ) {
-            buffer.setModifier(Stats::HP, std::get<0>(theDefModifiers[it]));
-            buffer.setModifier(Stats::DEF, std::get<1>(theDefModifiers[it]));
-            buffer.setModifier(Stats::SPDEF, std::get<2>(theDefModifiers[it]));
-            buffer.setTeraType(std::get<3>(theDefModifiers[it]));
-            buffer.setTerastallized(std::get<4>(theDefModifiers[it]));
-            buffer.setRuinSword(std::get<5>(theDefModifiers[it]));
-            buffer.setRuinBeads(std::get<6>(theDefModifiers[it]));
-            buffer.setFriendGuard(std::get<10>(theDefModifiers[it]));
-
-            // Apply attacker-side modifiers (tablets/vessel/helping_hand) for accurate display
-            Turn display_turn;
-            for(auto& mp : theTurn[it].getMoves()) {
-                Pokemon atk_copy = mp.first;
-                atk_copy.setRuinTablets(std::get<7>(theDefModifiers[it]));
-                atk_copy.setRuinVessel(std::get<8>(theDefModifiers[it]));
-                atk_copy.setHelpingHand(std::get<9>(theDefModifiers[it]));
-                display_turn.addMove(atk_copy, mp.second);
-            }
-            display_turn.setHits(theTurn[it].getHits());
-
-            returnable.def_ko_prob[i].push_back(buffer.getKOProbability(display_turn));
-            returnable.def_damage_perc[i].push_back(buffer.getDamagePercentage(display_turn));
-            returnable.def_damage_int[i].push_back(buffer.getDamageInt(display_turn));
-        }
+        recomputeDefenseDisplay(returnable, i, theTurn, theDefModifiers);
     }
 
     return returnable;
+}
+
+void Pokemon::recomputeDefenseDisplay(DefenseResult& theResult, const unsigned int theIndex, const std::vector<Turn>& theTurn, const std::vector<defense_modifier>& theDefModifiers) const {
+    Pokemon buffer = *this;
+    buffer.setEV(Stats::HP, theResult.hp_ev[theIndex]);
+    buffer.setEV(Stats::DEF, theResult.def_ev[theIndex]);
+    buffer.setEV(Stats::SPDEF, theResult.spdef_ev[theIndex]);
+
+    theResult.def_ko_prob[theIndex].clear();
+    theResult.def_damage_perc[theIndex].clear();
+    theResult.def_damage_int[theIndex].clear();
+    for( auto it = 0; it < theTurn.size(); it++ ) {
+        buffer.setModifier(Stats::HP, std::get<0>(theDefModifiers[it]));
+        buffer.setModifier(Stats::DEF, std::get<1>(theDefModifiers[it]));
+        buffer.setModifier(Stats::SPDEF, std::get<2>(theDefModifiers[it]));
+        buffer.setTeraType(std::get<3>(theDefModifiers[it]));
+        buffer.setTerastallized(std::get<4>(theDefModifiers[it]));
+        buffer.setRuinSword(std::get<5>(theDefModifiers[it]));
+        buffer.setRuinBeads(std::get<6>(theDefModifiers[it]));
+        buffer.setFriendGuard(std::get<10>(theDefModifiers[it]));
+
+        // Apply attacker-side modifiers (tablets/vessel/helping_hand) for accurate display
+        Turn display_turn;
+        for(auto& mp : theTurn[it].getMoves()) {
+            Pokemon atk_copy = mp.first;
+            atk_copy.setRuinTablets(std::get<7>(theDefModifiers[it]));
+            atk_copy.setRuinVessel(std::get<8>(theDefModifiers[it]));
+            atk_copy.setHelpingHand(std::get<9>(theDefModifiers[it]));
+            display_turn.addMove(atk_copy, mp.second);
+        }
+        display_turn.setHits(theTurn[it].getHits());
+
+        theResult.def_ko_prob[theIndex].push_back(buffer.getKOProbability(display_turn));
+        theResult.def_damage_perc[theIndex].push_back(buffer.getDamagePercentage(display_turn));
+        theResult.def_damage_int[theIndex].push_back(buffer.getDamageInt(display_turn));
+    }
 }
 
 std::pair<std::vector<std::tuple<uint8_t, uint8_t, uint8_t>>, std::vector<std::tuple<uint8_t, uint8_t, uint8_t>>> Pokemon::resistMoveLoop(const std::vector<Turn>& theTurn, const std::vector<defense_modifier>& theDefModifiers, const bool isSimplified, const Move::Category simplifiedType) {
@@ -1285,6 +1312,7 @@ AttackResult Pokemon::koMove(const std::vector<Turn>& theTurn, const std::vector
         AttackResult temp;
         temp.atk_ev.push_back(-2);
         temp.spatk_ev.push_back(-2);
+        temp.def_ev.push_back(-2);
 
         return temp;
     }
@@ -1294,6 +1322,7 @@ AttackResult Pokemon::koMove(const std::vector<Turn>& theTurn, const std::vector
         AttackResult temp;
         temp.atk_ev.push_back(-3);
         temp.spatk_ev.push_back(-3);
+        temp.def_ev.push_back(-3);
 
         return temp;
     }
@@ -1305,6 +1334,13 @@ AttackResult Pokemon::koMove(const std::vector<Turn>& theTurn, const std::vector
     const unsigned int ARRAY_SIZE = MAX_EVS_SINGLE_STAT + 1;
 
     Pokemon attacker = *this;
+
+    // Body Press uses the attacker's own Defense stat instead of Attack (see calculateAttackInMove);
+    // when it's in the turn list, the search must also explore Defense investment to power it up,
+    // since it's otherwise never touched by this offense-focused search.
+    bool has_body_press = false;
+    for( auto it = theTurn.begin(); it < theTurn.end(); it++ )
+        if( !it->getMoves().empty() && it->getMoves()[0].second.getMoveIndex() == Moves::Body_Press && !it->getMoves()[0].second.isZ() ) has_body_press = true;
 
     //calculating if we could use the faster loop
     Turn::Type previous = theTurn.begin()->getType();
@@ -1320,14 +1356,18 @@ AttackResult Pokemon::koMove(const std::vector<Turn>& theTurn, const std::vector
         else simplified_type = Move::SPECIAL;
     }
 
-    unsigned int assignable_evs = MAX_EVS - (attacker.getEV(Stats::HP) + attacker.getEV(Stats::DEF) + attacker.getEV(Stats::SPDEF) + attacker.getEV(Stats::SPE));
+    const unsigned int starting_def = getEV(Stats::DEF);
+    unsigned int assignable_evs = MAX_EVS - (attacker.getEV(Stats::HP) + attacker.getEV(Stats::SPDEF) + attacker.getEV(Stats::SPE));
     attacker.setAllEV(0, 0, 0, 0, 0, 0);
 
-    std::vector<std::pair<int, int>> results;
+    std::vector<std::tuple<int, int, int>> results;
 
     std::vector<std::vector<float>> results_buffer;
     results_buffer.resize(theTurn.size());
-    for(auto it = results_buffer.begin(); it < results_buffer.end(); it++) it->resize(ARRAY_SIZE*ARRAY_SIZE);
+    for(auto it = results_buffer.begin(); it < results_buffer.end(); it++) it->resize(ARRAY_SIZE*ARRAY_SIZE*ARRAY_SIZE);
+
+    for(unsigned int def_assigned = starting_def; def_assigned < (has_body_press ? MAX_EVS_SINGLE_STAT + 1 : starting_def + 1); def_assigned = def_assigned + calculateEVSNextStat(attacker, Stats::DEF, def_assigned)) {
+        attacker.setEV(Stats::DEF, def_assigned);
 
     for(unsigned int spatk_assigned = getEV(Stats::SPATK); spatk_assigned < MAX_EVS_SINGLE_STAT + 1; spatk_assigned = spatk_assigned + calculateEVSNextStat(attacker, Stats::SPATK, spatk_assigned)) {
         if( simplified && simplified_type == Move::PHYSICAL && spatk_assigned > getEV(Stats::SPATK) ) break;
@@ -1336,7 +1376,7 @@ AttackResult Pokemon::koMove(const std::vector<Turn>& theTurn, const std::vector
         for(unsigned int atk_assigned = getEV(Stats::ATK); atk_assigned < MAX_EVS_SINGLE_STAT + 1; atk_assigned = atk_assigned + calculateEVSNextStat(attacker, Stats::ATK, atk_assigned)) {
             if( simplified && simplified_type == Move::SPECIAL && atk_assigned > getEV(Stats::ATK) ) break;
             //if an abort has been requested we return an empty result
-            if( abort_calculation ) { AttackResult temp; temp.atk_ev.push_back(-4); temp.spatk_ev.push_back(-4); return temp; }
+            if( abort_calculation ) { AttackResult temp; temp.atk_ev.push_back(-4); temp.spatk_ev.push_back(-4); temp.def_ev.push_back(-4); return temp; }
 
             attacker.setEV(Stats::ATK, atk_assigned);
 
@@ -1363,15 +1403,18 @@ AttackResult Pokemon::koMove(const std::vector<Turn>& theTurn, const std::vector
                 temp_turn.addMove(attacker, theTurn[it].getMoves()[0].second);
                 temp_turn.setHits(theTurn[it].getHits());
 
-                float ko_prob;
-                if( attacker.getEV(Stats::ATK) + attacker.getEV(Stats::SPATK) > assignable_evs ) to_add = false;
-                else if( (ko_prob = def_copy.getKOProbability(temp_turn)) < (it < atk_roll_thresholds.size() ? atk_roll_thresholds[it] : 100.0f) ) { results_buffer[it][attacker.getEV(Stats::ATK) + attacker.getEV(Stats::SPATK) * ARRAY_SIZE] = ko_prob; to_add = false; }
+                const unsigned int buffer_index = attacker.getEV(Stats::ATK) + attacker.getEV(Stats::SPATK) * ARRAY_SIZE + attacker.getEV(Stats::DEF) * ARRAY_SIZE * ARRAY_SIZE;
 
-                else results_buffer[it][attacker.getEV(Stats::ATK) + attacker.getEV(Stats::SPATK) * ARRAY_SIZE] = ko_prob;
+                float ko_prob;
+                if( attacker.getEV(Stats::ATK) + attacker.getEV(Stats::SPATK) + attacker.getEV(Stats::DEF) > assignable_evs ) to_add = false;
+                else if( (ko_prob = def_copy.getKOProbability(temp_turn)) < (it < atk_roll_thresholds.size() ? atk_roll_thresholds[it] : 100.0f) ) { results_buffer[it][buffer_index] = ko_prob; to_add = false; }
+
+                else results_buffer[it][buffer_index] = ko_prob;
             }
 
-            if( to_add ) results.push_back(std::make_pair(attacker.getEV(Stats::ATK), attacker.getEV(Stats::SPATK)));
+            if( to_add ) results.push_back(std::make_tuple(attacker.getEV(Stats::ATK), attacker.getEV(Stats::SPATK), attacker.getEV(Stats::DEF)));
         }
+    }
     }
 
     //if no result is found we search some rolls
@@ -1404,23 +1447,28 @@ AttackResult Pokemon::koMove(const std::vector<Turn>& theTurn, const std::vector
         if( to_increment ) tolerances.back()++;
         */
 
+        for(unsigned int def_assigned = starting_def; def_assigned < (has_body_press ? MAX_EVS_SINGLE_STAT + 1 : starting_def + 1); def_assigned = def_assigned + calculateEVSNextStat(attacker, Stats::DEF, def_assigned)) {
+
         for(unsigned int spatk_assigned = 0; spatk_assigned < MAX_EVS_SINGLE_STAT + 1; spatk_assigned = spatk_assigned + calculateEVSNextStat(attacker, Stats::SPATK, spatk_assigned)) {
             if( simplified && simplified_type == Move::PHYSICAL && spatk_assigned > getEV(Stats::SPATK) ) break;
 
             for(unsigned int atk_assigned = 0; atk_assigned < MAX_EVS_SINGLE_STAT + 1; atk_assigned = atk_assigned + calculateEVSNextStat(attacker, Stats::ATK, atk_assigned)) {
                 //qDebug() << QString::number(roll_count) + " " + QString::number(hp_assigned) + " " + QString::number(spdef_assigned) + " " + QString::number(def_assigned);
                 //if an abort request is made
-                if( abort_calculation ) { AttackResult temp; temp.atk_ev.push_back(-4); temp.spatk_ev.push_back(-4); return temp; }
+                if( abort_calculation ) { AttackResult temp; temp.atk_ev.push_back(-4); temp.spatk_ev.push_back(-4); temp.def_ev.push_back(-4); return temp; }
                 if( simplified && simplified_type == Move::SPECIAL && atk_assigned > getEV(Stats::ATK) ) break;
+
+                const unsigned int buffer_index = atk_assigned + spatk_assigned * ARRAY_SIZE + def_assigned * ARRAY_SIZE * ARRAY_SIZE;
 
                 bool to_add = true;
                 for(unsigned int it = 0; it < theTurn.size() && to_add; it++ ) {
-                    if( spatk_assigned + atk_assigned > assignable_evs ) to_add = false;
-                    else if( results_buffer[it][atk_assigned + spatk_assigned * ARRAY_SIZE] < ((it < atk_roll_thresholds.size() ? atk_roll_thresholds[it] : 100.0f) - tolerances[it]) ) to_add = false;
+                    if( spatk_assigned + atk_assigned + def_assigned > assignable_evs ) to_add = false;
+                    else if( results_buffer[it][buffer_index] < ((it < atk_roll_thresholds.size() ? atk_roll_thresholds[it] : 100.0f) - tolerances[it]) ) to_add = false;
                 }
 
-                if( to_add ) results.push_back(std::make_pair(atk_assigned, spatk_assigned));
+                if( to_add ) results.push_back(std::make_tuple(atk_assigned, spatk_assigned, def_assigned));
             }
+        }
         }
 
     roll_count++;
@@ -1432,6 +1480,7 @@ AttackResult Pokemon::koMove(const std::vector<Turn>& theTurn, const std::vector
         AttackResult temp;
         temp.atk_ev.push_back(-1);
         temp.spatk_ev.push_back(-1);
+        temp.def_ev.push_back(-1);
 
         return temp;
     }
@@ -1441,6 +1490,7 @@ AttackResult Pokemon::koMove(const std::vector<Turn>& theTurn, const std::vector
         AttackResult temp;
         temp.atk_ev.push_back(-4);
         temp.spatk_ev.push_back(-4);
+        temp.def_ev.push_back(-4);
 
         return temp;
     }
@@ -1448,22 +1498,33 @@ AttackResult Pokemon::koMove(const std::vector<Turn>& theTurn, const std::vector
     //finding all the minimum elements
     std::vector<unsigned int> sum_results;
     //creating the vector with the sums
-    for( auto it = results.begin(); it < results.end(); it++ ) sum_results.push_back(it->first + it->second);
+    for( auto it = results.begin(); it < results.end(); it++ ) sum_results.push_back(std::get<0>(*it) + std::get<1>(*it) + std::get<2>(*it));
     //finding the minimum sums
     auto min_index = std::min_element(sum_results.begin(), sum_results.end());
 
     AttackResult final_result;
-    final_result.atk_ev.push_back(results[std::distance(sum_results.begin(), min_index)].first);
-    final_result.spatk_ev.push_back(results[std::distance(sum_results.begin(), min_index)].second);
-
-    //now calculating all the damages
-    Pokemon buffer = *this;
-    buffer.setEV(Stats::ATK, final_result.atk_ev[0]);
-    buffer.setEV(Stats::SPATK, final_result.spatk_ev[0]);
+    final_result.atk_ev.push_back(std::get<0>(results[std::distance(sum_results.begin(), min_index)]));
+    final_result.spatk_ev.push_back(std::get<1>(results[std::distance(sum_results.begin(), min_index)]));
+    final_result.def_ev.push_back(std::get<2>(results[std::distance(sum_results.begin(), min_index)]));
 
     final_result.atk_ko_prob.push_back(std::vector<float>());
     final_result.atk_damage_perc.push_back(std::vector<std::vector<float>>());
     final_result.atk_damage_int.push_back(std::vector<std::vector<int>>());
+    recomputeAttackDisplay(final_result, 0, theTurn, theDefendingPokemon, theAtkModifier);
+
+    return final_result;
+}
+
+void Pokemon::recomputeAttackDisplay(AttackResult& theResult, const unsigned int theIndex, const std::vector<Turn>& theTurn, const std::vector<Pokemon>& theDefendingPokemon, const std::vector<attack_modifier>& theAtkModifier) const {
+    //now calculating all the damages
+    Pokemon buffer = *this;
+    buffer.setEV(Stats::ATK, theResult.atk_ev[theIndex]);
+    buffer.setEV(Stats::SPATK, theResult.spatk_ev[theIndex]);
+    buffer.setEV(Stats::DEF, theResult.def_ev[theIndex]);
+
+    theResult.atk_ko_prob[theIndex].clear();
+    theResult.atk_damage_perc[theIndex].clear();
+    theResult.atk_damage_int[theIndex].clear();
     for( auto it = 0; it < theTurn.size(); it++ ) {
         //doing this switch because the Turn is used in an offensive sense
         buffer.setModifier(Stats::ATK, std::get<0>(theAtkModifier[it]));
@@ -1482,12 +1543,10 @@ AttackResult Pokemon::koMove(const std::vector<Turn>& theTurn, const std::vector
         temp_turn.addMove(buffer, theTurn[it].getMoves()[0].second);
         temp_turn.setHits(theTurn[it].getHits());
 
-        final_result.atk_ko_prob[0].push_back(def_copy_final.getKOProbability(temp_turn));
-        final_result.atk_damage_perc[0].push_back(def_copy_final.getDamagePercentage(temp_turn));
-        final_result.atk_damage_int[0].push_back(def_copy_final.getDamageInt(temp_turn));
+        theResult.atk_ko_prob[theIndex].push_back(def_copy_final.getKOProbability(temp_turn));
+        theResult.atk_damage_perc[theIndex].push_back(def_copy_final.getDamagePercentage(temp_turn));
+        theResult.atk_damage_int[theIndex].push_back(def_copy_final.getDamageInt(temp_turn));
     }
-
-    return final_result;
 }
 
 std::pair<DefenseResult, AttackResult> Pokemon::calculateEVSDistrisbution(const EVCalculationInput& theInput) {
@@ -1526,6 +1585,10 @@ std::pair<DefenseResult, AttackResult> Pokemon::calculateEVSDistrisbution(const 
 
             int total = 0;
             if( !result.first.isEmptyInput() )  total += result.first.hp_ev[0]  + result.first.def_ev[0]  + result.first.spdef_ev[0];
+            // Body Press invests in Defense through the offensive search too; when there's no
+            // defensive turn to merge it into (result.first empty), count it here instead so a
+            // Defense-boosting nature (Bold/Impish/Relaxed) can win the tie-break by needing fewer SPs.
+            else if( !result.second.isEmptyInput() && result.second.def_ev[0] >= 0 ) total += result.second.def_ev[0];
             if( !result.second.isEmptyInput() ) total += result.second.atk_ev[0] + result.second.spatk_ev[0];
 
             // Find worst-case KO probability across all defensive turns for this nature.
@@ -1554,7 +1617,7 @@ std::pair<DefenseResult, AttackResult> Pokemon::calculateEVSDistrisbution(const 
 
         if( abort_calculation ) {
             DefenseResult d; d.hp_ev.push_back(-4); d.def_ev.push_back(-4); d.spdef_ev.push_back(-4);
-            AttackResult  a; a.atk_ev.push_back(-4); a.spatk_ev.push_back(-4);
+            AttackResult  a; a.atk_ev.push_back(-4); a.spatk_ev.push_back(-4); a.def_ev.push_back(-4);
             return std::make_pair(d, a);
         }
 
@@ -1566,7 +1629,7 @@ std::pair<DefenseResult, AttackResult> Pokemon::calculateEVSDistrisbution(const 
         // Nothing worked with any nature — return impossible spread with a concrete nature set
         setNature(Stats::ADAMANT);
         DefenseResult d; d.hp_ev.push_back(-1); d.def_ev.push_back(-1); d.spdef_ev.push_back(-1);
-        AttackResult  a; a.atk_ev.push_back(-1); a.spatk_ev.push_back(-1);
+        AttackResult  a; a.atk_ev.push_back(-1); a.spatk_ev.push_back(-1); a.def_ev.push_back(-1);
         return std::make_pair(d, a);
     }
 
@@ -1586,9 +1649,16 @@ std::pair<DefenseResult, AttackResult> Pokemon::calculateEVSDistrisbution(const 
         unsigned int tamp_spdef = getEV(Stats::SPDEF);
         AttackResult atk_result;
         for(unsigned int i = 0; i < def_result.hp_ev.size(); i++) { //we use hp.ev but really could use any of the 3
-            setEV(Stats::HP, def_result.hp_ev[i]);
-            setEV(Stats::DEF, def_result.def_ev[i]);
-            setEV(Stats::SPDEF, def_result.spdef_ev[i]);
+            // Only a real (non-error) spread can be applied here — def_result.hp_ev[i]/def_ev[i]/spdef_ev[i]
+            // may hold a negative sentinel (-1/-3/-4, see DefenseResult) when there's no defensive turn to
+            // resist or no valid spread was found. Passing a negative value into setEV (uint8_t) would wrap
+            // around to a huge value and corrupt this Pokémon's stats for the koMove call below — leave
+            // HP/DEF/SPDEF untouched in that case so koMove searches from their original floor instead.
+            if( def_result.hp_ev[i] >= 0 && def_result.def_ev[i] >= 0 && def_result.spdef_ev[i] >= 0 ) {
+                setEV(Stats::HP, def_result.hp_ev[i]);
+                setEV(Stats::DEF, def_result.def_ev[i]);
+                setEV(Stats::SPDEF, def_result.spdef_ev[i]);
+            }
 
             auto atk_buffer = koMove(theInput.atk_turn, theInput.defending_pokemon, theInput.atk_modifier);
 
@@ -1603,8 +1673,19 @@ std::pair<DefenseResult, AttackResult> Pokemon::calculateEVSDistrisbution(const 
             }
 
             else {
+                // Body Press may need more Defense than this defensive spread alone provides;
+                // if koMove found that, extend def_result's Defense SPs and refresh its cached
+                // display values (extra bulk can only help the incoming-move resistance too).
+                // Only meaningful when def_result[i] is a real spread (not a "no defensive turn"/
+                // "no valid spread" sentinel) — otherwise leave the sentinel untouched.
+                if( def_result.hp_ev[i] >= 0 && atk_buffer.atk_ev[0] >= 0 && atk_buffer.def_ev[0] > def_result.def_ev[i] ) {
+                    def_result.def_ev[i] = atk_buffer.def_ev[0];
+                    recomputeDefenseDisplay(def_result, i, theInput.def_turn, theInput.def_modifier);
+                }
+
                 atk_result.atk_ev.push_back(atk_buffer.atk_ev[0]);
                 atk_result.spatk_ev.push_back(atk_buffer.spatk_ev[0]);
+                atk_result.def_ev.push_back(atk_buffer.def_ev[0]);
                 if( !atk_buffer.atk_ko_prob.empty() ) atk_result.atk_ko_prob.push_back(atk_buffer.atk_ko_prob[0]); //because in case of error the function returns empty vectors
                 if( !atk_buffer.atk_damage_int.empty() ) atk_result.atk_damage_int.push_back(atk_buffer.atk_damage_int[0]);
                 if( !atk_buffer.atk_damage_perc.empty() ) atk_result.atk_damage_perc.push_back(atk_buffer.atk_damage_perc[0]);
@@ -1625,9 +1706,13 @@ std::pair<DefenseResult, AttackResult> Pokemon::calculateEVSDistrisbution(const 
         //same as before, saving them because we need to restore them
         unsigned int tamp_atk = getEV(Stats::ATK);
         unsigned int tamp_spatk = getEV(Stats::SPATK);
+        unsigned int tamp_def = getEV(Stats::DEF);
 
         setEV(Stats::ATK, atk_result.atk_ev[0]);
         setEV(Stats::SPATK, atk_result.spatk_ev[0]);
+        // Body Press needs the attacker's own Defense; if koMove invested SPs there, pass that on
+        // as the floor for the defensive search below instead of losing it.
+        if( atk_result.atk_ev[0] >= 0 ) setEV(Stats::DEF, atk_result.def_ev[0]);
 
         auto def_result = resistMove(theInput.def_turn, theInput.def_modifier);
 
@@ -1636,14 +1721,28 @@ std::pair<DefenseResult, AttackResult> Pokemon::calculateEVSDistrisbution(const 
             for( unsigned int i = 1; i < def_result.hp_ev.size(); i++ ) {
                 atk_result.atk_ev.push_back(atk_result.atk_ev[i-1]);
                 atk_result.spatk_ev.push_back(atk_result.spatk_ev[i-1]);
+                atk_result.def_ev.push_back(atk_result.def_ev[i-1]);
                 atk_result.atk_ko_prob.push_back(atk_result.atk_ko_prob[i-1]);
                 atk_result.atk_damage_int.push_back(atk_result.atk_damage_int[i-1]);
                 atk_result.atk_damage_perc.push_back(atk_result.atk_damage_perc[i-1]);
             }
         }
 
+        // The defensive search may have pushed Defense further than Body Press alone needed
+        // (for survivability against incoming hits); sync the attack-side display to match —
+        // more Defense can only make Body Press hit harder, never invalidate the KO already found.
+        if( atk_result.atk_ev[0] >= 0 && def_result.hp_ev[0] >= 0 ) {
+            for( unsigned int i = 0; i < def_result.def_ev.size() && i < atk_result.def_ev.size(); i++ ) {
+                if( def_result.def_ev[i] != atk_result.def_ev[i] ) {
+                    atk_result.def_ev[i] = def_result.def_ev[i];
+                    recomputeAttackDisplay(atk_result, i, theInput.atk_turn, theInput.defending_pokemon, theInput.atk_modifier);
+                }
+            }
+        }
+
         setEV(Stats::ATK, tamp_atk);
         setEV(Stats::SPATK, tamp_spatk);
+        setEV(Stats::DEF, tamp_def);
         return std::make_pair(def_result, atk_result);
     }
 }

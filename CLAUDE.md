@@ -282,6 +282,16 @@ El criterio es **dos niveles**:
 ### Daño variable (Eruption/Water Spout/Dragon Energy)
 - BP = base_power × (HP_actual / HP_max), mínimo 1
 
+### Body Press
+- Usa el stat de **Defensa del propio atacante** (con sus stages) en vez de Ataque, tanto en crit como en no-crit. Implementado como rama dedicada en `calculateAttackInMove` (`source/pokemon.cpp`), antes de la rama genérica "usual phys".
+- Los modificadores de **Ataque** (Choice Band, Huge Power/Pure Power, Ruin Tablets) sí se siguen aplicando, porque boostean "el stat usado en el cálculo", no específicamente el Ataque. Verificado contra Bulbapedia/Smogon.
+- Los modificadores que boostean la **Defensa en sí** (Eviolite, Fur Coat, Marvel Scale, Assault Vest) **no** aplican — `getBoostedStat()` ya los excluye porque solo aplica stages, no bonus de item/habilidad, así que no hace falta lógica extra.
+- Sigue siendo categoría Física a todos los efectos (Guts, Hustle, defensa del rival, etc.), solo cambia qué stat del atacante se usa como "ataque".
+- **Optimizador de SPs (`koMove`, `source/pokemon.cpp`)**: por defecto esta función solo busca en el espacio Ataque/Ataque Especial, nunca toca Defensa. Para Body Press se añadió una tercera dimensión de búsqueda (SPs de Defensa) que se activa **solo** si detecta `Moves::Body_Press` en la lista de turnos ofensivos (evita triplicar el coste de búsqueda en el caso general). El resultado se guarda en el nuevo campo `AttackResult::def_ev`.
+- Esta Defensa "ofensiva" se sincroniza con la búsqueda defensiva normal (`resistMove`) en ambos sentidos: si Body Press necesita más Defensa de la que el cálculo defensivo iba a asignar, se extiende `DefenseResult::def_ev` (con `Pokemon::recomputeDefenseDisplay`); si el cálculo defensivo termina asignando más Defensa de la que Body Press necesitaba (por supervivencia), se refresca el display ofensivo (`Pokemon::recomputeAttackDisplay`). Nunca se pierde la mayor de las dos.
+- La selección automática de naturaleza (`calculateEVSDistrisbution`) también cuenta esta inversión de Defensa al comparar el total de SPs entre naturalezas candidatas — si no hay ningún turno defensivo configurado, la Defensa invertida por Body Press vive solo en `AttackResult::def_ev` y hay que sumarla explícitamente para que naturalezas que suben Defensa (Bold/Impish/Relaxed) puedan ganar el desempate.
+- **UI**: `ResultWindow::setResultType` debe usar `AttackResult::def_ev` como fallback cuando no hay resultado defensivo real (`DefenseResult::def_ev[0] < 0`), tanto para el label "Defense EVS" como para "Remaining SPs" y el cálculo de "Def. Score" — si no, el panel muestra 0 aunque el texto del cálculo ya diga "X Def" correctamente.
+
 ### Grassy Terrain
 - La recuperación de HP se muestra como nota de texto en el resultado, **no** se resta del daño calculado (igual que Showdown)
 
@@ -424,6 +434,7 @@ Estos efectos se almacenan como flags en la clase `Pokemon` (`ruin_sword`, `ruin
 - El Pokémon defensor recibe su Tera y los flags de Ruin ANTES de llamar a `getKOProbability` en todos los loops de cálculo
 - Para las Ruin abilities del defensor en `koMove`, se usa una copia local (`def_copy`) para no mutar el vector `const theDefendingPokemon`
 - `abort_calculation` es un campo de instancia en `Pokemon`; al clonar el Pokémon para el auto-nature, el abort se detecta entre naturalezas (no mid-nature)
+- **Sentinels de error en `DefenseResult`/`AttackResult` (`-1`, `-2`, `-3`, `-4`) nunca deben pasarse directamente a `setEV()`**: `setEV` recibe un `uint8_t`, así que un `int` negativo se convierte por desbordamiento en un valor gigante (p. ej. `-3` → `253`). Antes de usar `hp_ev[i]`/`def_ev[i]`/`spdef_ev[i]`/`atk_ev[i]`/`spatk_ev[i]` en un `setEV`, comprobar siempre `>= 0`. Este bug ya existía en `calculateEVSDistrisbution` (rama `PRIORITY_DEFENSE`) sin causar síntomas visibles porque el valor corrupto solo alimentaba una resta de `unsigned int` que desbordaba hacia un presupuesto gigante (inofensivo); se hizo visible al añadir la búsqueda de Defensa de Body Press en `koMove`, porque esa búsqueda usa el valor como **límite inferior de un bucle**, y con un "suelo" de 253 el bucle nunca llega a ejecutarse (253 no es menor que 33) → la calculadora reporta "no existe spread posible" aunque sí exista. Moraleja: un valor corrupto puede quedar "silenciosamente inofensivo" durante mucho tiempo hasta que otro cambio lo usa de una forma más estricta (como límite de bucle en vez de como sumando).
 
 ---
 
