@@ -56,7 +56,7 @@ void PresetWindow::deletePreset(bool clicked) {
     while( delete_node->GetText() == temp->currentText().toStdString().c_str() ) delete_node = delete_node->NextSiblingElement();
 
     ((MainWindow*)parentWidget())->xml_preset.RootElement()->DeleteChild(delete_node);
-    ((MainWindow*)parentWidget())->xml_preset.SaveFile("presets.xml");
+    ((MainWindow*)parentWidget())->xml_preset.SaveFile(MainWindow::userDataFilePath("presets.xml").c_str());
 
     ((MainWindow*)parentWidget())->presets.erase(((MainWindow*)parentWidget())->presets.begin() + temp->currentIndex());
     temp->removeItem(temp->currentIndex());

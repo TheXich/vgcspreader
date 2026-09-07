@@ -147,6 +147,9 @@ class MainWindow : public QDialog {
         static void populateSortedItemsComboBox(QComboBox* combo, const std::vector<QString>& names); //same, but hides the items banned by the current regulation
         static void setComboByOriginalIdx(QComboBox* combo, int originalIdx);
         static Move::Weather abilityToWeather(Ability ability);
+
+        //PERSISTENCE
+        static std::string userDataFilePath(const QString& theFileName); //absolute path inside the per-user data folder, migrating any file left behind by older versions
 };
 
 #endif // MAINWINDOW_HPP

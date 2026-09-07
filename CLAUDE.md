@@ -627,6 +627,31 @@ Serebii publica un roster por regulación en `https://www.serebii.net/pokemoncha
 
 ---
 
+## Almacenamiento de datos del usuario (presets y saved calcs)
+
+Los presets (`presets.xml`) y los cálculos guardados (`saves.xml`) se escriben en el **directorio de datos por usuario** del sistema operativo, no junto al ejecutable:
+
+| Plataforma | Ruta |
+|-----------|------|
+| macOS | `~/Library/Application Support/VGCSpreader/` |
+| Windows | `%APPDATA%/VGCSpreader/` |
+
+El nombre de la carpeta viene de `QCoreApplication::setApplicationName("VGCSpreader")` en `source/main.cpp` — **no cambiarlo**, o los usuarios perderían de vista sus datos.
+
+Toda ruta de fichero de usuario pasa por el helper:
+```cpp
+static std::string MainWindow::userDataFilePath(const QString& theFileName);
+```
+que resuelve `QStandardPaths::AppDataLocation`, crea el directorio si no existe (`QDir::mkpath`) y devuelve la ruta absoluta. Los seis puntos de acceso (`SaveFile`/`LoadFile` de `xml_preset` y `xml_saves` en `mainwindow.cpp`, más `presetwindow.cpp` y `savedcalcwindow.cpp`) lo usan siempre.
+
+Como los datos viven fuera del `.app` / de la carpeta de instalación, **sobreviven a las actualizaciones**.
+
+> **Bug histórico corregido**: antes se usaban rutas relativas (`"presets.xml"`, `"saves.xml"`), resueltas contra el directorio de trabajo del proceso. En macOS, al abrir el `.app` desde Finder el CWD es `/`, así que la escritura fallaba silenciosamente y **nunca se guardaba nada**; en Windows caían junto al `.exe` y se perdían al reemplazar la carpeta en cada actualización.
+
+El helper también **migra una sola vez** los ficheros que dejaron versiones antiguas: si el fichero no existe todavía en el directorio nuevo, lo busca en el directorio de trabajo y en `QCoreApplication::applicationDirPath()` y lo copia.
+
+---
+
 ## Roll de daño y umbral por movimiento
 
 ### Mecánica del roll

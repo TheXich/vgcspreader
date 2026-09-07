@@ -116,7 +116,7 @@ void SavedCalcWindow::deleteCalc(bool clicked) {
         for (int i = 0; i < idx && node; i++) node = node->NextSiblingElement("Calculation");
         if (node) {
             root->DeleteChild(node);
-            mw->xml_saves.SaveFile("saves.xml");
+            mw->xml_saves.SaveFile(MainWindow::userDataFilePath("saves.xml").c_str());
         }
     }
 

@@ -3,6 +3,10 @@
 #include <algorithm>
 #include <functional>
 #include <QFile>
+#include <QDir>
+#include <QFileInfo>
+#include <QStandardPaths>
+#include <QCoreApplication>
 #include <QTextEdit>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -20,6 +24,29 @@
 #include <qtconcurrentrun.h>
 
 #include "pokemon.hpp"
+
+//presets and saved calcs used to be written with a relative path, so they landed in the process working directory:
+//on macOS that is "/" when the .app is launched from Finder (nothing was ever saved), and on Windows it is the folder
+//of the executable, which gets wiped on every update. They now live in the per-user data folder the OS provides.
+std::string MainWindow::userDataFilePath(const QString& theFileName) {
+    QString dir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    if( dir.isEmpty() ) dir = QDir::homePath() + "/.vgcspreader";
+
+    QDir().mkpath(dir);
+
+    const QString path = QDir(dir).filePath(theFileName);
+
+    //one-time migration of the files an older version may have left next to the executable or in the working directory
+    if( !QFileInfo::exists(path) ) {
+        const QString legacy_paths[] = { QDir::current().filePath(theFileName),
+                                         QDir(QCoreApplication::applicationDirPath()).filePath(theFileName) };
+
+        for(const auto& legacy : legacy_paths)
+            if( QFileInfo::exists(legacy) && QFile::copy(legacy, path) ) break;
+    }
+
+    return path.toStdString();
+}
 
 Move::Weather MainWindow::abilityToWeather(Ability ability) {
     switch(ability) {
@@ -1493,7 +1520,7 @@ void MainWindow::addAsPreset(const QString& theName, const Turn& theTurn, const 
 
     xml_preset.LastChild()->InsertEndChild(title_node);
 
-    xml_preset.SaveFile("presets.xml");
+    xml_preset.SaveFile(userDataFilePath("presets.xml").c_str());
 }
 
 void MainWindow::solveMovePreset(const int index) {
@@ -1532,7 +1559,7 @@ void MainWindow::solveMovePreset(const int index) {
 }
 
 void MainWindow::LoadPresetsFromFile() {
-    xml_preset.LoadFile("presets.xml");
+    xml_preset.LoadFile(userDataFilePath("presets.xml").c_str());
 
     tinyxml2::XMLElement* root;
 
@@ -1837,11 +1864,11 @@ void MainWindow::addAsSavedCalc(const QString& theName) {
     calc_node->InsertEndChild(atk_turns_node);
 
     xml_saves.LastChild()->InsertEndChild(calc_node);
-    xml_saves.SaveFile("saves.xml");
+    xml_saves.SaveFile(userDataFilePath("saves.xml").c_str());
 }
 
 void MainWindow::LoadSavedCalcsFromFile() {
-    xml_saves.LoadFile("saves.xml");
+    xml_saves.LoadFile(userDataFilePath("saves.xml").c_str());
 
     tinyxml2::XMLElement* root = xml_saves.RootElement();
     if (root == nullptr) {
