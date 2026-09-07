@@ -129,7 +129,7 @@ void AttackMoveWindow::createDefendingPokemonGroupbox() {
     species->setObjectName("def_species_combobox");
 
     //loading it with all the species name
-    MainWindow::populateSortedComboBox(species, ((MainWindow*)parentWidget())->getSpeciesNames());
+    MainWindow::populateSortedSpeciesComboBox(species, ((MainWindow*)parentWidget())->getSpeciesNames());
 
     //some resizing
     int species_width = species->minimumSizeHint().width();
@@ -218,7 +218,7 @@ void AttackMoveWindow::createDefendingPokemonGroupbox() {
     items->setObjectName("def_items_combobox");
 
     //populating it
-    MainWindow::populateSortedComboBox(items, ((MainWindow*)parentWidget())->getItemsNames());
+    MainWindow::populateSortedItemsComboBox(items, ((MainWindow*)parentWidget())->getItemsNames());
 
     form_layout->addRow(tr("Item:"), items);
 
@@ -654,37 +654,23 @@ void AttackMoveWindow::setSpecies(int index) {
     int orig = defending_pokemon_groupbox->findChild<QComboBox*>("def_species_combobox")->currentData(Qt::UserRole).toInt();
     Pokemon selected_pokemon(orig + 1);
 
-    //setting correct sprite
-    QPixmap sprite_pixmap;
-    QString sprite_path = ":/db/sprites/" + QString::number(selected_pokemon.getPokedexNumber()) + ".png";
-    sprite_pixmap.load(sprite_path);
-    const int SPRITE_SCALE_FACTOR = 2;
-    sprite_pixmap = sprite_pixmap.scaled(sprite_pixmap.width() * SPRITE_SCALE_FACTOR, sprite_pixmap.height() * SPRITE_SCALE_FACTOR);
+    //setting correct form: this selects the first legal form, which in turn refreshes sprite, types and ability
+    MainWindow::populateFormComboAndSelectFirst(defending_pokemon_groupbox->findChild<QComboBox*>("def_forms_combobox"), orig + 1, selected_pokemon.getFormesNumber());
+}
 
-    QLabel* sprite = defending_pokemon_groupbox->findChild<QLabel*>("def_sprite");
-    sprite->setPixmap(sprite_pixmap);
+void AttackMoveWindow::refreshRegulationLists() {
+    QComboBox* species = defending_pokemon_groupbox->findChild<QComboBox*>("def_species_combobox");
+    species->blockSignals(true);
+    species->clear();
+    MainWindow::populateSortedSpeciesComboBox(species, ((MainWindow*)parentWidget())->getSpeciesNames());
+    species->setCurrentIndex(-1);
+    species->blockSignals(false);
+    species->setCurrentIndex(0); //fires setSpecies, which rebuilds the form combo as well
 
-    //setting correct types
-    QComboBox* type1 = defending_pokemon_groupbox->findChild<QComboBox*>("def_type1_combobox");
-    MainWindow::setComboByOriginalIdx(type1, selected_pokemon.getTypes()[0][0]);
-
-    QComboBox* type2 = defending_pokemon_groupbox->findChild<QComboBox*>("def_type2_combobox");
-    MainWindow::setComboByOriginalIdx(type2, selected_pokemon.getTypes()[0][1]);
-
-    if( selected_pokemon.getTypes()[0][0] == selected_pokemon.getTypes()[0][1] ) { type2->setVisible(false); type2->setVisible(false); }
-    else { type2->setVisible(true); type2->setVisible(true); }
-
-    //setting correct form
-    {
-        QComboBox* form = defending_pokemon_groupbox->findChild<QComboBox*>("def_forms_combobox");
-        MainWindow::populateFormCombo(form, orig + 1, selected_pokemon.getFormesNumber());
-        form->setCurrentIndex(0);
-        form->setVisible(form->count() > 1);
-    }
-
-    //setting correct ability
-    QComboBox* ability = defending_pokemon_groupbox->findChild<QComboBox*>("def_abilities_combobox");
-    MainWindow::setComboByOriginalIdx(ability, selected_pokemon.getPossibleAbilities()[0][0]);
+    QComboBox* items = defending_pokemon_groupbox->findChild<QComboBox*>("def_items_combobox");
+    items->clear();
+    MainWindow::populateSortedItemsComboBox(items, ((MainWindow*)parentWidget())->getItemsNames());
+    MainWindow::setComboByOriginalIdx(items, 0); // Default: None
 }
 
 void AttackMoveWindow::setForm(int index) {

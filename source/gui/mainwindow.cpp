@@ -1,6 +1,7 @@
 #include "mainwindow.hpp"
 
 #include <algorithm>
+#include <functional>
 #include <QFile>
 #include <QTextEdit>
 #include <QVBoxLayout>
@@ -46,6 +47,26 @@ MainWindow::MainWindow() {
     createMovesGroupBox();
 
     QVBoxLayout* main_layout = new QVBoxLayout;
+
+    //---format---//
+    //the battle format decides which species, forms and items the whole program offers
+    QHBoxLayout* regulation_layout = new QHBoxLayout;
+    QComboBox* regulation = new QComboBox;
+    regulation->setObjectName("regulation_combobox");
+
+    //listed newest first, so the format most people play sits on top
+    static const Regulation::Format FORMAT_ORDER[] = { Regulation::CHAMPIONS_MB, Regulation::CHAMPIONS_MA, Regulation::NATIONAL_DEX };
+    for(const Regulation::Format format : FORMAT_ORDER) {
+        regulation->addItem(tr(Regulation::getName(format)));
+        regulation->setItemData(regulation->count() - 1, (int)format, Qt::UserRole);
+    }
+    setComboByOriginalIdx(regulation, (int)Regulation::getCurrent());
+
+    regulation_layout->addWidget(new QLabel(tr("Format:")));
+    regulation_layout->addWidget(regulation);
+    regulation_layout->addStretch();
+
+    main_layout->addLayout(regulation_layout);
     main_layout->addWidget(defending_groupbox);
     main_layout->addWidget(moves_groupbox);
 
@@ -115,15 +136,18 @@ MainWindow::MainWindow() {
     connect(&this->future_watcher, SIGNAL (finished()), this, SLOT (calculateFinished()));
     connect(save_calc_button, SIGNAL(clicked(bool)), this, SLOT(openSaveCalcDialog(bool)));
     connect(load_calc_button, SIGNAL(clicked(bool)), this, SLOT(openLoadCalcWindow(bool)));
+    //connected only now that the move windows exist, since changing the format has to refresh them too
+    connect(regulation, SIGNAL(currentIndexChanged(int)), this, SLOT(setRegulation(int)));
 
     layout()->setSizeConstraint( QLayout::SetFixedSize );
 }
 
-/*static*/ void MainWindow::populateSortedComboBox(QComboBox* combo, const std::vector<QString>& names) {
+//fills a combo box with the alphabetically sorted names whose original index passes theFilter, keeping that index in Qt::UserRole
+static void populateSortedComboBoxFiltered(QComboBox* combo, const std::vector<QString>& names, const std::function<bool(int)>& theFilter) {
     std::vector<std::pair<QString, int>> sorted;
     sorted.reserve(names.size());
     for (int i = 0; i < (int)names.size(); i++)
-        sorted.push_back({names[i], i});
+        if( theFilter(i) ) sorted.push_back({names[i], i});
     std::sort(sorted.begin(), sorted.end(), [](const std::pair<QString,int>& a, const std::pair<QString,int>& b){
         return a.first.toLower() < b.first.toLower();
     });
@@ -131,6 +155,19 @@ MainWindow::MainWindow() {
         combo->addItem(p.first);
         combo->setItemData(combo->count() - 1, p.second, Qt::UserRole);
     }
+}
+
+/*static*/ void MainWindow::populateSortedComboBox(QComboBox* combo, const std::vector<QString>& names) {
+    populateSortedComboBoxFiltered(combo, names, [](int){ return true; });
+}
+
+/*static*/ void MainWindow::populateSortedSpeciesComboBox(QComboBox* combo, const std::vector<QString>& names) {
+    //the species vector skips the egg, so the entry at index i is the Pokemon whose Pokedex number is i + 1
+    populateSortedComboBoxFiltered(combo, names, [](int i){ return Regulation::isSpeciesLegal(i + 1); });
+}
+
+/*static*/ void MainWindow::populateSortedItemsComboBox(QComboBox* combo, const std::vector<QString>& names) {
+    populateSortedComboBoxFiltered(combo, names, [](int i){ return Regulation::isItemLegal(i); });
 }
 
 /*static*/ void MainWindow::setComboByOriginalIdx(QComboBox* combo, int originalIdx) {
@@ -163,35 +200,8 @@ void MainWindow::setDefendingPokemonSpecies(int index) {
     int orig = defending_groupbox->findChild<QComboBox*>("defending_species_combobox")->currentData(Qt::UserRole).toInt();
     Pokemon selected_pokemon(orig + 1);
 
-    //setting correct sprite
-    QPixmap sprite_pixmap;
-    QString sprite_path = ":/db/sprites/" + QString::number(selected_pokemon.getPokedexNumber()) + ".png";
-    sprite_pixmap.load(sprite_path);
-    const int SPRITE_SCALE_FACTOR = 2;
-    sprite_pixmap = sprite_pixmap.scaled(sprite_pixmap.width() * SPRITE_SCALE_FACTOR, sprite_pixmap.height() * SPRITE_SCALE_FACTOR);
-
-    QLabel* sprite = defending_groupbox->findChild<QLabel*>("defending_sprite");
-    sprite->setPixmap(sprite_pixmap);
-
-    //setting ability
-    setComboByOriginalIdx(defending_groupbox->findChild<QComboBox*>("defending_abilities_combobox"), selected_pokemon.getPossibleAbilities()[0][0]);
-
-    //setting correct types
-    setComboByOriginalIdx(defending_groupbox->findChild<QComboBox*>("defending_type1_combobox"), selected_pokemon.getTypes()[0][0]);
-    setComboByOriginalIdx(defending_groupbox->findChild<QComboBox*>("defending_type2_combobox"), selected_pokemon.getTypes()[0][1]);
-
-    if( selected_pokemon.getTypes()[0][0] == selected_pokemon.getTypes()[0][1] ) defending_groupbox->findChild<QComboBox*>("defending_type2_combobox")->setVisible(false);
-    else defending_groupbox->findChild<QComboBox*>("defending_type2_combobox")->setVisible(true);
-
-    //setting correct form
-    {
-        QComboBox* forms_combo = defending_groupbox->findChild<QComboBox*>("defending_forms_combobox");
-        int dex = orig + 1;
-        populateFormCombo(forms_combo, dex, selected_pokemon.getFormesNumber());
-        forms_combo->setCurrentIndex(0);
-        // hide if only "Base" remains (all alt forms were G-Max)
-        forms_combo->setVisible(forms_combo->count() > 1);
-    }
+    //setting correct form: this selects the first legal form, which in turn refreshes sprite, types and ability
+    populateFormComboAndSelectFirst(defending_groupbox->findChild<QComboBox*>("defending_forms_combobox"), orig + 1, selected_pokemon.getFormesNumber());
 }
 
 void MainWindow::setDefendingPokemonForm(int index) {
@@ -307,7 +317,7 @@ void MainWindow::createDefendingPokemonGroupBox() {
         else is_egg = false;
     }
 
-    populateSortedComboBox(species, species_names);
+    populateSortedSpeciesComboBox(species, species_names);
 
     //some resizing
     int species_width = species->minimumSizeHint().width();
@@ -439,7 +449,7 @@ void MainWindow::createDefendingPokemonGroupBox() {
         items_names.push_back(line);
     }
 
-    populateSortedComboBox(items, items_names);
+    populateSortedItemsComboBox(items, items_names);
     setComboByOriginalIdx(items, 0); // Default: None
 
     form_layout->addRow(tr("Item:"), items);
@@ -792,6 +802,57 @@ void MainWindow::addDefenseTurn(const Turn& theTurn, const defense_modifier& the
     }
 }
 
+/*a preset or a saved calculation may have been built under another format, or under a previous version of the program.
+Its species, form or item can therefore be missing from the filtered combo boxes, which would silently load a different
+Pokemon than the one that was saved, so the program falls back to the unrestricted list instead.*/
+void MainWindow::switchToNationalDexIfIllegal(const int theDex, const int theForm, const int theItem) {
+    if( Regulation::isFormLegal(theDex, theForm) && Regulation::isItemLegal(theItem) ) return;
+
+    //the combo box is moved without going through setRegulation, which would throw away the data being loaded
+    QComboBox* regulation = findChild<QComboBox*>("regulation_combobox");
+    regulation->blockSignals(true);
+    setComboByOriginalIdx(regulation, (int)Regulation::NATIONAL_DEX);
+    regulation->blockSignals(false);
+
+    Regulation::setCurrent(Regulation::NATIONAL_DEX);
+    applyRegulationLists();
+}
+
+void MainWindow::applyRegulationLists() {
+    QComboBox* species = defending_groupbox->findChild<QComboBox*>("defending_species_combobox");
+    const int previous_species = species->currentData(Qt::UserRole).toInt();
+
+    species->blockSignals(true);
+    species->clear();
+    populateSortedSpeciesComboBox(species, species_names);
+    species->setCurrentIndex(-1);
+    species->blockSignals(false);
+
+    //keep the Pokemon that was selected whenever the new format still allows it; either way the
+    //resulting currentIndexChanged rebuilds the form combo, the sprite, the types and the ability
+    setComboByOriginalIdx(species, previous_species);
+    if( species->currentIndex() < 0 ) species->setCurrentIndex(0);
+
+    QComboBox* items = defending_groupbox->findChild<QComboBox*>("defending_items_combobox");
+    const int previous_item = items->currentData(Qt::UserRole).toInt();
+
+    items->clear();
+    populateSortedItemsComboBox(items, items_names);
+    setComboByOriginalIdx(items, previous_item);
+    if( items->currentIndex() < 0 ) setComboByOriginalIdx(items, 0); // None
+
+    defense_move_window->refreshRegulationLists();
+    attack_move_window->refreshRegulationLists();
+}
+
+void MainWindow::setRegulation(int index) {
+    Regulation::setCurrent((Regulation::Format)findChild<QComboBox*>("regulation_combobox")->currentData(Qt::UserRole).toInt());
+
+    //the moves already configured refer to the Pokemon and the items of the previous format, so they are dropped
+    clearAll();
+    applyRegulationLists();
+}
+
 void MainWindow::clearAll() {
     defending_groupbox->findChild<QComboBox*>("defending_species_combobox")->setCurrentIndex(0);
     defending_groupbox->findChild<QComboBox*>("defending_forms_combobox")->setCurrentIndex(0);
@@ -891,10 +952,23 @@ void MainWindow::calculate() {
     combo->clear();
     for (int i = 0; i < form_count; i++) {
         if (isGMaxForm(dex, i)) continue;
+        if (!Regulation::isFormLegal(dex, i)) continue;
         QString name = (i == 0) ? "Base" : retrieveFormName(dex, i);
         combo->addItem(name);
         combo->setItemData(combo->count() - 1, i, Qt::UserRole);
     }
+}
+
+/*static*/ void MainWindow::populateFormComboAndSelectFirst(QComboBox* combo, int dex, int form_count) {
+    //the first legal form is not necessarily the base one (a regulation may allow only some forms of a species),
+    //so the selection is forced through currentIndexChanged to let the form slot refresh sprite, types and ability
+    combo->blockSignals(true);
+    populateFormCombo(combo, dex, form_count);
+    combo->setCurrentIndex(-1);
+    combo->blockSignals(false);
+
+    combo->setCurrentIndex(0);
+    combo->setVisible(combo->count() > 1); //hide it when there is nothing to choose from
 }
 
 /*static*/ void MainWindow::setFormComboByFormIdx(QComboBox* combo, int form_idx) {
@@ -1423,6 +1497,9 @@ void MainWindow::addAsPreset(const QString& theName, const Turn& theTurn, const 
 }
 
 void MainWindow::solveMovePreset(const int index) {
+    for(const auto& move : std::get<1>(presets[index]).getMoves())
+        switchToNationalDexIfIllegal(move.first.getPokedexNumber(), move.first.getForm(), move.first.getItem().getIndex());
+
     turns_def.push_back(std::get<1>(presets[index]));
     modifiers_def.push_back(std::get<2>(presets[index]));
 
@@ -1972,6 +2049,13 @@ void MainWindow::LoadSavedCalcsFromFile() {
 
 void MainWindow::restoreFromSavedCalc(int index) {
     const auto& sc = saved_calculations[index];
+
+    switchToNationalDexIfIllegal(sc.species + 1, sc.form, sc.item);
+    for(const Turn& turn : sc.turns_def)
+        for(const auto& move : turn.getMoves())
+            switchToNationalDexIfIllegal(move.first.getPokedexNumber(), move.first.getForm(), move.first.getItem().getIndex());
+    for(const Pokemon& defender : sc.defending_pokemons_in_attack)
+        switchToNationalDexIfIllegal(defender.getPokedexNumber(), defender.getForm(), defender.getItem().getIndex());
 
     clearAll();
 

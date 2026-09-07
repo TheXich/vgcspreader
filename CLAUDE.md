@@ -579,6 +579,54 @@ with open('db/personal_species.bin', 'wb') as f: f.write(data)
 
 ---
 
+## Filtro por formato / regulación (GUI)
+
+> Añadido el **7 de septiembre de 2026**. Los rosters y las listas de objetos se capturaron de Serebii y RotomPicks ese mismo día, con Regulation M-B todavía vigente (terminaba el 9 de septiembre de 2026).
+
+El combo **"Format:"** en la parte superior de la ventana principal decide qué especies, qué formas y qué objetos ofrece **toda** la aplicación. Opciones (listadas de más nueva a más antigua):
+
+| Opción | Contenido |
+|--------|-----------|
+| `Champions Reg. M-B` | **Por defecto.** 208 especies / 298 combinaciones especie-forma, 40 de los 55 objetos |
+| `Champions Reg. M-A` | 186 especies / 260 combinaciones especie-forma, 39 de los 55 objetos |
+| `National Dex` | Sin filtro: los 1025 Pokémon, todas las formas y los 55 objetos (comportamiento histórico) |
+
+### Módulo `Regulation`
+
+`include/regulation.hpp` + `source/regulation.cpp`. Clase sin dependencias de Qt con estado estático:
+
+```cpp
+Regulation::getCurrent() / setCurrent(Format)
+Regulation::isFormLegal(dex, form)      // (especie, forma) exacta
+Regulation::isSpeciesLegal(dex)         // al menos una forma legal
+Regulation::getFirstLegalForm(dex)      // -1 si la especie está prohibida
+Regulation::isItemLegal(item_index)     // índice del enum Items
+```
+
+Las tablas son arrays estáticos ordenados de `(dex << 8) | form` (`std::binary_search`). **M-B es aditiva sobre M-A**: `CHAMPIONS_MA_FORMS` contiene el roster completo de M-A y `CHAMPIONS_MB_NEW_FORMS` solo los 38 añadidos (22 especies + 16 Megas). El índice de forma es el mismo que usa `personal_species.bin`, así que las Mega Evoluciones son formas alternativas normales — prohibir Mega Lucario Z / Mega Garchomp Z consiste simplemente en no listar esa forma.
+
+### Objetos
+
+De los 55 objetos del programa, Champions **no** tiene: Assault Vest, Choice Band, Choice Specs, Booster Energy, Clear Amulet, Covert Cloak, Loaded Dice, Mirror Herb, Punching Glove, Eviolite y las bayas de confusión (Aguav, Figy, Iapapa, Mago, Wiki). **Life Orb** no existe en M-A y se añadió en M-B (junto con Big Root, Damp Rock, Expert Belt, Heat Rock, Icy Rock, Iron Ball, Light Clay, Metronome, Muscle Band, Shed Shell, Smooth Rock, Wide Lens, Wise Glasses y Zoom Lens, ninguno de los cuales está modelado todavía).
+
+### Puntos de enganche en la GUI
+
+- `MainWindow::populateSortedSpeciesComboBox` / `populateSortedItemsComboBox` — variantes filtradas de `populateSortedComboBox`; **usar siempre estas** en combos de especie o de objeto (mainwindow, attackmovewindow ×1, defensemovewindow ×2 de cada).
+- `MainWindow::populateFormCombo` — descarta además las formas ilegales (ya descartaba las G-Max).
+- `MainWindow::populateFormComboAndSelectFirst` — rellena el combo de formas y fuerza la señal `currentIndexChanged` para que el slot `setForm*` refresque sprite, tipos, habilidad y clima. **La primera forma legal no siempre es la base**: en Champions, Floette (#670) solo tiene legales la forma 1 (Eternal Flower) y la 2 (Mega). Por eso los slots `setSpecies*` ya no duplican esa lógica: delegan por completo en `setForm*`.
+- `MainWindow::applyRegulationLists()` — repuebla los combos de especie/objeto de las tres ventanas conservando la selección anterior si sigue siendo legal. `DefenseMoveWindow::refreshRegulationLists()` y `AttackMoveWindow::refreshRegulationLists()` hacen lo propio en las ventanas hija.
+- `MainWindow::setRegulation(int)` — slot del combo: cambia el formato, hace `clearAll()` (los ataques configurados apuntan a Pokémon/objetos del formato anterior) y llama a `applyRegulationLists()`.
+
+### Presets y cálculos guardados
+
+Ni los presets XML ni `SavedCalculation` almacenan el formato. Como `setComboByOriginalIdx` no hace nada si el índice buscado no está en el combo, cargar datos de otro formato cargaría silenciosamente un Pokémon distinto. Para evitarlo, `MainWindow::switchToNationalDexIfIllegal(dex, form, item)` cambia el formato a National Dex (sin pasar por el slot, para no borrar lo que se está cargando) cuando detecta algo fuera del formato actual. Se llama desde `restoreFromSavedCalc` (Pokémon propio + todos los turnos) y desde `solveMovePreset`.
+
+### Actualizar el roster a una regulación nueva
+
+Serebii publica un roster por regulación en `https://www.serebii.net/pokemonchampions/rankedbattle/regulationm-X.shtml`. Los iconos de esa página (`/pokedex-champions/icon/NNN[-suf].png`) identifican especie y forma; los sufijos son `-m` Mega, `-mx`/`-my` Mega X/Y, `-a` Alola (o Tauros Aqua), `-g` Galar, `-h` Hisui, `-p`/`-b` Tauros Paldea Combat/Blaze, `-e` Floette Eternal. Para traducirlos al índice de forma del binario, el orden de formas coincide con el de `pokedex.ts` de pokemon-showdown filtrado como hace `tools/build_db.py` (se verificó comparando los base stats de cada forma con el binario). Las listas de objetos legales se contrastaron con RotomPicks (`rotompicks.com/en/m-a/items/` y `rotompicks.com/en/items/`).
+
+---
+
 ## Roll de daño y umbral por movimiento
 
 ### Mecánica del roll
@@ -703,4 +751,8 @@ Los objetos siguen existiendo con nombre (ObjectName) para los `findChild<>` que
 - El enum `Status` usa `NO_STATUS` (no `HEALTHY`) como valor neutro — importante al implementar habilidades que dependen del estado
 - Algunos sprites Champions no tienen minisprite en Smogon/PS aún: Raichu Mega (#26-2, #26-3), Lucario Gmax (#448-2) — se usan versiones redimensionadas de los Serebii 120×120. Formas Totem (Raticate #20, Marowak #105), Maushold-Three, Toxtricity-Low-Key-Gmax tampoco tienen minisprite disponible.
 - Los nombres de formas en la GUI son genéricos ("Form 1", "Form 2"…); hay código comentado que sugería usar `db/forms.txt` — pendiente de implementar nombres propios por forma
+- Las regulaciones de Champions también restringen los **movimientos** (502 legales en M-B); el combo de movimientos todavía no se filtra por formato
+- Serebii ya publica **Regulation M-C** (a partir del 9 de septiembre de 2026, dos días después de implementarse este filtro); añadirla es cuestión de meter una tercera tabla aditiva en `source/regulation.cpp` y una entrada en `FORMAT_ORDER`
+- El formato seleccionado no se recuerda entre ejecuciones: siempre arranca en `Regulation::DEFAULT_FORMAT`
+- `MainWindow::isGMaxForm` marca `{448,2}` como G-Max, pero en el binario actual esa forma es Lucario-Mega-Z (el orden de formas cambió al añadirse las Mega Z); en la práctica queda oculta, que es lo que se quiere en Champions, pero la etiqueta es incorrecta para National Dex
 - El pool total de SPs es **66** (`MAX_EVS = 66` en `pokemon.cpp`), con máximo **32** por stat (`MAX_EVS_SINGLE_STAT = 32`). El cálculo de spreads óptimos usa la suma de SPs asignados como proxy de "coste total" y respeta ambos límites.

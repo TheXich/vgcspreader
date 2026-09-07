@@ -21,6 +21,7 @@
 #include "savedcalcwindow.hpp"
 #include "turn.hpp"
 #include "pokemon.hpp"
+#include "regulation.hpp"
 #include "tinyxml2.h"
 
 typedef std::tuple<QString, Turn, defense_modifier> Preset;
@@ -63,6 +64,7 @@ class MainWindow : public QDialog {
         void calculateFinished();
         void openSaveCalcDialog(bool checked);
         void openLoadCalcWindow(bool checked);
+        void setRegulation(int index);
 
     private:
         DefenseMoveWindow* defense_move_window;
@@ -102,6 +104,8 @@ class MainWindow : public QDialog {
         void openMoveWindowAttack();
         void openMoveWindowEditDefense();
         void openMoveWindowEditAttack();
+        void applyRegulationLists(); //rebuilds every species and item list so they match the selected format
+        void switchToNationalDexIfIllegal(const int theDex, const int theForm, const int theItem = 0); //keeps loaded data usable when it does not belong to the selected format
         void LoadPresetsFromFile();
         void LoadSavedCalcsFromFile();
         void clearAll();
@@ -135,9 +139,12 @@ class MainWindow : public QDialog {
         static QString retrieveFormName(const int species, const int form);
         static bool isGMaxForm(int dex, int form);
         static void populateFormCombo(QComboBox* combo, int dex, int form_count);
+        static void populateFormComboAndSelectFirst(QComboBox* combo, int dex, int form_count);
         static void setFormComboByFormIdx(QComboBox* combo, int form_idx);
 
         static void populateSortedComboBox(QComboBox* combo, const std::vector<QString>& names);
+        static void populateSortedSpeciesComboBox(QComboBox* combo, const std::vector<QString>& names); //same, but hides the species banned by the current regulation
+        static void populateSortedItemsComboBox(QComboBox* combo, const std::vector<QString>& names); //same, but hides the items banned by the current regulation
         static void setComboByOriginalIdx(QComboBox* combo, int originalIdx);
         static Move::Weather abilityToWeather(Ability ability);
 };

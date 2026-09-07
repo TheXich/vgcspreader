@@ -55,6 +55,7 @@ class DefenseMoveWindow : public QDialog {
         QDialogButtonBox* bottom_button_box; //HERE BECAUSE IT HAS TO BE ACCESSED BY MAINWINDOW
 
         void setAsBlank();
+        void refreshRegulationLists(); //rebuilds the species and item lists after the battle format changed
         void setDefaultWeather(Move::Weather weather);
         void setAsTurn(const Turn& theTurn, const defense_modifier& theDefenseModifier, float rollThreshold = 0.0f);
         bool isEditMode() { return edit_mode; }

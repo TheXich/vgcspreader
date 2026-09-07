@@ -60,6 +60,7 @@ DefenseMoveWindow::DefenseMoveWindow(QWidget* parent, Qt::WindowFlags f) : QDial
     main_layout->addWidget(tabs);
 
     edit_mode = false;
+    modifier_groupbox = nullptr; //the species/form slots fire while the tabs are built, before this group box exists
 
     createAtk1GroupBox();
     createAtk2GroupBox();
@@ -151,7 +152,7 @@ void DefenseMoveWindow::createAtk1GroupBox() {
     species->setObjectName("atk1_species_combobox");
 
     //loading it with all the species name
-    MainWindow::populateSortedComboBox(species, ((MainWindow*)parentWidget())->getSpeciesNames());
+    MainWindow::populateSortedSpeciesComboBox(species, ((MainWindow*)parentWidget())->getSpeciesNames());
 
     //some resizing
     int species_width = species->minimumSizeHint().width();
@@ -240,7 +241,7 @@ void DefenseMoveWindow::createAtk1GroupBox() {
     items->setObjectName("atk1_items_combobox");
 
     //populating it
-    MainWindow::populateSortedComboBox(items, ((MainWindow*)parentWidget())->getItemsNames());
+    MainWindow::populateSortedItemsComboBox(items, ((MainWindow*)parentWidget())->getItemsNames());
 
     form_layout->addRow(tr("Item:"), items);
 
@@ -480,7 +481,7 @@ void DefenseMoveWindow::createAtk2GroupBox() {
     species->setObjectName("atk2_species_combobox");
 
     //loading it with all the species name
-    MainWindow::populateSortedComboBox(species, ((MainWindow*)parentWidget())->getSpeciesNames());
+    MainWindow::populateSortedSpeciesComboBox(species, ((MainWindow*)parentWidget())->getSpeciesNames());
 
     //some resizing
     int species_width = species->minimumSizeHint().width();
@@ -569,7 +570,7 @@ void DefenseMoveWindow::createAtk2GroupBox() {
     items->setObjectName("atk2_items_combobox");
 
     //populating it
-    MainWindow::populateSortedComboBox(items, ((MainWindow*)parentWidget())->getItemsNames());
+    MainWindow::populateSortedItemsComboBox(items, ((MainWindow*)parentWidget())->getItemsNames());
 
     form_layout->addRow(tr("Item:"), items);
 
@@ -982,43 +983,8 @@ void DefenseMoveWindow::setSpecies1(int index) {
     int orig = atk1_groupbox->findChild<QComboBox*>("atk1_species_combobox")->currentData(Qt::UserRole).toInt();
     Pokemon selected_pokemon(orig + 1);
 
-    //setting correct sprite
-    QPixmap sprite_pixmap;
-    QString sprite_path = ":/db/sprites/" + QString::number(selected_pokemon.getPokedexNumber()) + ".png";
-    sprite_pixmap.load(sprite_path);
-    const int SPRITE_SCALE_FACTOR = 2;
-    sprite_pixmap = sprite_pixmap.scaled(sprite_pixmap.width() * SPRITE_SCALE_FACTOR, sprite_pixmap.height() * SPRITE_SCALE_FACTOR);
-
-    QLabel* sprite = atk1_groupbox->findChild<QLabel*>("atk1_sprite");
-    sprite->setPixmap(sprite_pixmap);
-
-    //setting correct types
-    QComboBox* type1 = atk1_groupbox->findChild<QComboBox*>("atk1_type1_combobox");
-    MainWindow::setComboByOriginalIdx(type1, selected_pokemon.getTypes()[0][0]);
-
-    QComboBox* type2 = atk1_groupbox->findChild<QComboBox*>("atk1_type2_combobox");
-    MainWindow::setComboByOriginalIdx(type2, selected_pokemon.getTypes()[0][1]);
-
-    if( selected_pokemon.getTypes()[0][0] == selected_pokemon.getTypes()[0][1] ) { type2->setVisible(false); type2->setVisible(false); }
-    else { type2->setVisible(true); type2->setVisible(true); }
-
-    //setting correct form
-    {
-        QComboBox* form = atk1_groupbox->findChild<QComboBox*>("atk1_forms_combobox");
-        MainWindow::populateFormCombo(form, orig + 1, selected_pokemon.getFormesNumber());
-        form->setCurrentIndex(0);
-        form->setVisible(form->count() > 1);
-    }
-
-    //setting correct ability
-    QComboBox* ability = atk1_groupbox->findChild<QComboBox*>("atk1_abilities_combobox");
-    MainWindow::setComboByOriginalIdx(ability, selected_pokemon.getPossibleAbilities()[0][0]);
-
-    if( modifier_groupbox ) {
-        Move::Weather w = MainWindow::abilityToWeather((Ability)ability->currentData(Qt::UserRole).toInt());
-        if( w != Move::WEATHER_NONE )
-            modifier_groupbox->findChild<QComboBox*>("weather_combobox")->setCurrentIndex((int)w);
-    }
+    //setting correct form: this selects the first legal form, which in turn refreshes sprite, types, ability and weather
+    MainWindow::populateFormComboAndSelectFirst(atk1_groupbox->findChild<QComboBox*>("atk1_forms_combobox"), orig + 1, selected_pokemon.getFormesNumber());
 }
 
 void DefenseMoveWindow::setForm1(int index) {
@@ -1168,43 +1134,8 @@ void DefenseMoveWindow::setSpecies2(int index) {
     int orig = atk2_groupbox->findChild<QComboBox*>("atk2_species_combobox")->currentData(Qt::UserRole).toInt();
     Pokemon selected_pokemon(orig + 1);
 
-    //setting correct sprite
-    QPixmap sprite_pixmap;
-    QString sprite_path = ":/db/sprites/" + QString::number(selected_pokemon.getPokedexNumber()) + ".png";
-    sprite_pixmap.load(sprite_path);
-    const int SPRITE_SCALE_FACTOR = 2;
-    sprite_pixmap = sprite_pixmap.scaled(sprite_pixmap.width() * SPRITE_SCALE_FACTOR, sprite_pixmap.height() * SPRITE_SCALE_FACTOR);
-
-    QLabel* sprite = atk2_groupbox->findChild<QLabel*>("atk2_sprite");
-    sprite->setPixmap(sprite_pixmap);
-
-    //setting correct types
-    QComboBox* type1 = atk2_groupbox->findChild<QComboBox*>("atk2_type1_combobox");
-    MainWindow::setComboByOriginalIdx(type1, selected_pokemon.getTypes()[0][0]);
-
-    QComboBox* type2 = atk2_groupbox->findChild<QComboBox*>("atk2_type2_combobox");
-    MainWindow::setComboByOriginalIdx(type2, selected_pokemon.getTypes()[0][1]);
-
-    if( selected_pokemon.getTypes()[0][0] == selected_pokemon.getTypes()[0][1] ) { type2->setVisible(false); type2->setVisible(false); }
-    else { type2->setVisible(true); type2->setVisible(true); }
-
-    //setting correct form
-    {
-        QComboBox* form = atk2_groupbox->findChild<QComboBox*>("atk2_forms_combobox");
-        MainWindow::populateFormCombo(form, orig + 1, selected_pokemon.getFormesNumber());
-        form->setCurrentIndex(0);
-        form->setVisible(form->count() > 1);
-    }
-
-    //setting correct ability
-    QComboBox* ability = atk2_groupbox->findChild<QComboBox*>("atk2_abilities_combobox");
-    MainWindow::setComboByOriginalIdx(ability, selected_pokemon.getPossibleAbilities()[0][0]);
-
-    if( modifier_groupbox ) {
-        Move::Weather w = MainWindow::abilityToWeather((Ability)ability->currentData(Qt::UserRole).toInt());
-        if( w != Move::WEATHER_NONE )
-            modifier_groupbox->findChild<QComboBox*>("weather_combobox")->setCurrentIndex((int)w);
-    }
+    //setting correct form: this selects the first legal form, which in turn refreshes sprite, types, ability and weather
+    MainWindow::populateFormComboAndSelectFirst(atk2_groupbox->findChild<QComboBox*>("atk2_forms_combobox"), orig + 1, selected_pokemon.getFormesNumber());
 }
 
 void DefenseMoveWindow::activateAtk2(int state) {
@@ -1371,6 +1302,28 @@ void DefenseMoveWindow::solveMove(const bool preset, const QString& preset_name)
 
     if( !preset ) ((MainWindow*)parentWidget())->addDefenseTurn(turn, def_mod);
     else ((MainWindow*)parentWidget())->addAsPreset(preset_name, turn, def_mod);
+}
+
+void DefenseMoveWindow::refreshRegulationLists() {
+    static const char* SPECIES_COMBOS[] = { "atk1_species_combobox", "atk2_species_combobox" };
+    static const char* ITEMS_COMBOS[]   = { "atk1_items_combobox",   "atk2_items_combobox"   };
+
+    for(const char* name : SPECIES_COMBOS) {
+        QComboBox* species = findChild<QComboBox*>(name);
+        species->blockSignals(true);
+        species->clear();
+        MainWindow::populateSortedSpeciesComboBox(species, ((MainWindow*)parentWidget())->getSpeciesNames());
+        species->setCurrentIndex(-1);
+        species->blockSignals(false);
+        species->setCurrentIndex(0); //fires setSpecies1 / setSpecies2, which rebuild the form combo as well
+    }
+
+    for(const char* name : ITEMS_COMBOS) {
+        QComboBox* items = findChild<QComboBox*>(name);
+        items->clear();
+        MainWindow::populateSortedItemsComboBox(items, ((MainWindow*)parentWidget())->getItemsNames());
+        MainWindow::setComboByOriginalIdx(items, 0); // Default: None
+    }
 }
 
 void DefenseMoveWindow::setAsBlank() {

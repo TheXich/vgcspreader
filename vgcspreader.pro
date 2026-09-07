@@ -7,6 +7,7 @@ SOURCES += \
     source/move.cpp \
     source/pokemon.cpp \
     source/pokemondb.cpp \
+    source/regulation.cpp \
     source/stats.cpp \
     source/turn.cpp \
     source/gui/mainwindow.cpp \
@@ -30,6 +31,7 @@ HEADERS += \
     include/moves.hpp \
     include/pokemon.hpp \
     include/pokemondb.hpp \
+    include/regulation.hpp \
     include/stats.hpp \
     include/turn.hpp \
     include/types.hpp \
