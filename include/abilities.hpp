@@ -277,7 +277,8 @@ enum Ability {
     Spicy_Spray = 272,
     // Gen 10 / Champions abilities
     Fire_Mane,   // 273: Mega Pyroar — boosts Fire-type moves by ×1.5
-    Eelevate     // 274: Mega Eelektross — Levitate + Beast Boost (Ground immunity; KO boost out of scope)
+    Eelevate,    // 274: Mega Eelektross — Levitate + Beast Boost (Ground immunity; KO boost out of scope)
+    Unseen_Fist  // 275: Urshifu — contact moves ignore the target's Protect
 };
 
 #endif

@@ -9,6 +9,7 @@
 #include <QSpinBox>
 
 #include "mainwindow.hpp"
+#include "regulation.hpp"
 
 // Returns {min_hits, max_hits} for multi-hit moves, {0, 0} for non-multi-hit.
 static std::pair<int,int> multiHitRange(Moves m) {
@@ -89,6 +90,8 @@ AttackMoveWindow::AttackMoveWindow(QWidget* parent, Qt::WindowFlags f) : QDialog
     connect(bottom_button_box, &QDialogButtonBox::accepted, this, &QDialog::accept);
     connect(bottom_button_box, SIGNAL(accepted()), this, SLOT(solveMove(void)));
     connect(bottom_button_box, &QDialogButtonBox::rejected, this, &QDialog::reject);
+
+    applyRegulationVisibility();
 }
 
 void AttackMoveWindow::createDefendingPokemonGroupbox() {
@@ -227,12 +230,16 @@ void AttackMoveWindow::createDefendingPokemonGroupbox() {
     tera_type->setObjectName("def_teratype_combobox");
     MainWindow::populateSortedComboBox(tera_type, ((MainWindow*)parentWidget())->getTypesNames());
     tera_type->setMaximumWidth(abilities_width);
-    form_layout->addRow(tr("Tera Type:"), tera_type);
+    QLabel* tera_type_label = new QLabel(tr("Tera Type:"));
+    tera_type_label->setObjectName("def_teratype_label");
+    form_layout->addRow(tera_type_label, tera_type);
 
     //TERASTALLIZED
     QCheckBox* terastallized = new QCheckBox;
     terastallized->setObjectName("def_terastallized");
-    form_layout->addRow(tr("Terastallized:"), terastallized);
+    QLabel* terastallized_label = new QLabel(tr("Terastallized:"));
+    terastallized_label->setObjectName("def_terastallized_label");
+    form_layout->addRow(terastallized_label, terastallized);
 
     natures->setMaximumWidth(abilities_width);
     items->setMaximumWidth(abilities_width);
@@ -410,6 +417,7 @@ void AttackMoveWindow::createMoveGroupbox() {
 
     //z
     QLabel* z_label = new QLabel(tr("Z"));
+    z_label->setObjectName("z_label");
     move_info_layout->addWidget(z_label);
 
     QCheckBox* z = new QCheckBox;
@@ -480,6 +488,7 @@ void AttackMoveWindow::createModifierGroupbox() {
     attacking_layout->addWidget(hits_modifier_spinbox, Qt::AlignLeft);
 
     QLabel* atk_tera_label = new QLabel(tr("Tera Type:"));
+    atk_tera_label->setObjectName("attacking_tera_type_label");
     attacking_layout->addWidget(atk_tera_label);
 
     QComboBox* atk_tera_combobox = new QComboBox;
@@ -488,6 +497,7 @@ void AttackMoveWindow::createModifierGroupbox() {
     attacking_layout->addWidget(atk_tera_combobox, Qt::AlignLeft);
 
     QLabel* atk_tera_bool_label = new QLabel(tr("Terastallized:"));
+    atk_tera_bool_label->setObjectName("attacking_terastallized_label");
     attacking_layout->addWidget(atk_tera_bool_label);
 
     QCheckBox* atk_terastallized = new QCheckBox;
@@ -552,24 +562,28 @@ void AttackMoveWindow::createModifierGroupbox() {
     ruin_layout->addWidget(ruin_label);
 
     QLabel* tablets_label = new QLabel(tr("Tablets (−25% Atk)"));
+    tablets_label->setObjectName("tablets_of_ruin_label");
     ruin_layout->addWidget(tablets_label);
     QCheckBox* tablets_cb = new QCheckBox;
     tablets_cb->setObjectName("tablets_of_ruin_checkbox");
     ruin_layout->addWidget(tablets_cb);
 
     QLabel* vessel_label = new QLabel(tr("Vessel (−25% SpAtk)"));
+    vessel_label->setObjectName("vessel_of_ruin_label");
     ruin_layout->addWidget(vessel_label);
     QCheckBox* vessel_cb = new QCheckBox;
     vessel_cb->setObjectName("vessel_of_ruin_checkbox");
     ruin_layout->addWidget(vessel_cb);
 
     QLabel* sword_label = new QLabel(tr("Sword (−25% Def)"));
+    sword_label->setObjectName("sword_of_ruin_label");
     ruin_layout->addWidget(sword_label);
     QCheckBox* sword_cb = new QCheckBox;
     sword_cb->setObjectName("sword_of_ruin_checkbox");
     ruin_layout->addWidget(sword_cb);
 
     QLabel* beads_label = new QLabel(tr("Beads (−25% SpDef)"));
+    beads_label->setObjectName("beads_of_ruin_label");
     ruin_layout->addWidget(beads_label);
     QCheckBox* beads_cb = new QCheckBox;
     beads_cb->setObjectName("beads_of_ruin_checkbox");
@@ -588,6 +602,40 @@ void AttackMoveWindow::createModifierGroupbox() {
     ruin_layout->addWidget(fg_cb);
 
     modifier_layout->addLayout(ruin_layout);
+
+    //SCREENS + PROTECT (defending side)
+    QHBoxLayout* screens_layout = new QHBoxLayout;
+    screens_layout->setAlignment(Qt::AlignLeft);
+
+    QLabel* screens_label = new QLabel(tr("Side:"));
+    screens_layout->addWidget(screens_label);
+
+    QLabel* protect_label = new QLabel(tr("Protect"));
+    screens_layout->addWidget(protect_label);
+    QCheckBox* protect_cb = new QCheckBox;
+    protect_cb->setObjectName("protect_checkbox");
+    protect_cb->setToolTip(tr("The defending Pokemon protects: only moves that go through Protect (Unseen Fist) deal damage"));
+    screens_layout->addWidget(protect_cb);
+
+    QLabel* reflect_label = new QLabel(tr("Reflect"));
+    screens_layout->addWidget(reflect_label);
+    QCheckBox* reflect_cb = new QCheckBox;
+    reflect_cb->setObjectName("reflect_checkbox");
+    screens_layout->addWidget(reflect_cb);
+
+    QLabel* ls_label = new QLabel(tr("Light Screen"));
+    screens_layout->addWidget(ls_label);
+    QCheckBox* ls_cb = new QCheckBox;
+    ls_cb->setObjectName("light_screen_checkbox");
+    screens_layout->addWidget(ls_cb);
+
+    QLabel* av_label = new QLabel(tr("Aurora Veil"));
+    screens_layout->addWidget(av_label);
+    QCheckBox* av_cb = new QCheckBox;
+    av_cb->setObjectName("aurora_veil_checkbox");
+    screens_layout->addWidget(av_cb);
+
+    modifier_layout->addLayout(screens_layout);
 }
 
 void AttackMoveWindow::setMove(int index) {
@@ -671,6 +719,57 @@ void AttackMoveWindow::refreshRegulationLists() {
     items->clear();
     MainWindow::populateSortedItemsComboBox(items, ((MainWindow*)parentWidget())->getItemsNames());
     MainWindow::setComboByOriginalIdx(items, 0); // Default: None
+
+    applyRegulationVisibility();
+}
+
+/*Pokemon Champions has neither Terastallization, nor Z-Moves, nor the Treasures of Ruin, so those controls
+are hidden (and reset, so a stale value can never leak into a calculation) while a Champions regulation is
+selected. National Dex keeps showing everything.*/
+void AttackMoveWindow::applyRegulationVisibility() {
+    const bool national_dex = !Regulation::isChampions();
+
+    static const char* TERA_COMBOS[] = { "def_teratype_combobox", "attacking_tera_type" };
+    static const char* TERA_CHECKS[] = { "def_terastallized", "attacking_terastallized" };
+    static const char* RUIN_CHECKS[] = { "sword_of_ruin_checkbox", "beads_of_ruin_checkbox",
+                                         "tablets_of_ruin_checkbox", "vessel_of_ruin_checkbox" };
+    static const char* HIDDEN_LABELS[] = {
+        "def_teratype_label", "attacking_tera_type_label",
+        "def_terastallized_label", "attacking_terastallized_label", "z_label",
+        "sword_of_ruin_label", "beads_of_ruin_label", "tablets_of_ruin_label", "vessel_of_ruin_label"
+    };
+
+    for(const char* name : TERA_COMBOS) {
+        QComboBox* combo = findChild<QComboBox*>(name);
+        if( !combo ) continue;
+        if( !national_dex ) combo->setCurrentIndex(0); //same reset setAsBlank() does; the Tera type is inert anyway with the checkbox off
+        combo->setVisible(national_dex);
+    }
+
+    for(const char* name : TERA_CHECKS) {
+        QCheckBox* check = findChild<QCheckBox*>(name);
+        if( !check ) continue;
+        if( !national_dex ) check->setChecked(false);
+        check->setVisible(national_dex);
+    }
+
+    QCheckBox* z_check = findChild<QCheckBox*>("z");
+    if( z_check ) {
+        if( !national_dex ) z_check->setChecked(false);
+        z_check->setVisible(national_dex);
+    }
+
+    for(const char* name : RUIN_CHECKS) {
+        QCheckBox* check = findChild<QCheckBox*>(name);
+        if( !check ) continue;
+        if( !national_dex ) check->setChecked(false);
+        check->setVisible(national_dex);
+    }
+
+    for(const char* name : HIDDEN_LABELS) {
+        QLabel* label = findChild<QLabel*>(name);
+        if( label ) label->setVisible(national_dex);
+    }
 }
 
 void AttackMoveWindow::setForm(int index) {
@@ -784,8 +883,12 @@ void AttackMoveWindow::solveMove(void) {
     bool beads_ruin   = move_modifier_groupbox->findChild<QCheckBox*>("beads_of_ruin_checkbox")->isChecked();
     bool helping_hand = move_modifier_groupbox->findChild<QCheckBox*>("helping_hand_checkbox")->isChecked();
     bool friend_guard = move_modifier_groupbox->findChild<QCheckBox*>("friend_guard_checkbox")->isChecked();
+    bool protect      = move_modifier_groupbox->findChild<QCheckBox*>("protect_checkbox")->isChecked();
+    bool reflect      = move_modifier_groupbox->findChild<QCheckBox*>("reflect_checkbox")->isChecked();
+    bool light_screen = move_modifier_groupbox->findChild<QCheckBox*>("light_screen_checkbox")->isChecked();
+    bool aurora_veil  = move_modifier_groupbox->findChild<QCheckBox*>("aurora_veil_checkbox")->isChecked();
 
-    ((MainWindow*)parentWidget())->addAttackTurn(turn, attacking1, std::make_tuple(atk_mod, spatk_mod, atk_tera, atk_terastallized, tablets_ruin, vessel_ruin, sword_ruin, beads_ruin, helping_hand, friend_guard));
+    ((MainWindow*)parentWidget())->addAttackTurn(turn, attacking1, std::make_tuple(atk_mod, spatk_mod, atk_tera, atk_terastallized, tablets_ruin, vessel_ruin, sword_ruin, beads_ruin, helping_hand, friend_guard, protect, reflect, light_screen, aurora_veil));
 }
 
 void AttackMoveWindow::setAsBlank() {
@@ -827,6 +930,10 @@ void AttackMoveWindow::setAsBlank() {
     move_modifier_groupbox->findChild<QCheckBox*>("beads_of_ruin_checkbox")->setChecked(false);
     move_modifier_groupbox->findChild<QCheckBox*>("helping_hand_checkbox")->setChecked(false);
     move_modifier_groupbox->findChild<QCheckBox*>("friend_guard_checkbox")->setChecked(false);
+    move_modifier_groupbox->findChild<QCheckBox*>("protect_checkbox")->setChecked(false);
+    move_modifier_groupbox->findChild<QCheckBox*>("reflect_checkbox")->setChecked(false);
+    move_modifier_groupbox->findChild<QCheckBox*>("light_screen_checkbox")->setChecked(false);
+    move_modifier_groupbox->findChild<QCheckBox*>("aurora_veil_checkbox")->setChecked(false);
 }
 
 void AttackMoveWindow::setDefaultWeather(Move::Weather weather) {
@@ -907,6 +1014,10 @@ void AttackMoveWindow::setAsTurn(const Turn& theTurn, const Pokemon& theDefendin
     move_modifier_groupbox->findChild<QCheckBox*>("beads_of_ruin_checkbox")->setChecked(std::get<7>(theAttackModifier));
     move_modifier_groupbox->findChild<QCheckBox*>("helping_hand_checkbox")->setChecked(std::get<8>(theAttackModifier));
     move_modifier_groupbox->findChild<QCheckBox*>("friend_guard_checkbox")->setChecked(std::get<9>(theAttackModifier));
+    move_modifier_groupbox->findChild<QCheckBox*>("protect_checkbox")->setChecked(std::get<10>(theAttackModifier));
+    move_modifier_groupbox->findChild<QCheckBox*>("reflect_checkbox")->setChecked(std::get<11>(theAttackModifier));
+    move_modifier_groupbox->findChild<QCheckBox*>("light_screen_checkbox")->setChecked(std::get<12>(theAttackModifier));
+    move_modifier_groupbox->findChild<QCheckBox*>("aurora_veil_checkbox")->setChecked(std::get<13>(theAttackModifier));
 }
 
 void AttackMoveWindow::setMoveCategory(int index) {

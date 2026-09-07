@@ -56,6 +56,7 @@ class DefenseMoveWindow : public QDialog {
 
         void setAsBlank();
         void refreshRegulationLists(); //rebuilds the species and item lists after the battle format changed
+        void applyRegulationVisibility(); //shows only the mechanics the current battle format actually has
         void setDefaultWeather(Move::Weather weather);
         void setAsTurn(const Turn& theTurn, const defense_modifier& theDefenseModifier, float rollThreshold = 0.0f);
         bool isEditMode() { return edit_mode; }

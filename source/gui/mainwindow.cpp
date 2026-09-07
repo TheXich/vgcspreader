@@ -1518,6 +1518,26 @@ void MainWindow::addAsPreset(const QString& theName, const Turn& theTurn, const 
     friend_guard_node->SetText(std::get<10>(std::get<2>(presets.back())));
     title_node->InsertEndChild(friend_guard_node);
 
+    //protect
+    tinyxml2::XMLElement* protect_node = xml_preset.NewElement("Protect");
+    protect_node->SetText(std::get<11>(std::get<2>(presets.back())));
+    title_node->InsertEndChild(protect_node);
+
+    //reflect
+    tinyxml2::XMLElement* reflect_node = xml_preset.NewElement("Reflect");
+    reflect_node->SetText(std::get<12>(std::get<2>(presets.back())));
+    title_node->InsertEndChild(reflect_node);
+
+    //light screen
+    tinyxml2::XMLElement* light_screen_node = xml_preset.NewElement("LightScreen");
+    light_screen_node->SetText(std::get<13>(std::get<2>(presets.back())));
+    title_node->InsertEndChild(light_screen_node);
+
+    //aurora veil
+    tinyxml2::XMLElement* aurora_veil_node = xml_preset.NewElement("AuroraVeil");
+    aurora_veil_node->SetText(std::get<14>(std::get<2>(presets.back())));
+    title_node->InsertEndChild(aurora_veil_node);
+
     xml_preset.LastChild()->InsertEndChild(title_node);
 
     xml_preset.SaveFile(userDataFilePath("presets.xml").c_str());
@@ -1638,6 +1658,14 @@ void MainWindow::LoadPresetsFromFile() {
             std::get<9>(std::get<2>(buffer)) = hh_elem ? (bool)std::atoi(hh_elem->GetText()) : false;
             auto* fg_elem = move_element_temp->NextSiblingElement("FriendGuard");
             std::get<10>(std::get<2>(buffer)) = fg_elem ? (bool)std::atoi(fg_elem->GetText()) : false;
+            auto* protect_elem = move_element_temp->NextSiblingElement("Protect");
+            std::get<11>(std::get<2>(buffer)) = protect_elem ? (bool)std::atoi(protect_elem->GetText()) : false;
+            auto* reflect_elem = move_element_temp->NextSiblingElement("Reflect");
+            std::get<12>(std::get<2>(buffer)) = reflect_elem ? (bool)std::atoi(reflect_elem->GetText()) : false;
+            auto* ls_elem = move_element_temp->NextSiblingElement("LightScreen");
+            std::get<13>(std::get<2>(buffer)) = ls_elem ? (bool)std::atoi(ls_elem->GetText()) : false;
+            auto* av_elem = move_element_temp->NextSiblingElement("AuroraVeil");
+            std::get<14>(std::get<2>(buffer)) = av_elem ? (bool)std::atoi(av_elem->GetText()) : false;
 
             presets.push_back(buffer);
             element = element->NextSiblingElement();
@@ -1794,6 +1822,10 @@ void MainWindow::addAsSavedCalc(const QString& theName) {
         add_int(turn_node, "VesselOfRuin",  std::get<8>(defmod));
         add_int(turn_node, "HelpingHand",   std::get<9>(defmod));
         add_int(turn_node, "FriendGuard",   std::get<10>(defmod));
+        add_int(turn_node, "Protect",       std::get<11>(defmod));
+        add_int(turn_node, "Reflect",       std::get<12>(defmod));
+        add_int(turn_node, "LightScreen",   std::get<13>(defmod));
+        add_int(turn_node, "AuroraVeil",    std::get<14>(defmod));
         def_turns_node->InsertEndChild(turn_node);
     }
     calc_node->InsertEndChild(def_turns_node);
@@ -1859,6 +1891,10 @@ void MainWindow::addAsSavedCalc(const QString& theName) {
         add_int(turn_node, "Beads",            std::get<7>(atkmod));
         add_int(turn_node, "HelpingHand",      std::get<8>(atkmod));
         add_int(turn_node, "FriendGuard",      std::get<9>(atkmod));
+        add_int(turn_node, "Protect",          std::get<10>(atkmod));
+        add_int(turn_node, "Reflect",          std::get<11>(atkmod));
+        add_int(turn_node, "LightScreen",      std::get<12>(atkmod));
+        add_int(turn_node, "AuroraVeil",       std::get<13>(atkmod));
         atk_turns_node->InsertEndChild(turn_node);
     }
     calc_node->InsertEndChild(atk_turns_node);
@@ -2001,6 +2037,14 @@ void MainWindow::LoadSavedCalcsFromFile() {
                 std::get<9>(defmod) = hh ? (bool)std::atoi(hh->GetText()) : false;
                 auto* fg = turn_elem->FirstChildElement("FriendGuard");
                 std::get<10>(defmod) = fg ? (bool)std::atoi(fg->GetText()) : false;
+                auto* pr = turn_elem->FirstChildElement("Protect");
+                std::get<11>(defmod) = pr ? (bool)std::atoi(pr->GetText()) : false;
+                auto* rf = turn_elem->FirstChildElement("Reflect");
+                std::get<12>(defmod) = rf ? (bool)std::atoi(rf->GetText()) : false;
+                auto* lsc = turn_elem->FirstChildElement("LightScreen");
+                std::get<13>(defmod) = lsc ? (bool)std::atoi(lsc->GetText()) : false;
+                auto* av = turn_elem->FirstChildElement("AuroraVeil");
+                std::get<14>(defmod) = av ? (bool)std::atoi(av->GetText()) : false;
 
                 sc.turns_def.push_back(turn);
                 sc.modifiers_def.push_back(defmod);
@@ -2063,6 +2107,14 @@ void MainWindow::LoadSavedCalcsFromFile() {
                 std::get<8>(atkmod) = hh2 ? (bool)std::atoi(hh2->GetText()) : false;
                 auto* fg2 = turn_elem->FirstChildElement("FriendGuard");
                 std::get<9>(atkmod) = fg2 ? (bool)std::atoi(fg2->GetText()) : false;
+                auto* pr2 = turn_elem->FirstChildElement("Protect");
+                std::get<10>(atkmod) = pr2 ? (bool)std::atoi(pr2->GetText()) : false;
+                auto* rf2 = turn_elem->FirstChildElement("Reflect");
+                std::get<11>(atkmod) = rf2 ? (bool)std::atoi(rf2->GetText()) : false;
+                auto* ls2 = turn_elem->FirstChildElement("LightScreen");
+                std::get<12>(atkmod) = ls2 ? (bool)std::atoi(ls2->GetText()) : false;
+                auto* av2 = turn_elem->FirstChildElement("AuroraVeil");
+                std::get<13>(atkmod) = av2 ? (bool)std::atoi(av2->GetText()) : false;
 
                 sc.turns_atk.push_back(turn);
                 sc.modifiers_atk.push_back(atkmod);

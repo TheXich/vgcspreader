@@ -49,6 +49,10 @@ Pokemon::Pokemon(const unsigned int thePokedexNumber, const Stats& theStats) {
     ruin_vessel = false;
     helping_hand = false;
     friend_guard = false;
+    protect = false;
+    reflect = false;
+    light_screen = false;
+    aurora_veil = false;
 
     pokedex_number = thePokedexNumber;
 
@@ -427,6 +431,13 @@ float Pokemon::calculateOtherModifier(const Pokemon& theAttacker, const Move& th
     // Friend Guard (ally ability): ×0.75 to damage received by this Pokémon
     if( friend_guard ) modifier = modifier * 0.75f;
 
+    // Reflect / Light Screen / Aurora Veil: 2732/4096 (~0.667) in double battles, which is the only
+    // format this calculator targets. A critical hit goes through the screens, and so does Infiltrator.
+    if( !theMove.isCrit() && theAttacker.getAbility() != Ability::Infiltrator ) {
+        const bool physical = ( theMove.getMoveCategory() == Move::PHYSICAL );
+        if( aurora_veil || ( physical ? reflect : light_screen ) ) modifier = modifier * (2732.0f / 4096.0f);
+    }
+
     // Collision Course / Electro Drift (Gen 9): 5461/4096 ≈ 1.333× bonus when super-effective
     if( (theMove.getMoveIndex() == Moves::Collision_Course || theMove.getMoveIndex() == Moves::Electro_Drift) &&
         calculateTypeModifier(theAttacker, theMove) >= 2 ) modifier = modifier * (5461.0f / 4096.0f);
@@ -748,6 +759,11 @@ unsigned int Pokemon::calculateMoveBasePowerInAttack(const Pokemon& theAttacker,
 }
 
 std::vector<int> Pokemon::getDamage(const Pokemon& theAttacker, Move theMove) const {
+    // Protect: the move is blocked entirely. Unseen Fist (Urshifu) lets contact moves hit through it;
+    // as everywhere else in this file, contact is approximated by the move being Physical.
+    if( protect && !( theAttacker.getAbility() == Ability::Unseen_Fist && theMove.getMoveCategory() == Move::PHYSICAL ) )
+        return std::vector<int>(16, 0);
+
     // Flower Trick (Gen 9): always lands as a critical hit.
     if( theMove.getMoveIndex() == Moves::Flower_Trick ) theMove.setCrit(true);
 
@@ -1097,6 +1113,10 @@ void Pokemon::recomputeDefenseDisplay(DefenseResult& theResult, const unsigned i
         buffer.setRuinSword(std::get<5>(theDefModifiers[it]));
         buffer.setRuinBeads(std::get<6>(theDefModifiers[it]));
         buffer.setFriendGuard(std::get<10>(theDefModifiers[it]));
+        buffer.setProtect(std::get<11>(theDefModifiers[it]));
+        buffer.setReflect(std::get<12>(theDefModifiers[it]));
+        buffer.setLightScreen(std::get<13>(theDefModifiers[it]));
+        buffer.setAuroraVeil(std::get<14>(theDefModifiers[it]));
 
         // Apply attacker-side modifiers (tablets/vessel/helping_hand) for accurate display
         Turn display_turn;
@@ -1266,6 +1286,10 @@ void Pokemon::resistMoveLoopThread(Pokemon theDefender, const std::vector<Turn>&
         theDefender.setRuinSword(std::get<5>(theDefModifiers[it]));
         theDefender.setRuinBeads(std::get<6>(theDefModifiers[it]));
         theDefender.setFriendGuard(std::get<10>(theDefModifiers[it]));
+        theDefender.setProtect(std::get<11>(theDefModifiers[it]));
+        theDefender.setReflect(std::get<12>(theDefModifiers[it]));
+        theDefender.setLightScreen(std::get<13>(theDefModifiers[it]));
+        theDefender.setAuroraVeil(std::get<14>(theDefModifiers[it]));
 
         // Apply attacker-side modifiers (tablets/vessel/helping_hand) to attackers in a copy of the turn
         Turn modified_turn;
@@ -1397,6 +1421,10 @@ AttackResult Pokemon::koMove(const std::vector<Turn>& theTurn, const std::vector
                 def_copy.setRuinSword(std::get<6>(theAtkModifier[it]));
                 def_copy.setRuinBeads(std::get<7>(theAtkModifier[it]));
                 def_copy.setFriendGuard(std::get<9>(theAtkModifier[it]));
+                def_copy.setProtect(std::get<10>(theAtkModifier[it]));
+                def_copy.setReflect(std::get<11>(theAtkModifier[it]));
+                def_copy.setLightScreen(std::get<12>(theAtkModifier[it]));
+                def_copy.setAuroraVeil(std::get<13>(theAtkModifier[it]));
 
                 //reversing because of the offensive nature of the calc
                 Turn temp_turn;
@@ -1538,6 +1566,11 @@ void Pokemon::recomputeAttackDisplay(AttackResult& theResult, const unsigned int
         Pokemon def_copy_final = theDefendingPokemon[it];
         def_copy_final.setRuinSword(std::get<6>(theAtkModifier[it]));
         def_copy_final.setRuinBeads(std::get<7>(theAtkModifier[it]));
+        def_copy_final.setFriendGuard(std::get<9>(theAtkModifier[it]));
+        def_copy_final.setProtect(std::get<10>(theAtkModifier[it]));
+        def_copy_final.setReflect(std::get<11>(theAtkModifier[it]));
+        def_copy_final.setLightScreen(std::get<12>(theAtkModifier[it]));
+        def_copy_final.setAuroraVeil(std::get<13>(theAtkModifier[it]));
 
         Turn temp_turn;
         temp_turn.addMove(buffer, theTurn[it].getMoves()[0].second);

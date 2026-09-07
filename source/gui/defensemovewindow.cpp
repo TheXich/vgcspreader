@@ -12,6 +12,7 @@
 #include <tuple>
 
 #include "mainwindow.hpp"
+#include "regulation.hpp"
 #include "move.hpp"
 #include "turn.hpp"
 #include "items.hpp"
@@ -109,6 +110,8 @@ DefenseMoveWindow::DefenseMoveWindow(QWidget* parent, Qt::WindowFlags f) : QDial
     connect(bottom_button_box, &QDialogButtonBox::accepted, this, &QDialog::accept);
     connect(bottom_button_box, SIGNAL(accepted()), this, SLOT(solveMove(void)));
     connect(bottom_button_box, &QDialogButtonBox::rejected, this, &QDialog::reject);
+
+    applyRegulationVisibility();
 
     layout()->setSizeConstraint( QLayout::SetFixedSize );
 }
@@ -250,12 +253,16 @@ void DefenseMoveWindow::createAtk1GroupBox() {
     tera_type1->setObjectName("atk1_teratype_combobox");
     MainWindow::populateSortedComboBox(tera_type1, ((MainWindow*)parentWidget())->getTypesNames());
     tera_type1->setMaximumWidth(abilities_width);
-    form_layout->addRow(tr("Tera Type:"), tera_type1);
+    QLabel* tera_type1_label = new QLabel(tr("Tera Type:"));
+    tera_type1_label->setObjectName("atk1_teratype_label");
+    form_layout->addRow(tera_type1_label, tera_type1);
 
     //TERASTALLIZED
     QCheckBox* terastallized1 = new QCheckBox;
     terastallized1->setObjectName("atk1_terastallized");
-    form_layout->addRow(tr("Terastallized:"), terastallized1);
+    QLabel* terastallized1_label = new QLabel(tr("Terastallized:"));
+    terastallized1_label->setObjectName("atk1_terastallized_label");
+    form_layout->addRow(terastallized1_label, terastallized1);
 
     natures->setMaximumWidth(abilities_width);
     items->setMaximumWidth(abilities_width);
@@ -377,6 +384,7 @@ void DefenseMoveWindow::createAtk1GroupBox() {
 
     //z
     QLabel* z_label = new QLabel(tr("Z"));
+    z_label->setObjectName("atk1_z_label");
     move_info_layout->addWidget(z_label);
 
     QCheckBox* z = new QCheckBox;
@@ -579,12 +587,16 @@ void DefenseMoveWindow::createAtk2GroupBox() {
     tera_type2->setObjectName("atk2_teratype_combobox");
     MainWindow::populateSortedComboBox(tera_type2, ((MainWindow*)parentWidget())->getTypesNames());
     tera_type2->setMaximumWidth(abilities_width);
-    form_layout->addRow(tr("Tera Type:"), tera_type2);
+    QLabel* tera_type2_label = new QLabel(tr("Tera Type:"));
+    tera_type2_label->setObjectName("atk2_teratype_label");
+    form_layout->addRow(tera_type2_label, tera_type2);
 
     //TERASTALLIZED
     QCheckBox* terastallized2 = new QCheckBox;
     terastallized2->setObjectName("atk2_terastallized");
-    form_layout->addRow(tr("Terastallized:"), terastallized2);
+    QLabel* terastallized2_label = new QLabel(tr("Terastallized:"));
+    terastallized2_label->setObjectName("atk2_terastallized_label");
+    form_layout->addRow(terastallized2_label, terastallized2);
 
     natures->setMaximumWidth(abilities_width);
     items->setMaximumWidth(abilities_width);
@@ -706,6 +718,7 @@ void DefenseMoveWindow::createAtk2GroupBox() {
 
     //z
     QLabel* z_label = new QLabel(tr("Z"));
+    z_label->setObjectName("atk2_z_label");
     move_info_layout->addWidget(z_label);
 
     QCheckBox* z = new QCheckBox;
@@ -752,9 +765,6 @@ void DefenseMoveWindow::createAtk2GroupBox() {
     connect(move_category, SIGNAL(currentIndexChanged(int)), this, SLOT(setMoveCategory2(int)));
 
 
-    //activating attack number 2
-    activated->setChecked(true);
-
     //setting index 0
     species->setCurrentIndex(1); //setting it to 1 because the signal is currentindexCHANGED, i am so stupid lol
     species->setCurrentIndex(0);
@@ -762,6 +772,11 @@ void DefenseMoveWindow::createAtk2GroupBox() {
     //same
     moves->setCurrentIndex(1);
     moves->setCurrentIndex(0);
+
+    //attack number 2 starts off: most calculations face a single attacker. The checkbox is already unchecked,
+    //so stateChanged never fires and the widgets have to be greyed out by hand.
+    activated->setChecked(false);
+    activateAtk2(Qt::Unchecked);
 }
 
 void DefenseMoveWindow::createDefendingGroupBox() {
@@ -810,6 +825,7 @@ void DefenseMoveWindow::createDefendingGroupBox() {
     defending_layout->addWidget(hits_modifier_spinbox, Qt::AlignLeft);
 
     QLabel* tera_type_label = new QLabel(tr("Tera Type:"));
+    tera_type_label->setObjectName("defending_tera_type_label");
     defending_layout->addWidget(tera_type_label);
 
     QComboBox* tera_type_combobox = new QComboBox;
@@ -818,6 +834,7 @@ void DefenseMoveWindow::createDefendingGroupBox() {
     defending_layout->addWidget(tera_type_combobox, Qt::AlignLeft);
 
     QLabel* terastallized_label = new QLabel(tr("Terastallized:"));
+    terastallized_label->setObjectName("defending_terastallized_label");
     defending_layout->addWidget(terastallized_label);
 
     QCheckBox* terastallized_checkbox = new QCheckBox;
@@ -882,24 +899,28 @@ void DefenseMoveWindow::createDefendingGroupBox() {
     ruin_layout->addWidget(ruin_label);
 
     QLabel* tablets_label = new QLabel(tr("Tablets (−25% Atk)"));
+    tablets_label->setObjectName("tablets_of_ruin_label");
     ruin_layout->addWidget(tablets_label);
     QCheckBox* tablets_cb = new QCheckBox;
     tablets_cb->setObjectName("tablets_of_ruin_checkbox");
     ruin_layout->addWidget(tablets_cb);
 
     QLabel* vessel_label = new QLabel(tr("Vessel (−25% SpAtk)"));
+    vessel_label->setObjectName("vessel_of_ruin_label");
     ruin_layout->addWidget(vessel_label);
     QCheckBox* vessel_cb = new QCheckBox;
     vessel_cb->setObjectName("vessel_of_ruin_checkbox");
     ruin_layout->addWidget(vessel_cb);
 
     QLabel* sword_ruin_label = new QLabel(tr("Sword (−25% Def)"));
+    sword_ruin_label->setObjectName("sword_of_ruin_label");
     ruin_layout->addWidget(sword_ruin_label);
     QCheckBox* sword_ruin_cb = new QCheckBox;
     sword_ruin_cb->setObjectName("sword_of_ruin_checkbox");
     ruin_layout->addWidget(sword_ruin_cb);
 
     QLabel* beads_ruin_label = new QLabel(tr("Beads (−25% SpDef)"));
+    beads_ruin_label->setObjectName("beads_of_ruin_label");
     ruin_layout->addWidget(beads_ruin_label);
     QCheckBox* beads_ruin_cb = new QCheckBox;
     beads_ruin_cb->setObjectName("beads_of_ruin_checkbox");
@@ -918,6 +939,40 @@ void DefenseMoveWindow::createDefendingGroupBox() {
     ruin_layout->addWidget(fg_cb);
 
     modifier_layout->addLayout(ruin_layout);
+
+    //SCREENS + PROTECT (defending side)
+    QHBoxLayout* screens_layout = new QHBoxLayout;
+    screens_layout->setAlignment(Qt::AlignLeft);
+
+    QLabel* screens_label = new QLabel(tr("Side:"));
+    screens_layout->addWidget(screens_label);
+
+    QLabel* protect_label = new QLabel(tr("Protect"));
+    screens_layout->addWidget(protect_label);
+    QCheckBox* protect_cb = new QCheckBox;
+    protect_cb->setObjectName("protect_checkbox");
+    protect_cb->setToolTip(tr("The defending Pokemon protects: only moves that go through Protect (Unseen Fist) deal damage"));
+    screens_layout->addWidget(protect_cb);
+
+    QLabel* reflect_label = new QLabel(tr("Reflect"));
+    screens_layout->addWidget(reflect_label);
+    QCheckBox* reflect_cb = new QCheckBox;
+    reflect_cb->setObjectName("reflect_checkbox");
+    screens_layout->addWidget(reflect_cb);
+
+    QLabel* ls_label = new QLabel(tr("Light Screen"));
+    screens_layout->addWidget(ls_label);
+    QCheckBox* ls_cb = new QCheckBox;
+    ls_cb->setObjectName("light_screen_checkbox");
+    screens_layout->addWidget(ls_cb);
+
+    QLabel* av_label = new QLabel(tr("Aurora Veil"));
+    screens_layout->addWidget(av_label);
+    QCheckBox* av_cb = new QCheckBox;
+    av_cb->setObjectName("aurora_veil_checkbox");
+    screens_layout->addWidget(av_cb);
+
+    modifier_layout->addLayout(screens_layout);
 }
 
 void DefenseMoveWindow::setMove1(int index) {
@@ -1297,7 +1352,11 @@ void DefenseMoveWindow::solveMove(const bool preset, const QString& preset_name)
         modifier_groupbox->findChild<QCheckBox*>("tablets_of_ruin_checkbox")->isChecked(),
         modifier_groupbox->findChild<QCheckBox*>("vessel_of_ruin_checkbox")->isChecked(),
         modifier_groupbox->findChild<QCheckBox*>("helping_hand_checkbox")->isChecked(),
-        modifier_groupbox->findChild<QCheckBox*>("friend_guard_checkbox")->isChecked()
+        modifier_groupbox->findChild<QCheckBox*>("friend_guard_checkbox")->isChecked(),
+        modifier_groupbox->findChild<QCheckBox*>("protect_checkbox")->isChecked(),
+        modifier_groupbox->findChild<QCheckBox*>("reflect_checkbox")->isChecked(),
+        modifier_groupbox->findChild<QCheckBox*>("light_screen_checkbox")->isChecked(),
+        modifier_groupbox->findChild<QCheckBox*>("aurora_veil_checkbox")->isChecked()
     );
 
     if( !preset ) ((MainWindow*)parentWidget())->addDefenseTurn(turn, def_mod);
@@ -1323,6 +1382,60 @@ void DefenseMoveWindow::refreshRegulationLists() {
         items->clear();
         MainWindow::populateSortedItemsComboBox(items, ((MainWindow*)parentWidget())->getItemsNames());
         MainWindow::setComboByOriginalIdx(items, 0); // Default: None
+    }
+
+    applyRegulationVisibility();
+}
+
+/*Pokemon Champions has neither Terastallization, nor Z-Moves, nor the Treasures of Ruin, so those controls
+are hidden (and reset, so a stale value can never leak into a calculation) while a Champions regulation is
+selected. National Dex keeps showing everything.*/
+void DefenseMoveWindow::applyRegulationVisibility() {
+    const bool national_dex = !Regulation::isChampions();
+
+    static const char* TERA_COMBOS[]  = { "atk1_teratype_combobox", "atk2_teratype_combobox", "defending_tera_type" };
+    static const char* TERA_CHECKS[]  = { "atk1_terastallized", "atk2_terastallized", "defending_terastallized" };
+    static const char* Z_CHECKS[]     = { "atk1_z", "atk2_z" };
+    static const char* RUIN_CHECKS[]  = { "sword_of_ruin_checkbox", "beads_of_ruin_checkbox",
+                                          "tablets_of_ruin_checkbox", "vessel_of_ruin_checkbox" };
+    static const char* HIDDEN_LABELS[] = {
+        "atk1_teratype_label", "atk2_teratype_label", "defending_tera_type_label",
+        "atk1_terastallized_label", "atk2_terastallized_label", "defending_terastallized_label",
+        "atk1_z_label", "atk2_z_label",
+        "sword_of_ruin_label", "beads_of_ruin_label", "tablets_of_ruin_label", "vessel_of_ruin_label"
+    };
+
+    for(const char* name : TERA_COMBOS) {
+        QComboBox* combo = findChild<QComboBox*>(name);
+        if( !combo ) continue;
+        if( !national_dex ) combo->setCurrentIndex(0); //same reset setAsBlank() does; the Tera type is inert anyway with the checkbox off
+        combo->setVisible(national_dex);
+    }
+
+    for(const char* name : TERA_CHECKS) {
+        QCheckBox* check = findChild<QCheckBox*>(name);
+        if( !check ) continue;
+        if( !national_dex ) check->setChecked(false);
+        check->setVisible(national_dex);
+    }
+
+    for(const char* name : Z_CHECKS) {
+        QCheckBox* check = findChild<QCheckBox*>(name);
+        if( !check ) continue;
+        if( !national_dex ) check->setChecked(false);
+        check->setVisible(national_dex);
+    }
+
+    for(const char* name : RUIN_CHECKS) {
+        QCheckBox* check = findChild<QCheckBox*>(name);
+        if( !check ) continue;
+        if( !national_dex ) check->setChecked(false);
+        check->setVisible(national_dex);
+    }
+
+    for(const char* name : HIDDEN_LABELS) {
+        QLabel* label = findChild<QLabel*>(name);
+        if( label ) label->setVisible(national_dex);
     }
 }
 
@@ -1353,7 +1466,8 @@ void DefenseMoveWindow::setAsBlank() {
     atk1_groupbox->findChild<QSpinBox*>("atk1_last_respects_spinbox")->setValue(0);
 
     //atk2
-    atk2_groupbox->findChild<QCheckBox*>("atk2_activated")->setChecked(true);
+    atk2_groupbox->findChild<QCheckBox*>("atk2_activated")->setChecked(false);
+    activateAtk2(Qt::Unchecked); //no stateChanged when it was already unchecked
     //atk2_groupbox->findChild<QComboBox*>("atk2_type1_combobox")->setCurrentIndex(0);
     //atk2_groupbox->findChild<QComboBox*>("atk2_type2_combobox")->setCurrentIndex(0);
     atk2_groupbox->findChild<QComboBox*>("atk2_species_combobox")->setCurrentIndex(0);
@@ -1386,6 +1500,10 @@ void DefenseMoveWindow::setAsBlank() {
     modifier_groupbox->findChild<QCheckBox*>("vessel_of_ruin_checkbox")->setChecked(false);
     modifier_groupbox->findChild<QCheckBox*>("helping_hand_checkbox")->setChecked(false);
     modifier_groupbox->findChild<QCheckBox*>("friend_guard_checkbox")->setChecked(false);
+    modifier_groupbox->findChild<QCheckBox*>("protect_checkbox")->setChecked(false);
+    modifier_groupbox->findChild<QCheckBox*>("reflect_checkbox")->setChecked(false);
+    modifier_groupbox->findChild<QCheckBox*>("light_screen_checkbox")->setChecked(false);
+    modifier_groupbox->findChild<QCheckBox*>("aurora_veil_checkbox")->setChecked(false);
 
     defending_groupbox->findChild<QSpinBox*>("defending_def_modifier")->setValue(0);
     defending_groupbox->findChild<QSpinBox*>("defending_spdef_modifier")->setValue(0);
@@ -1515,6 +1633,10 @@ void DefenseMoveWindow::setAsTurn(const Turn &theTurn, const defense_modifier &t
     modifier_groupbox->findChild<QCheckBox*>("vessel_of_ruin_checkbox")->setChecked(std::get<8>(theDefenseModifier));
     modifier_groupbox->findChild<QCheckBox*>("helping_hand_checkbox")->setChecked(std::get<9>(theDefenseModifier));
     modifier_groupbox->findChild<QCheckBox*>("friend_guard_checkbox")->setChecked(std::get<10>(theDefenseModifier));
+    modifier_groupbox->findChild<QCheckBox*>("protect_checkbox")->setChecked(std::get<11>(theDefenseModifier));
+    modifier_groupbox->findChild<QCheckBox*>("reflect_checkbox")->setChecked(std::get<12>(theDefenseModifier));
+    modifier_groupbox->findChild<QCheckBox*>("light_screen_checkbox")->setChecked(std::get<13>(theDefenseModifier));
+    modifier_groupbox->findChild<QCheckBox*>("aurora_veil_checkbox")->setChecked(std::get<14>(theDefenseModifier));
     defending_groupbox->findChild<QSpinBox*>("defending_hits_modifier")->setValue(theTurn.getHits()+1);
 
     tabs->setCurrentIndex(0);

@@ -22,10 +22,10 @@
 
 class Turn;
 
-// defense_modifier: HP%, mod_DEF, mod_SPDEF, tera_type, terastallized, sword_of_ruin, beads_of_ruin, tablets_of_ruin, vessel_of_ruin, helping_hand, friend_guard
-typedef std::tuple<float, int16_t, int16_t, Type, bool, bool, bool, bool, bool, bool, bool> defense_modifier;
-// attack_modifier: mod_ATK, mod_SPATK, tera_type, terastallized, tablets_of_ruin, vessel_of_ruin, sword_of_ruin, beads_of_ruin, helping_hand, friend_guard
-typedef std::tuple<int16_t, int16_t, Type, bool, bool, bool, bool, bool, bool, bool> attack_modifier;
+// defense_modifier: HP%, mod_DEF, mod_SPDEF, tera_type, terastallized, sword_of_ruin, beads_of_ruin, tablets_of_ruin, vessel_of_ruin, helping_hand, friend_guard, protect, reflect, light_screen, aurora_veil
+typedef std::tuple<float, int16_t, int16_t, Type, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool> defense_modifier;
+// attack_modifier: mod_ATK, mod_SPATK, tera_type, terastallized, tablets_of_ruin, vessel_of_ruin, sword_of_ruin, beads_of_ruin, helping_hand, friend_guard, protect, reflect, light_screen, aurora_veil
+typedef std::tuple<int16_t, int16_t, Type, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool> attack_modifier;
 typedef std::pair<DefenseResult, AttackResult> FinalResult;
 
 class EVCalculationInput;
@@ -75,6 +75,10 @@ class Pokemon {
         bool ruin_vessel;   // Vessel of Ruin active: ×0.75 to this Pokémon's SpAtk
         bool helping_hand;  // Helping Hand active: ×1.5 to moves used by this Pokémon
         bool friend_guard;  // Friend Guard active (ally ability): ×0.75 to damage received by this Pokémon
+        bool protect;       // this Pokémon used Protect: it takes no damage unless the move goes through it (Unseen Fist)
+        bool reflect;       // Reflect up on this Pokémon's side: ×2732/4096 to physical damage received
+        bool light_screen;  // Light Screen up on this Pokémon's side: ×2732/4096 to special damage received
+        bool aurora_veil;   // Aurora Veil up on this Pokémon's side: ×2732/4096 to both physical and special damage received
 
         void calculateTotal();
         std::vector<int> getDamage(const Pokemon& theAttacker, Move theMove) const;
@@ -132,6 +136,10 @@ class Pokemon {
         void setRuinVessel(const bool v) { ruin_vessel = v; }
         void setHelpingHand(const bool v) { helping_hand = v; }
         void setFriendGuard(const bool v) { friend_guard = v; }
+        void setProtect(const bool v) { protect = v; }
+        void setReflect(const bool v) { reflect = v; }
+        void setLightScreen(const bool v) { light_screen = v; }
+        void setAuroraVeil(const bool v) { aurora_veil = v; }
         void abortCalculation() { abort_calculation = true; }
 
         unsigned int getPokedexNumber() const { return pokedex_number; }
@@ -161,6 +169,10 @@ class Pokemon {
         bool getRuinVessel() const { return ruin_vessel; }
         bool getHelpingHand() const { return helping_hand; }
         bool getFriendGuard() const { return friend_guard; }
+        bool getProtect() const { return protect; }
+        bool getReflect() const { return reflect; }
+        bool getLightScreen() const { return light_screen; }
+        bool getAuroraVeil() const { return aurora_veil; }
         float getDEFTier() const;
         float getSPDEFTier() const;
 

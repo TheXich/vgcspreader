@@ -191,7 +191,7 @@ static constexpr int remap[] = {0, 1, 2, 5, 3, 4};
 Uno por línea, en el mismo orden que el enum correspondiente:
 - `moves.txt` — 421 nombres (sincronizado con `Moves` enum)
 - `species.txt` — 1026 nombres (Pokédex)
-- `abilities.txt` — 272 nombres
+- `abilities.txt` — 276 nombres (sincronizado con el enum `Ability`; índice 275 = Unseen Fist)
 - `items.txt` — 55 nombres (sincronizado con `Items` enum; índice 0 = None, índice 54 = Leftovers)
 - `types.txt` — 18 nombres
 - `natures.txt` — 25 nombres (Hardy…Quirky, sin "Auto")
@@ -212,13 +212,18 @@ PNGs en `db/sprites/`, nombrados `{dex}.png` (forma base) o `{dex}-{form}.png` (
 
 ```cpp
 // defense_modifier: por turno en el cálculo defensivo
-typedef std::tuple<float, int16_t, int16_t, Type, bool, bool, bool, bool, bool, bool> defense_modifier;
-// campos: HP%, mod_DEF, mod_SPDEF, tera_type, terastallized, sword_of_ruin, beads_of_ruin, tablets_of_ruin, vessel_of_ruin, helping_hand
+typedef std::tuple<float, int16_t, int16_t, Type, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool> defense_modifier;
+// campos: HP%, mod_DEF, mod_SPDEF, tera_type, terastallized, sword_of_ruin, beads_of_ruin, tablets_of_ruin,
+//         vessel_of_ruin, helping_hand, friend_guard, protect, reflect, light_screen, aurora_veil
 
 // attack_modifier: por turno en el cálculo ofensivo
-typedef std::tuple<int16_t, int16_t, Type, bool, bool, bool, bool, bool, bool> attack_modifier;
-// campos: mod_ATK, mod_SPATK, tera_type, terastallized, tablets_of_ruin, vessel_of_ruin, sword_of_ruin, beads_of_ruin, helping_hand
+typedef std::tuple<int16_t, int16_t, Type, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool> attack_modifier;
+// campos: mod_ATK, mod_SPATK, tera_type, terastallized, tablets_of_ruin, vessel_of_ruin, sword_of_ruin,
+//         beads_of_ruin, helping_hand, friend_guard, protect, reflect, light_screen, aurora_veil
 ```
+
+Los cuatro campos nuevos (`protect`, `reflect`, `light_screen`, `aurora_veil`) son **del lado del defensor** en ambos tuples:
+en `defense_modifier` se aplican al Pokémon propio, en `attack_modifier` a la copia local del rival (`def_copy`).
 
 ---
 
@@ -227,6 +232,12 @@ typedef std::tuple<int16_t, int16_t, Type, bool, bool, bool, bool, bool, bool> a
 1. El usuario configura su Pokémon en el panel principal (`mainwindow`)
 2. Añade ataques defensivos en `DefenseMoveWindow` → se guardan en `turns_def` / `modifiers_def` / `thresholds_def`
 3. Añade ataques ofensivos en `AttackMoveWindow` → se guardan en `turns_atk` / `modifiers_atk` / `thresholds_atk`
+
+> El checkbox **"Activated"** del segundo atacante (`atk2_activated`) arranca **desmarcado** (7 de septiembre de 2026): lo
+> normal es calcular contra un solo atacante. Como el checkbox ya nace desmarcado, `stateChanged` no se dispara, así que
+> tanto `createAtk2GroupBox()` como `setAsBlank()` tienen que llamar a `activateAtk2(Qt::Unchecked)` a mano para dejar
+> los controles de la pestaña "Attack #2" deshabilitados. En `createAtk2GroupBox()` la llamada va **al final**, después
+> de los `setCurrentIndex` que disparan `setMove2`, porque si no ese slot vuelve a habilitar el spinbox de multi-golpe.
 4. `calculate()` llama a `Pokemon::calculateEVSDistrisbution(EVCalculationInput)` en un thread separado (`QtConcurrent::run`)
 5. Internamente: `resistMove` (mínimos EVs defensivos) + `koMove` (mínimos EVs ofensivos), con threads internos en `resistMoveLoopThread`
 6. El resultado se muestra en `ResultWindow`
@@ -419,6 +430,28 @@ Estos efectos se almacenan como flags en la clase `Pokemon` (`ruin_sword`, `ruin
 **UI**: Ambas ventanas exponen los mismos 5 checkboxes en su sección "Modifiers:" (Field:):
 - `DefenseMoveWindow`: Tablets (−25% Atk), Vessel (−25% SpAtk), Sword (−25% Def), Beads (−25% SpDef), Helping Hand (×1.5)
 - `AttackMoveWindow`: ídem
+
+### Pantallas, Protect y Unseen Fist
+
+> Añadidos el **7 de septiembre de 2026**.
+
+Son cuatro flags del lado del **defensor**, guardados en la clase `Pokemon` (`protect`, `reflect`, `light_screen`,
+`aurora_veil`) y seteados desde los tuples de modificadores antes de cada `getKOProbability`.
+
+| Modificador | Efecto | Dónde se aplica |
+|-------------|--------|-----------------|
+| `Reflect` | ×2732/4096 (≈0.667) al daño **físico** recibido | `calculateOtherModifier` |
+| `Light_Screen` | ×2732/4096 al daño **especial** recibido | `calculateOtherModifier` |
+| `Aurora_Veil` | ×2732/4096 a físico **y** especial | `calculateOtherModifier` |
+| `Protect` | daño 0 (los 16 rolls a cero) | `getDamage`, antes de cualquier otro cálculo |
+
+- El multiplicador de las pantallas es el de **dobles** (2732/4096), no el de singles (0.5): esta calculadora solo
+  contempla VGC. Un **golpe crítico** y la habilidad **Infiltrator** atraviesan las tres pantallas.
+- **Protect** bloquea el movimiento por completo salvo que el atacante tenga **Unseen Fist** y el movimiento haga
+  contacto. Como en el resto del fichero (p.ej. Fluffy), el contacto se aproxima con "categoría Física". Los
+  movimientos que ignoran Protect por sí mismos (Feint, Phantom Force…) no están modelados.
+- **`Unseen_Fist` (índice 275)** se añadió al enum `Ability` y a `db/abilities.txt` para esta funcionalidad, y se
+  parcheó en `personal_species.bin` para las cuatro formas de Urshifu (#892), que tenían `No Ability` (0).
 
 ### Notas críticas sobre habilidades
 - **`Huge_Power`/`Pure_Power`**: solo aplica ×2 al **atacante** en ataques físicos normales. En **Foul Play** aplica al **defensor** (correcto, porque Foul Play usa el ATK del defensor). En Photon Geyser, solo afecta a la rama de ATK, no a la de SpATK.
@@ -617,6 +650,27 @@ De los 55 objetos del programa, Champions **no** tiene: Assault Vest, Choice Ban
 - `MainWindow::applyRegulationLists()` — repuebla los combos de especie/objeto de las tres ventanas conservando la selección anterior si sigue siendo legal. `DefenseMoveWindow::refreshRegulationLists()` y `AttackMoveWindow::refreshRegulationLists()` hacen lo propio en las ventanas hija.
 - `MainWindow::setRegulation(int)` — slot del combo: cambia el formato, hace `clearAll()` (los ataques configurados apuntan a Pokémon/objetos del formato anterior) y llama a `applyRegulationLists()`.
 
+### Mecánicas visibles según el formato
+
+> Añadido el **7 de septiembre de 2026**.
+
+Las regulaciones de Champions no tienen Terastalización, ni Movimientos Z, ni las Treasures of Ruin, así que
+`DefenseMoveWindow::applyRegulationVisibility()` y `AttackMoveWindow::applyRegulationVisibility()` **ocultan**
+esos controles mientras haya un formato Champions seleccionado, y los **resetean** al ocultarlos (Tera type a
+Typeless, checkboxes a false) para que un valor viejo no se cuele en un cálculo. En National Dex se muestra todo.
+
+Los modificadores que sí aplican en Champions —y que por tanto están siempre visibles en ambas ventanas— son:
+Weather, Terrain, Protect, Helping Hand, Friend Guard, Reflect, Light Screen y Aurora Veil. Los cuatro últimos
+más Protect viven en una fila propia etiquetada **"Side:"**, debajo de la fila "Field:" de las Ruin.
+
+`Regulation::isChampions()` distingue los dos formatos Champions de National Dex. Ambas ventanas llaman a
+`applyRegulationVisibility()` al final de su constructor y desde `refreshRegulationLists()`, que a su vez se
+invoca desde `MainWindow::applyRegulationLists()` cada vez que cambia el combo "Format:".
+
+Para poder ocultar las filas de `QFormLayout` (Qt 5 no tiene `setRowVisible`, es de Qt 6.4), las etiquetas de
+Tera Type / Terastallized / Z / Ruin se crean ahora como `QLabel` con `setObjectName` y se pasan a `addRow`,
+de modo que `findChild<QLabel*>` puede alcanzarlas.
+
 ### Presets y cálculos guardados
 
 Ni los presets XML ni `SavedCalculation` almacenan el formato. Como `setComboByOriginalIdx` no hace nada si el índice buscado no está en el combo, cargar datos de otro formato cargaría silenciosamente un Pokémon distinto. Para evitarlo, `MainWindow::switchToNationalDexIfIllegal(dex, form, item)` cambia el formato a National Dex (sin pasar por el slot, para no borrar lo que se está cargando) cuando detecta algo fuera del formato actual. Se llama desde `restoreFromSavedCalc` (Pokémon propio + todos los turnos) y desde `solveMovePreset`.
@@ -771,7 +825,7 @@ Los objetos siguen existiendo con nombre (ObjectName) para los `findChild<>` que
 - El identificador `Psichic` en el enum `Moves` (`moves.hpp`) no puede renombrarse a `Psychic`: ambos `enum Moves` y `enum Type` son unscoped y comparten el mismo scope global, y `Type` ya tiene un enumerador `Psychic` — renombrarlo produciría un choque de nombres en compilación. El nombre visible en la GUI (`db/moves.txt`) sí se corrigió a "Psychic"; solo el identificador C++ interno conserva el typo. Las propiedades del movimiento (BP=90, tipo Psychic, categoría Special) estaban a cero en `personal_moves.bin` (índice 220) y fueron corregidas en julio 2026.
 - Los presets XML no guardan el `attack_modifier` completo (Tera del atacante por turno); si se añade en el futuro habría que versionar el formato XML
 - Los presets XML y `SavedCalculation` no guardan el roll threshold por movimiento (`thresholds_def` / `thresholds_atk`); al cargar, todos los movimientos usan el default (100% defensivo / 100% ofensivo)
-- Los presets XML guardan los 5 checkboxes de Ruin + Helping Hand del `defense_modifier` (get<5..9>); los campos son opcionales en la carga (fallback a false) para compatibilidad con presets antiguos
+- Los presets XML y `SavedCalculation` guardan los checkboxes de Ruin, Helping Hand, Friend Guard, Protect, Reflect, Light Screen y Aurora Veil del `defense_modifier` (get<5..14>) y del `attack_modifier` (get<4..13>); todos son opcionales en la carga (fallback a false) para compatibilidad con datos antiguos
 - `NATURE_NUM` y `AUTO_NATURE` tienen el mismo valor numérico (25); el combobox de naturaleza tiene 26 ítems (índices 0–24 = naturales reales, índice 25 = Auto)
 - El enum `Status` usa `NO_STATUS` (no `HEALTHY`) como valor neutro — importante al implementar habilidades que dependen del estado
 - Algunos sprites Champions no tienen minisprite en Smogon/PS aún: Raichu Mega (#26-2, #26-3), Lucario Gmax (#448-2) — se usan versiones redimensionadas de los Serebii 120×120. Formas Totem (Raticate #20, Marowak #105), Maushold-Three, Toxtricity-Low-Key-Gmax tampoco tienen minisprite disponible.

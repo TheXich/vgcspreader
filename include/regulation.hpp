@@ -21,6 +21,10 @@ class Regulation {
         static Format getCurrent() { return current; }
         static void setCurrent(const Format theFormat) { current = theFormat; }
 
+        //Pokemon Champions regulations share the same set of battle mechanics (no Terastallization, no Z-Moves,
+        //no Treasures of Ruin), so the GUI only has to tell them apart from National Dex
+        static bool isChampions() { return current == CHAMPIONS_MA || current == CHAMPIONS_MB; }
+
         static const char* getName(const Format theFormat);
 
         static bool isFormLegal(const unsigned int thePokedexNumber, const unsigned int theForm); //is this exact (species, form) usable in the current format?
