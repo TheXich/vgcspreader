@@ -192,7 +192,7 @@ Uno por línea, en el mismo orden que el enum correspondiente:
 - `moves.txt` — 421 nombres (sincronizado con `Moves` enum)
 - `species.txt` — 1026 nombres (Pokédex)
 - `abilities.txt` — 276 nombres (sincronizado con el enum `Ability`; índice 275 = Unseen Fist)
-- `items.txt` — 55 nombres (sincronizado con `Items` enum; índice 0 = None, índice 54 = Leftovers)
+- `items.txt` — 56 nombres (sincronizado con `Items` enum; índice 0 = None, índice 54 = Leftovers, índice 55 = Normal Gem)
 - `types.txt` — 18 nombres
 - `natures.txt` — 25 nombres (Hardy…Quirky, sin "Auto")
 
@@ -614,14 +614,19 @@ with open('db/personal_species.bin', 'wb') as f: f.write(data)
 
 ## Filtro por formato / regulación (GUI)
 
-> Añadido el **7 de septiembre de 2026**. Los rosters y las listas de objetos se capturaron de Serebii y RotomPicks ese mismo día, con Regulation M-B todavía vigente (terminaba el 9 de septiembre de 2026).
+> Añadido el **7 de septiembre de 2026** (M-A/M-B). Los rosters y las listas de objetos se capturaron de
+> Serebii y RotomPicks ese mismo día, con Regulation M-B todavía vigente (terminaba el 9 de septiembre de
+> 2026). **Regulation M-C añadida el 9 de septiembre de 2026**, el mismo día en que entró en vigor
+> (9 de septiembre de 2026 - 2 de diciembre de 2026), roster capturado de
+> `serebii.net/pokemonchampions/rankedbattle/regulationm-c.shtml`.
 
 El combo **"Format:"** en la parte superior de la ventana principal decide qué especies, qué formas y qué objetos ofrece **toda** la aplicación. Opciones (listadas de más nueva a más antigua):
 
 | Opción | Contenido |
 |--------|-----------|
-| `Champions Reg. M-B` | **Por defecto.** 208 especies / 298 combinaciones especie-forma, 40 de los 55 objetos |
-| `Champions Reg. M-A` | 186 especies / 260 combinaciones especie-forma, 39 de los 55 objetos |
+| `Champions Reg. M-C` | **Por defecto.** 231 especies / 330 combinaciones especie-forma, 41 de los 56 objetos |
+| `Champions Reg. M-B` | 208 especies / 298 combinaciones especie-forma, 40 de los 56 objetos |
+| `Champions Reg. M-A` | 186 especies / 260 combinaciones especie-forma, 39 de los 56 objetos |
 | `National Dex` | Sin filtro: los 1025 Pokémon, todas las formas y los 55 objetos (comportamiento histórico) |
 
 ### Módulo `Regulation`
@@ -636,11 +641,48 @@ Regulation::getFirstLegalForm(dex)      // -1 si la especie está prohibida
 Regulation::isItemLegal(item_index)     // índice del enum Items
 ```
 
-Las tablas son arrays estáticos ordenados de `(dex << 8) | form` (`std::binary_search`). **M-B es aditiva sobre M-A**: `CHAMPIONS_MA_FORMS` contiene el roster completo de M-A y `CHAMPIONS_MB_NEW_FORMS` solo los 38 añadidos (22 especies + 16 Megas). El índice de forma es el mismo que usa `personal_species.bin`, así que las Mega Evoluciones son formas alternativas normales — prohibir Mega Lucario Z / Mega Garchomp Z consiste simplemente en no listar esa forma.
+Las tablas son arrays estáticos ordenados de `(dex << 8) | form` (`std::binary_search`). **M-B es aditiva sobre M-A**: `CHAMPIONS_MA_FORMS` contiene el roster completo de M-A y `CHAMPIONS_MB_NEW_FORMS` solo los 38 añadidos (22 especies + 16 Megas). **M-C es aditiva sobre M-B**: `CHAMPIONS_MC_NEW_FORMS` añade 32 combinaciones especie-forma más (23 especies nuevas + las formas "Mega X Z" de Absol/Garchomp/Lucario, cuya Mega clásica ya era legal desde M-A). El índice de forma es el mismo que usa `personal_species.bin`, así que las Mega Evoluciones son formas alternativas normales — prohibir Mega Lucario Z / Mega Garchomp Z (legales por fin en M-C) consistía simplemente en no listar esa forma en M-A/M-B.
+
+> **Bug histórico corregido al añadir M-C**: `MainWindow::isGMaxForm` (`source/gui/mainwindow.cpp`) tenía
+> `{448,2}` hardcodeado como forma G-Max, pero esa forma es en realidad Mega Lucario Z. Mientras esa forma
+> era ilegal en todas las regulaciones daba igual (`populateFormCombo` la descarta por las dos razones a la
+> vez), pero al legalizarla en M-C `isGMaxForm` seguía ocultándola del combo de formas silenciosamente. Se
+> quitó `{448,2}` del set `gmax_forms`; esto también corrige National Dex, donde esa forma llevaba tiempo
+> oculta sin motivo real (Lucario no tiene G-Max en el juego real).
+
+### Identificar el índice de forma correcto a partir de Serebii
+
+El roster de una regulación en Serebii (`.../rankedbattle/regulationm-X.shtml`) solo muestra nombres de especie
+en texto plano — dos filas con el mismo nombre (p.ej. "Persian" dos veces) no dicen por sí solas si son dos
+formas distintas o una fila duplicada por un artefacto de scraping. La señal fiable es el **atributo `src` de
+cada `<img>` de icono** (`/pokedex-champions/icon/NNN[-suf].png`), extraído con JavaScript en el navegador
+(`document.querySelectorAll('img')` filtrando por esa ruta) en vez de con extracción de texto. Los sufijos
+observados en M-C: `-a` Alola (Persian), `-m` Mega (Salamence, Golisopod, Baxcalibur), `-mz` Mega Z (Absol,
+Garchomp, Lucario), `-l` Low Key (Toxtricity), `-f` Indeedee-F. Sin sufijo = forma base. Cada sufijo distinto
+en la página corresponde a una fila que sí hay que añadir a la tabla; nombres repetidos sin sufijo distinto
+(p.ej. "Squawkabilly" listado dos veces en el texto plano pero con un único `931.png` sin sufijo) son ruido del
+scraper, no formas nuevas.
+
+Para traducir el sufijo al índice de forma de `personal_species.bin`, cuidado con el byte "número total de
+formas" (offset 32): no es fiable tomarlo como "número de formas alternativas reales" sin más — en varios
+casos (Ninetales, Raichu, Floette, Eelektross) ese byte cuenta una forma de más porque la tabla maestra de
+formas es contigua entre especies y el byte se pasa por uno, "robando" la primera forma de la siguiente especie
+en la tabla (verificado comparando esos stats sobrantes con los de la especie siguiente: p.ej. la "forma 2" de
+Ninetales en el binario son en realidad los base stats de Diglett-Alola). En otros casos (Toxtricity,
+Squawkabilly) el byte sí es exacto y las formas "de más" son formas reales de la propia especie (Gmax,
+variantes de color) que la GUI ya oculta con otro mecanismo (`isGMaxForm`). La forma fiable de resolverlo sin
+ambigüedad es comprobar qué sprites ya existen en `resources.qrc` (`grep 'db/sprites/DEX-'`) — si ya hay un
+`DEX-1.png`, esa forma 1 ya está pensada para uso en la GUI y su índice es de fiar; si no existe ningún sprite
+para la forma nueva (caso de Mega Baxcalibur, `998-1.png` no existía y hubo que descargarlo), hay que añadirlo
+tú mismo antes de dar la forma por terminada.
 
 ### Objetos
 
-De los 55 objetos del programa, Champions **no** tiene: Assault Vest, Choice Band, Choice Specs, Booster Energy, Clear Amulet, Covert Cloak, Loaded Dice, Mirror Herb, Punching Glove, Eviolite y las bayas de confusión (Aguav, Figy, Iapapa, Mago, Wiki). **Life Orb** no existe en M-A y se añadió en M-B (junto con Big Root, Damp Rock, Expert Belt, Heat Rock, Icy Rock, Iron Ball, Light Clay, Metronome, Muscle Band, Shed Shell, Smooth Rock, Wide Lens, Wise Glasses y Zoom Lens, ninguno de los cuales está modelado todavía).
+> `Normal_Gem` añadido el **9 de septiembre de 2026**, en la misma sesión que el roster de Regulation M-C.
+
+De los 56 objetos del programa, Champions **no** tiene: Assault Vest, Choice Band, Choice Specs, Booster Energy, Clear Amulet, Covert Cloak, Loaded Dice, Mirror Herb, Punching Glove, Eviolite y las bayas de confusión (Aguav, Figy, Iapapa, Mago, Wiki). **Life Orb** no existe en M-A y se añadió en M-B (junto con Big Root, Damp Rock, Expert Belt, Heat Rock, Icy Rock, Iron Ball, Light Clay, Metronome, Muscle Band, Shed Shell, Smooth Rock, Wide Lens, Wise Glasses y Zoom Lens, ninguno de los cuales está modelado todavía). **Normal Gem** no existe hasta M-B y se añadió en M-C — es el único de los 12 objetos nuevos de M-C con efecto modelable en esta calculadora (los otros 11 se documentan como pendientes más abajo).
+
+`Items::Normal_Gem` (añadido al final del enum, tras `Leftovers`, para no romper los valores existentes) da ×1.3 a los movimientos de tipo Normal del propio atacante — implementado en `calculateOtherModifier` (`source/pokemon.cpp`), junto al ×1.3 de Life Orb. En el juego real la gema se consume tras el primer golpe que boostea; esta calculadora no modela consumo de objetos entre golpes/turnos, así que el ×1.3 se aplica sin condición — una aproximación exacta para el caso de uso típico (calcular un 1HKO o el primer golpe), pero optimista si se configura un ataque Normal en un turno posterior al primero dentro de un cálculo multi-turno.
 
 ### Puntos de enganche en la GUI
 
@@ -831,7 +873,6 @@ Los objetos siguen existiendo con nombre (ObjectName) para los `findChild<>` que
 - Algunos sprites Champions no tienen minisprite en Smogon/PS aún: Raichu Mega (#26-2, #26-3), Lucario Gmax (#448-2) — se usan versiones redimensionadas de los Serebii 120×120. Formas Totem (Raticate #20, Marowak #105), Maushold-Three, Toxtricity-Low-Key-Gmax tampoco tienen minisprite disponible.
 - Los nombres de formas en la GUI son genéricos ("Form 1", "Form 2"…); hay código comentado que sugería usar `db/forms.txt` — pendiente de implementar nombres propios por forma
 - Las regulaciones de Champions también restringen los **movimientos** (502 legales en M-B); el combo de movimientos todavía no se filtra por formato
-- Serebii ya publica **Regulation M-C** (a partir del 9 de septiembre de 2026, dos días después de implementarse este filtro); añadirla es cuestión de meter una tercera tabla aditiva en `source/regulation.cpp` y una entrada en `FORMAT_ORDER`
 - El formato seleccionado no se recuerda entre ejecuciones: siempre arranca en `Regulation::DEFAULT_FORMAT`
-- `MainWindow::isGMaxForm` marca `{448,2}` como G-Max, pero en el binario actual esa forma es Lucario-Mega-Z (el orden de formas cambió al añadirse las Mega Z); en la práctica queda oculta, que es lo que se quiere en Champions, pero la etiqueta es incorrecta para National Dex
+- De los 12 objetos nuevos listados por Serebii para Regulation M-C, **Normal Gem** se añadió (ver sección "Objetos" arriba); los otros 11 (Leek, Rocky Helmet, Air Balloon, Red Card, Binding Band, Eject Button, Terrain Extender y las 4 Seeds de terreno) **no se han añadido** al enum `Items` / `db/items.txt` / `personal_items.bin`: ninguno tiene mecánica modelada en esta calculadora (recoil al atacante, crit-ratio por stage, semillas reactivas a terreno, o — en el caso de Red Card/Eject Button — cualquier concepto de cambio de Pokémon, que no existe en absoluto en este cálculo de un solo turno/KO). Esto sigue el mismo precedente que los 14 objetos de M-B sin modelar (Big Root, Damp Rock, etc., ver sección "Objetos" arriba): se documentan como pendientes en vez de añadirse a medias sin efecto real.
 - El pool total de SPs es **66** (`MAX_EVS = 66` en `pokemon.cpp`), con máximo **32** por stat (`MAX_EVS_SINGLE_STAT = 32`). El cálculo de spreads óptimos usa la suma de SPs asignados como proxy de "coste total" y respeta ambos límites.

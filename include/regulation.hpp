@@ -13,17 +13,18 @@ class Regulation {
             NATIONAL_DEX = 0,   //everything in the database
             CHAMPIONS_MA = 1,   //Pokemon Champions Ranked Battle, Regulation M-A
             CHAMPIONS_MB = 2,   //Pokemon Champions Ranked Battle, Regulation M-B
+            CHAMPIONS_MC = 3,   //Pokemon Champions Ranked Battle, Regulation M-C
             FORMAT_NUM
         };
 
-        static const Format DEFAULT_FORMAT = CHAMPIONS_MB; //the most recent regulation
+        static const Format DEFAULT_FORMAT = CHAMPIONS_MC; //the most recent regulation
 
         static Format getCurrent() { return current; }
         static void setCurrent(const Format theFormat) { current = theFormat; }
 
         //Pokemon Champions regulations share the same set of battle mechanics (no Terastallization, no Z-Moves,
         //no Treasures of Ruin), so the GUI only has to tell them apart from National Dex
-        static bool isChampions() { return current == CHAMPIONS_MA || current == CHAMPIONS_MB; }
+        static bool isChampions() { return current == CHAMPIONS_MA || current == CHAMPIONS_MB || current == CHAMPIONS_MC; }
 
         static const char* getName(const Format theFormat);
 

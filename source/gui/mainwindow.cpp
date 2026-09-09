@@ -82,7 +82,7 @@ MainWindow::MainWindow() {
     regulation->setObjectName("regulation_combobox");
 
     //listed newest first, so the format most people play sits on top
-    static const Regulation::Format FORMAT_ORDER[] = { Regulation::CHAMPIONS_MB, Regulation::CHAMPIONS_MA, Regulation::NATIONAL_DEX };
+    static const Regulation::Format FORMAT_ORDER[] = { Regulation::CHAMPIONS_MC, Regulation::CHAMPIONS_MB, Regulation::CHAMPIONS_MA, Regulation::NATIONAL_DEX };
     for(const Regulation::Format format : FORMAT_ORDER) {
         regulation->addItem(tr(Regulation::getName(format)));
         regulation->setItemData(regulation->count() - 1, (int)format, Qt::UserRole);
@@ -968,7 +968,7 @@ void MainWindow::calculate() {
 /*static*/ bool MainWindow::isGMaxForm(int dex, int form) {
     static const QSet<QPair<int,int>> gmax_forms = {
         {3,2}, {6,3}, {9,2}, {12,1}, {68,1}, {94,2}, {99,1}, {131,1}, {133,2}, {143,1},
-        {448,2}, {569,1}, {807,1}, {809,1}, {812,1}, {815,1}, {818,1}, {823,1}, {826,1},
+        {569,1}, {807,1}, {809,1}, {812,1}, {815,1}, {818,1}, {823,1}, {826,1},
         {834,1}, {839,1}, {841,1}, {842,1}, {844,1}, {849,2}, {849,3}, {851,1}, {858,1},
         {861,1}, {869,1}, {879,1}, {884,1}, {890,1}, {892,2}, {892,3}
     };

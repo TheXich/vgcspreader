@@ -8,14 +8,19 @@
 /*
 Legal rosters for the Pokemon Champions Ranked Battle regulations.
 
-Sources (checked 2026-09-07):
+Sources (checked 2026-09-07, M-C checked 2026-09-09):
   https://www.serebii.net/pokemonchampions/rankedbattle/regulationm-a.shtml
   https://www.serebii.net/pokemonchampions/rankedbattle/regulationm-b.shtml
+  https://www.serebii.net/pokemonchampions/rankedbattle/regulationm-c.shtml
   https://rotompicks.com/en/m-a/items/  and  https://rotompicks.com/en/items/   (held item pools)
 
 Regulation M-A ran April 8th 2026 - June 17th 2026 (260 legal species/form combinations).
 Regulation M-B is additive over M-A: it kept the whole M-A roster and added 22 species,
 16 Mega Evolutions and 15 held items (298 legal species/form combinations).
+Regulation M-C runs September 9th 2026 - December 2nd 2026 and is additive over M-B: it kept the
+whole M-B roster and added 23 more species (330 legal species/form combinations total), including
+the "Mega X Z" evolutions of Absol, Garchomp and Lucario, identified on Serebii by the "-mz" icon
+suffix (the classic Mega of those three was already legal since M-A).
 
 Each entry is a (National Dex number, form index) pair, where the form index matches the one used by
 personal_species.bin (0 = base form, 1 = first alternate form, ...). Mega Evolutions are ordinary
@@ -73,6 +78,17 @@ static const uint32_t CHAMPIONS_MB_NEW_FORMS[] = {
     P(870,0), P(870,1), P(904,0), P(972,0), P(979,0), P(1000,0),
 };
 
+//Pokemon and forms introduced by Regulation M-C on top of the M-B roster.
+//Form 2 is the "Mega X Z" evolution for Absol/Garchomp/Lucario (form 1 in each case is the classic
+//Mega, already legal since M-A); form 1 is the classic Mega for Salamence/Golisopod/Baxcalibur, all
+//three newly legal here for the first time (base form included).
+static const uint32_t CHAMPIONS_MC_NEW_FORMS[] = {
+    P(40,0), P(53,0), P(53,1), P(83,0), P(122,0), P(317,0), P(359,2), P(373,0),
+    P(373,1), P(445,2), P(448,2), P(673,0), P(768,0), P(768,1), P(812,0), P(815,0),
+    P(818,0), P(828,0), P(849,0), P(849,1), P(853,0), P(863,0), P(865,0), P(871,0),
+    P(876,0), P(876,1), P(923,0), P(930,0), P(931,0), P(943,0), P(998,0), P(998,1),
+};
+
 #undef P
 
 //Items that Regulation M-A left out of the game's held item pool, among the ones this program knows about
@@ -97,6 +113,8 @@ static bool isItemLegalInMA(const unsigned int theItemIndex) {
         case Items::Wiki_Berry:
         //added later, in Regulation M-B
         case Items::Life_Orb:
+        //added later, in Regulation M-C
+        case Items::Normal_Gem:
             return false;
         default:
             return true;
@@ -107,6 +125,7 @@ static bool isItemLegalInMA(const unsigned int theItemIndex) {
 
 /*static*/ const char* Regulation::getName(const Format theFormat) {
     switch(theFormat) {
+        case CHAMPIONS_MC: return "Champions Reg. M-C";
         case CHAMPIONS_MB: return "Champions Reg. M-B";
         case CHAMPIONS_MA: return "Champions Reg. M-A";
         case NATIONAL_DEX: return "National Dex";
@@ -123,7 +142,9 @@ static bool contains(const uint32_t* theTable, const size_t theSize, const uint3
 
     const uint32_t key = ((uint32_t)thePokedexNumber << 8) | (uint32_t)theForm;
     if( contains(CHAMPIONS_MA_FORMS, sizeof(CHAMPIONS_MA_FORMS) / sizeof(uint32_t), key) ) return true;
-    if( current == CHAMPIONS_MB ) return contains(CHAMPIONS_MB_NEW_FORMS, sizeof(CHAMPIONS_MB_NEW_FORMS) / sizeof(uint32_t), key);
+    if( current != CHAMPIONS_MB && current != CHAMPIONS_MC ) return false;
+    if( contains(CHAMPIONS_MB_NEW_FORMS, sizeof(CHAMPIONS_MB_NEW_FORMS) / sizeof(uint32_t), key) ) return true;
+    if( current == CHAMPIONS_MC ) return contains(CHAMPIONS_MC_NEW_FORMS, sizeof(CHAMPIONS_MC_NEW_FORMS) / sizeof(uint32_t), key);
     return false;
 }
 
@@ -145,6 +166,7 @@ static bool contains(const uint32_t* theTable, const size_t theSize, const uint3
         case NATIONAL_DEX: return true;
         case CHAMPIONS_MA: return isItemLegalInMA(theItemIndex);
         case CHAMPIONS_MB: return isItemLegalInMA(theItemIndex) || theItemIndex == Items::Life_Orb;
+        case CHAMPIONS_MC: return isItemLegalInMA(theItemIndex) || theItemIndex == Items::Life_Orb || theItemIndex == Items::Normal_Gem;
         default:           return true;
     }
 }

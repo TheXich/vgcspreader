@@ -373,6 +373,12 @@ float Pokemon::calculateOtherModifier(const Pokemon& theAttacker, const Move& th
     // Offensive item/ability boosts
     if( theAttacker.getItem() == Items::Life_Orb ) modifier = modifier * 1.3;
 
+    // Normal Gem (Regulation M-C): 1.3x to the attacker's own Normal-type moves.
+    // In-game the Gem is consumed after the first hit it boosts; this calculator does not track
+    // item consumption across turns/hits, so the boost is applied unconditionally (an approximation
+    // that matches exactly for the common 1HKO/first-hit case this tool is built around).
+    if( theAttacker.getItem() == Items::Normal_Gem && theMove.getMoveType() == Type::Normal ) modifier = modifier * 1.3;
+
     // Type-boosting items (×1.2 to matching type)
     {
         static const struct { Items item; Type type; } TYPE_ITEMS[] = {

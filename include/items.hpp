@@ -59,7 +59,9 @@ enum Items {
 	Spell_Tag,
 	Twisted_Spoon,
 	// Recovery items
-	Leftovers
+	Leftovers,
+	// Regulation M-C (Gen 10) items
+	Normal_Gem
 };
 
 #endif
